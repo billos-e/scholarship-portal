@@ -1,12 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useState, useTransition } from "react";
 import { Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  type ActionState,
   createUniversity,
   updateUniversity,
 } from "@/lib/actions/universities";
@@ -33,27 +31,25 @@ type University = {
   notes: string | null;
 };
 
-function SubmitButton({ label }: { label: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending ? "Saving..." : label}
-    </Button>
-  );
-}
-
 export function UniversityDialog({ university }: { university?: University }) {
   const isEdit = Boolean(university);
   const action = isEdit ? updateUniversity : createUniversity;
-  const [state, formAction] = useActionState<ActionState, FormData>(action, {});
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string>();
+  const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (state.success) {
+  function onSubmit(formData: FormData) {
+    startTransition(async () => {
+      const result = await action({}, formData);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setError(undefined);
       toast.success(isEdit ? "University updated." : "University created.");
       setOpen(false);
-    }
-  }, [state.success, isEdit]);
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -84,7 +80,7 @@ export function UniversityDialog({ university }: { university?: University }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-4">
+        <form action={onSubmit} className="space-y-4">
           {isEdit ? (
             <input type="hidden" name="id" value={university!.id} />
           ) : null}
@@ -138,12 +134,14 @@ export function UniversityDialog({ university }: { university?: University }) {
             />
           </div>
 
-          {state.error ? (
-            <p className="text-sm font-medium text-destructive">{state.error}</p>
+          {error ? (
+            <p className="text-sm font-medium text-destructive">{error}</p>
           ) : null}
 
           <DialogFooter showCloseButton>
-            <SubmitButton label={isEdit ? "Save changes" : "Create"} />
+            <Button type="submit" disabled={pending}>
+              {pending ? "Saving..." : isEdit ? "Save changes" : "Create"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
