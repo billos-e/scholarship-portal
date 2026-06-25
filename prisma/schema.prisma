@@ -1,0 +1,213 @@
+// Student Scholarship Portal — Prisma schema
+// All business tables from IMPLEMENTATION_PLAN.md §4.
+// Prisma model fields use camelCase; DB tables are mapped to snake_case names.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum StudentStatus {
+  ACTIVE
+  GRADUATED
+  INACTIVE
+}
+
+enum RequestStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  PAID
+}
+
+// ---------------------------------------------------------------------------
+// Reference data
+// ---------------------------------------------------------------------------
+
+model University {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  hasSummerSemester Boolean   @default(true)
+  isActive          Boolean   @default(true)
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  students Student[]
+
+  @@map("universities")
+}
+
+// ---------------------------------------------------------------------------
+// Authentication
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student Student?
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Business profile
+// ---------------------------------------------------------------------------
+
+model Student {
+  id                    String        @id @default(cuid())
+  userId                String        @unique
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId             String?       @unique
+  firstName             String
+  lastName              String
+  phone                 String?
+  universityId          String?
+  university            University?   @relation(fields: [universityId], references: [id])
+  degreeProgram         String?
+  yearOfStudy           String?
+  currentSemesterLabel  String?
+  gpa                   Decimal?      @db.Decimal(3, 2)
+  status                StudentStatus @default(ACTIVE)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  bankInformation        BankInformation?
+  tuitionPaymentRequests TuitionPaymentRequest[]
+  semesterReports        SemesterReport[]
+  paymentHistory         PaymentHistory[]
+
+  @@map("students")
+}
+
+model BankInformation {
+  id                String   @id @default(cuid())
+  studentId         String   @unique
+  student           Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  bankAccountName   String?
+  bankAccountNumber String?
+  bankName          String?
+  promptpayNumber   String?
+  qrPaymentImageUrl String?
+  lastUpdatedAt     DateTime @default(now()) @updatedAt
+
+  @@map("bank_information")
+}
+
+// ---------------------------------------------------------------------------
+// Semester submission (payment request + report)
+// ---------------------------------------------------------------------------
+
+model TuitionPaymentRequest {
+  id            String        @id @default(cuid())
+  studentId     String
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semesterLabel String
+  amountDue     Decimal       @db.Decimal(10, 2)
+  dueDate       DateTime?     @db.Date
+  invoiceFileUrl String?
+  status        RequestStatus @default(SUBMITTED)
+  adminNotes    String?
+
+  // Bank snapshot captured at submission time.
+  bankAccountName   String?
+  bankAccountNumber String?
+  bankName          String?
+  promptpayNumber   String?
+  qrPaymentImageUrl String?
+
+  // Reserved for future university calendar feature (see plan §4.4).
+  universitySemesterId String?
+
+  submittedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  approvedAt  DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  semesterReport SemesterReport?
+  paymentHistory PaymentHistory?
+
+  @@index([studentId])
+  @@index([status])
+  @@index([semesterLabel])
+  @@map("tuition_payment_requests")
+}
+
+model SemesterReport {
+  id                      String                @id @default(cuid())
+  studentId               String
+  student                 Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tuitionPaymentRequestId String                @unique
+  tuitionPaymentRequest   TuitionPaymentRequest @relation(fields: [tuitionPaymentRequestId], references: [id], onDelete: Cascade)
+  semesterLabel           String
+
+  // Academic
+  gpa                Decimal? @db.Decimal(3, 2)
+  creditsCompleted   Int?
+  passedAllCourses   Boolean?
+  transcriptFileUrl  String?
+
+  // Wellbeing (1-5)
+  wellbeingPhysical   Int?
+  wellbeingMental     Int?
+  wellbeingFinancial  Int?
+  wellbeingStress     Int?
+  wellbeingConfidence Int?
+
+  // Challenges & activities (multi-select)
+  challenges String[]
+  activities String[]
+
+  // Reflections
+  reflectionAchievement String?
+  reflectionChallenge   String?
+  reflectionAdditional  String?
+
+  // Reserved for future university calendar feature.
+  universitySemesterId String?
+
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([studentId])
+  @@map("semester_reports")
+}
+
+model PaymentHistory {
+  id                      String                 @id @default(cuid())
+  studentId               String
+  student                 Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tuitionPaymentRequestId String                 @unique
+  tuitionPaymentRequest   TuitionPaymentRequest  @relation(fields: [tuitionPaymentRequestId], references: [id], onDelete: Cascade)
+  semesterLabel           String
+  amountPaid              Decimal                @db.Decimal(10, 2)
+  paymentStatus           String                 @default("PAID")
+  paymentDate             DateTime               @db.Date
+  internalNotes           String?
+  createdAt               DateTime               @default(now())
+
+  @@index([studentId])
+  @@map("payment_history")
+}

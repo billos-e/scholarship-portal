@@ -1,0 +1,147 @@
+Impromptu Zoom Meeting - June 24
+VIEW RECORDING - 17 mins (No highlights): 
+
+---
+
+0:03 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Hey, how are you doing? Hello? I cannot hear you. Hello?
+
+0:12 - Alexandra Bay
+  Yes.
+
+0:13 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  can you hear me now?
+
+0:14 - Alexandra Bay
+  Yes, I can hear you now.
+
+0:15 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  How's it going? Yes, good. So yeah, I mean, I think I just thought it'll be easier to have a discussion directly over a call than just, you know, sending you some links and things like that.  Because typically those applications usually, you know, they are, there's a login in it and so on. So usually it's just better to discuss it over a call.  So I understand that you guys are looking for a kind of a portal for students, basically. Is that correct?  Yes.
+
+0:53 - Alexandra Bay
+  Right now we do everything manually in Excel and with over 100 students, it's too much to handle. And the data is not working.
+
+1:03 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Got it. So the actual app, so the student will be able to log in. So you will have an admin interface.  Do you also plan to have a donor access or something or just those two access are enough? No, donor access, just for our admin to go in and see what their GPA is and if the scholarships are paid.  Okay. All right. So the way that would work in that case is you will have a sort of like, you know, the admin will be able to see all the students.  So currently, how does the student apply? Is there any like form or anything which you guys are using for the application for the student?
+
+1:50 - Alexandra Bay
+  I'm sorry, can you repeat that?
+
+1:53 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  The application, how does the student currently apply? We we don't use any application right now.
+
+1:59 - Alexandra Bay
+  They email. And then we manually put it into a spreadsheet.
+
+2:07 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay, so the student emails you the information and you enter it within a spreadsheet. Okay. Okay, so we'll then student tables.  In terms of payment, right, so once you have the student information within the app, it was mentioning that the student needs to be able to request a permit each semester.
+  ACTION ITEM: Email Masdouk semester dates for all universities - WATCH: https://fathom.video/calls/723978976?timestamp=139.9999  So the semester from which, I mean, from which month to which month is a semester? So what do you consider as, and how many semester do you have maybe within a year for the program?
+
+2:44 - Alexandra Bay
+  Normally four semesters. I would have to check the dates and get back to you because we work with several different universities.
+
+2:54 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay. Okay. So the... So basically the semester will vary based on the university?
+
+3:05 - Alexandra Bay
+  Yes. And some universities require summer semesters and some don't.
+
+3:12 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay. All right. let me see something here. Do we, for the university, is there a different list of universities?  And how does the university link to those students? Is there, like, because I don't think, I didn't thought we needed a university table.  But this might be relevant to have a list of universities and being able to link those students to the university.  So that way you can open a university and see all the students within that university.
+
+3:48 - Alexandra Bay
+  Do you mean that would be just another way we could search for it?
+
+3:53 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Yeah. mean, another way we can search for it. But also if there is, since you were mentioning, you can have different...  So semester based on the different university, then on the university side, I mean, on the university table, you will be able to kind of, like, customize the semester, you know, like, period by university, which would then apply to those students.
+
+4:22 - Alexandra Bay
+  The universities don't need to have access or to log in.
+
+4:26 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Yeah. It's just for art.
+
+4:28 - Alexandra Bay
+  Okay.
+
+4:28 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  I'm just talking about, like, the table just for you. So you will have a table for university where you can see all the university participating to that.  Does that make sense? I didn't even know what your table was until yesterday.
+
+4:49 - Alexandra Bay
+  So I will trust you.
+
+4:52 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  All right. Okay. So give me one sec. This will be easier to show. So basically the stack, which I was suggesting in terms of building a solution like this, usually you want to go with something like, not necessarily irritable, using something like, let's say, Replete, you know, which is usually a deployment and development platform.  Because if you are using something like software, as an example, if you use something like software, then what will happen is per users, because you will be paying at some point per users, basically.  And if you have 100, you know, students, the cost per month could go higher, basically. So usually we'll also just take a different stack for a client, where it will just cost you, I think, something like around $25 or $30.  call it from. which is kind of the hosting platform of the application, if that makes sense.
+
+6:07 - Alexandra Bay
+  Okay, if you think that's better than softer. We don't plan to have more active students, so we will probably be always capped at 100 to not more than 150 students every year.
+
+6:22 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Right. Because, yeah, we have a certain amount graduating every year. So once they graduate, what happens? You remove them from the system?  They don't have access anymore?
+  ACTION ITEM: Email Masdouk current student spreadsheet - WATCH: https://fathom.video/calls/723978976?timestamp=394.9999
+
+6:36 - Alexandra Bay
+  Right now, we just keep them in a different spreadsheet, so I don't know.
+
+6:41 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay. So I think it will be relevant also. After this class, you can share the current spreadsheet with me so I can see how it gets going to structure the data there in different fields and everything which you have in that spreadsheet.  That will be helpful to build out this solution. Okay. So let me show you quickly an example, just looking at a good example here to show you.
+  ACTION ITEM: Email Masdouk exact fuchsia + orange color codes - WATCH: https://fathom.video/calls/723978976?timestamp=444.9999  And also another question, is there any specific logo colors for, you know, for the, which you prefer using for the, for the app?
+
+7:50 - Alexandra Bay
+  Yeah, our nonprofit's colors are fuchsia and orange. I can send you the exact colors.
+
+7:57 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay. Okay, one sec, let me just log in into an example, okay, I think this one is very interesting to show, let me know when you can see my screen here.
+  SCREEN SHARING: Masdouk started screen sharing - WATCH: https://fathom.video/calls/723978976?timestamp=546.022696
+
+9:00 - Alexandra Bay
+  One second. You have to forgive my ignorance. I have never done anything like this before. We're mostly volunteers at the organization.
+
+9:10 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Sure.
+
+9:13 - Alexandra Bay
+  Yes, I can see your screen.
+
+9:15 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay. All right, cool. This is just a quick example to show you, you know, it obviously doesn't match exactly what you are looking to build, but the idea in terms of the framework usually, you know, is really similar to something like this.  Okay. So basically the idea will be, you will have an application. Okay. Within the app, obviously you can have a dashboard.  This is, you can consider this as being the administration portal. So if you log in as an admin, this is, you will have a dashboard, right?  So that's the first thing which you will see. So this client is a bit different, which we are building the solution for.  This client is more like a restaurant, obviously it's not university, it's a restaurant. So that's why. So You know, it's a bit different, but the idea that I was mentioning will still be the same.  you will have, like, a dashboard, typically you will start with that, where it shows you the different KPIs. In your case, you can see, you know, how many students in total there is within the system, you know, how many, like, scholarships has been given, you know, maybe the status of those scholarships and things like that.  Those are going to be the KPIs on the screen, okay? And then you will have, instead of customer in your case, it will be student.  You will have a table for students, and then you will see all the student information, basically. So you can click on one of those students, as an example, and you can click on this one.  Then you can see the details from the student. So things like, okay, what is his name, his phone number, whatever information you want to track, what is his ratings, what are the scholarships he received.  You know, a true information there will be able to track it. But, Thank That student will be able to, you know, we can disable it, you know, once they finish, maybe, like, the program, they can be disabled and removed from the system.  So there will be that capability so they don't have access to the pathway anymore, you know, after a certain period.  Or you can keep them active anytime you want as well. So you will have a view like that, similar to this, as an example.  In your case, of, you know, in this case, you'd say orders, but in your case, could be something like the application, right, in case they apply for the scholarship or things like that, they will be able to see, you'll be able to see all the application which has been submitted, right, and then you can click on the application, you can see the value and everything, all the details which you want to track, you'll be able to see it here, as well.  So the student will also have their own access. So in here you can see we have an example here we've got customer portal, in your case it will be student portal basically.  Whenever you switch to that, know, this is what the students will see. The student will be able to see the dashboard as well.  They can submit, in this case it say place order, but in your case it will be apply basically for, you know, apply for the scholarship.
+
+12:28 - Alexandra Bay
+  All of our students already are awarded scholarships, we just need to be able to track their grade and that we've paid every semester.
+
+12:36 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay. So we don't need, we don't need accepted or not accepted. Okay, you don't need to track if they are being accepted, because they are already eligible for the, for the scholarship.  They already, I mean, they already been approved. Yes. you just need to, you give them the option where they can.  You request, basically, the payment on the platform, and then you can see whenever they request it, you want to track the grade.  So regarding the grade, you will be entering that information basically in the system, right, manually, correct? For every student.  The student enters their GPA and then their bank information, which is like their bank name, the bank number. Got it.  In Thailand, we have three bank payment systems.
+
+13:32 - Alexandra Bay
+  One is paying it to the bank number, one is paying it to a phone number called prompt pay, and the other is a QR scan.  For that, they could just upload a picture, a file, and we can scan it. Okay, got it.
+
+13:47 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Yeah, so that is fine. So we'll able to have, you know, an option where you can click on the profile, and then you can see whatever they have, you know.  Provide it as the main details, and you can see also they create as an admin for the student. So whenever the students log into their profile, they can have a profile, they can have an option where they can request a permit.  Is there anything else the student should be able to do within the platform?
+
+14:30 - Alexandra Bay
+  No, just enter their information. They don't really need to look at it. It's just for our organization. Okay.
+
+14:39 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Okay. So request. So okay. All right. Makes sense. Yeah, I think that's pretty much it then. So I think that's how the process will work.  So in our end, when we do the development, we use a platform called Replete. Replete is kind of our deployment.  Deployment platform, basically. Can you spell it for me? Replete is R-E-P-L-I-T. Okay. Replete. R-E-P-L-I-T. That's what we use for the deployment, basically.  So we can build everything there, and then we deploy it there. And usually you will need to have, let's say, because you created that application, then usually you want to put it under your custom domain, right?  You probably have a domain name. So usually you want to use maybe a subdomain for that application. So in that case, we will need to have access to the hosting platform of your domain name, so that way we can, you know, so it can be custom to you instead of having...  so it actually lives on our domain. Exactly. Adding just the DNS on the domain name. Yeah, I mean... And that's it.  I don't know if you have any question for me, but that's pretty much it, the process.
+
+16:06 - Alexandra Bay
+  How much, how long does it normally take to do something like this?
+
+16:11 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Usually it takes less than 20 days.
+
+16:14 - Alexandra Bay
+  Okay. And when it's finished, do you do like a video call or do you send any instructions?
+
+16:19 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  Yeah, totally. So once it's finished, we'll have a call like this. You know, usually it's going to be a shared screen and we'll be able to work you through how the apps works.  And we can also share a Loom video beforehand, before that call, so that we can, we can take a look on how the apps works.  And also, you know, we can give you access as well. can play with it and let us know if you have any questions.
+  ACTION ITEM: Send Alexandra scope doc + Fiverr key; then build portal after payment - WATCH: https://fathom.video/calls/723978976?timestamp=1002.9999
+
+16:48 - Alexandra Bay
+  Yeah, that sounds great.
+
+16:51 - Masdouk Adelakoun (techmaofficial.ca@gmail.com)
+  All right. Perfect. So thanks so much. So what I will do then, so I will just put together a quick.  You know, document, which specify what we're going to be working on, and from there, will send you basically the key on Fiverr, and then you can pay it to there.
+
+17:16 - Alexandra Bay
+  Thank you for your time. All right. Thanks so much. Have a good day. Okay. See you, too. Bye.
