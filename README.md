@@ -115,7 +115,9 @@ src/
 - [x] **Phase 0 — Foundations:** Docker Postgres, Prisma schema + migration,
       seed, Auth.js (login, roles, route protection), student/admin shells,
       dashboards, login page.
-- [ ] Phase 1 — Profiles & reference data (CRUD students/universities, profile edit)
+- [x] **Phase 1 — Profiles & reference data:** admin CRUD for universities and
+      students (with account provisioning, status/access management, password
+      reset) and student-side profile editing (phone + bank info).
 - [ ] Phase 2 — Semester submission (payment request + report + uploads)
 - [ ] Phase 3 — Admin workflow (request list, filters, status transitions, notes)
 - [ ] Phase 4 — Export, import, polish, Replit deployment

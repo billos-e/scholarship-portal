@@ -562,11 +562,11 @@ Objectif : tester tous les parcours sans données client.
 
 ### Phase 1 — Profils & référentiels (Jour 2)
 
-- [ ] CRUD `Universities` (admin)
-- [ ] CRUD `Students` + création compte `User` associé (admin)
-- [ ] Page profil étudiant (lecture / édition)
-- [ ] Gestion statut étudiant (`ACTIVE` / `GRADUATED` / `INACTIVE`)
-- [ ] Désactivation login sans suppression de données
+- [x] CRUD `Universities` (admin)
+- [x] CRUD `Students` + création compte `User` associé (admin)
+- [x] Page profil étudiant (lecture / édition : téléphone + infos bancaires)
+- [x] Gestion statut étudiant (`ACTIVE` / `GRADUATED` / `INACTIVE`)
+- [x] Désactivation login sans suppression de données (statut pilote `User.isActive`)
 
 **Jalon :** capture profil étudiant + liste admin des étudiants.
 
@@ -700,6 +700,11 @@ Objectif : tester tous les parcours sans données client.
 | 2026-06-25 | Auth.js v5 : `auth.config.ts` edge-safe + `auth.ts` Node ; protection des routes via `src/proxy.ts` (convention Next 16 remplaçant `middleware.ts`) |
 | 2026-06-25 | `.env` unique (lu par Prisma CLI et Next.js) au lieu de `.env.local` |
 | 2026-06-25 | Phase 0 livrée : login 2 rôles, dashboards, seed — testée de bout en bout |
+| 2026-06-25 | Git initialisé (branche `main`), commits par jalon |
+| 2026-06-25 | Selects via `<select>` natif stylé (fiabilité formulaires/filtres, usage non technique) |
+| 2026-06-25 | Statut étudiant pilote l'accès : `User.isActive = (status === ACTIVE)` |
+| 2026-06-25 | Champs éditables par l'étudiant : téléphone + infos bancaires (académique géré par l'admin) |
+| 2026-06-25 | Phase 1 livrée : CRUD universités + étudiants, profil éditable, gestion statut/accès |
 
 ---
 
