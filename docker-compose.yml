@@ -1,3 +1,5 @@
+# Optional local PostgreSQL (fallback when Supabase is unavailable).
+# Primary local dev database: Supabase project "schoolarship app" (see README).
 services:
   postgres:
     image: postgres:16-alpine

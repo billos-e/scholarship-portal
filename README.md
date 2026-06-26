@@ -13,34 +13,47 @@ document uploads, and payment tracking.
 | -------- | --------------------------------------- |
 | Framework| Next.js 16 (App Router) + TypeScript    |
 | ORM      | Prisma 6 (versioned migrations)         |
-| Database | PostgreSQL 16 (Docker locally, Replit in prod) |
+| Database | PostgreSQL via **Supabase** (local dev), Replit (prod) |
 | Auth     | Auth.js v5 (Credentials) — `STUDENT` / `ADMIN` |
 | UI       | Tailwind CSS v4 + shadcn/ui (Base UI)   |
 | Forms    | React Hook Form + Zod                   |
 
-**Guiding principle:** one codebase. The only thing that changes between local
-and Replit is `DATABASE_URL`.
+**Guiding principle:** one codebase. Only `DATABASE_URL` (and `DIRECT_URL` for
+Supabase pooling) change between environments. Production stays on Replit
+PostgreSQL — Supabase is for local development only.
 
 ## Local setup
 
 ### 1. Prerequisites
 
 - Node.js 20+ and npm
-- Docker (daemon running) — `docker --version`, `docker compose version`
+- Access to the **schoolarship app** Supabase project (org: *Techma hosted db*)
 
-### 2. Database (Docker Postgres)
+### 2. Database (Supabase — local dev)
+
+1. In [Supabase Dashboard](https://supabase.com/dashboard) → **schoolarship app**
+   → **Project Settings** → **Database**, copy:
+   - **Transaction pooler** → `DATABASE_URL` (port `6543`, include `?pgbouncer=true`)
+   - **Direct connection** → `DIRECT_URL` (port `5432`)
+2. Replace `[YOUR-PASSWORD]` in the connection strings with the database password.
+
+The initial Prisma schema is already applied on this Supabase project. After
+cloning, if `npm run db:migrate` reports the migration as pending while tables
+already exist, run once:
 
 ```bash
-docker compose up -d      # start Postgres
-docker compose ps         # wait for "healthy"
+npx prisma migrate resolve --applied 20260625190228_init
 ```
 
-| Setting   | Value                                                          |
-| --------- | -------------------------------------------------------------- |
-| Container | `scholarship-postgres`                                         |
-| URL       | `postgresql://scholarship:scholarship_dev@localhost:5432/scholarship` |
+**Optional fallback — Docker Postgres** (offline / no network):
 
-`docker compose down` keeps the data; `docker compose down -v` **deletes** it.
+```bash
+docker compose up -d
+docker compose ps   # wait for "healthy"
+```
+
+Use `postgresql://scholarship:scholarship_dev@localhost:5432/scholarship` for
+both `DATABASE_URL` and `DIRECT_URL`, then `npm run db:migrate`.
 
 ### 3. Environment variables
 
@@ -55,10 +68,11 @@ cp .env.example .env
 
 ```bash
 npm install
-npm run db:migrate        # apply migrations to local Postgres
-npm run db:seed           # load test data
+npm run db:seed           # load test data (schema already on Supabase)
 npm run dev               # http://localhost:3000
 ```
+
+For new migrations during development: `npm run db:migrate`.
 
 ### Test accounts (from seed)
 
@@ -122,10 +136,25 @@ src/
 - [ ] Phase 3 — Admin workflow (request list, filters, status transitions, notes)
 - [ ] Phase 4 — Export, import, polish, Replit deployment
 
-## Deploying to Replit (end of project)
+## Deploying to Netlify (production)
+
+1. Merge this branch into `main` and connect the repo in Netlify (or use `netlify link`).
+2. Install the **Supabase** extension and link the *schoolarship app* project (Next.js framework).
+3. In **Site configuration → Environment variables**, add (from Supabase → Database):
+   - `DATABASE_URL` — Transaction pooler URI (port `6543`, `?pgbouncer=true`)
+   - `DIRECT_URL` — Direct connection URI (port `5432`)
+   - `AUTH_SECRET` — `openssl rand -base64 32`
+   - `UPLOAD_DIR` — `/tmp/uploads` (ephemeral on serverless; migrate to Blobs for durable storage)
+4. Build runs `scripts/netlify-build.sh` (`prisma migrate deploy` + `next build`).
+5. After first deploy, seed if needed: run `npm run db:seed` locally against the Supabase DB, or via Netlify CLI.
+
+Local dev with Netlify env injection: `netlify dev` (after `netlify link`).
+
+## Deploying to Replit (legacy)
 
 1. Push the repo to GitHub / import into Replit.
-2. Set `DATABASE_URL` and `AUTH_SECRET` in Replit secrets.
+2. Set `DATABASE_URL`, `DIRECT_URL` (same value as `DATABASE_URL` on Replit),
+   and `AUTH_SECRET` in Replit secrets.
 3. Run `npm run db:deploy` (applies migrations — no code change needed).
 4. Run `npm run db:seed` (or the client import script) if needed.
 5. Test the critical flows in production.
