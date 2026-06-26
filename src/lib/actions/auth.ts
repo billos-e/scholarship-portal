@@ -2,7 +2,7 @@
 
 import { AuthError } from "next-auth";
 
-import { signIn, signOut } from "@/auth";
+import { signIn } from "@/auth";
 
 export type LoginState = { error?: string };
 
@@ -24,8 +24,4 @@ export async function authenticate(
     // signIn throws a redirect on success; re-throw so Next.js can handle it.
     throw error;
   }
-}
-
-export async function logout() {
-  await signOut({ redirectTo: "/login" });
 }
