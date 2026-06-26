@@ -574,13 +574,13 @@ Objectif : tester tous les parcours sans données client.
 
 ### Phase 2 — Soumission semestrielle (Jour 3)
 
-- [ ] Formulaire groupé paiement + rapport
-- [ ] Tous les champs §4 (`TuitionPaymentRequests`, `SemesterReports`)
-- [ ] Uploads facture + relevé + QR
-- [ ] Snapshot bancaire à la soumission
-- [ ] Mise à jour `BankInformation` (dernière version)
-- [ ] Statut initial `SUBMITTED`
-- [ ] Page historique étudiant
+- [x] Formulaire groupé paiement + rapport
+- [x] Tous les champs §4 (`TuitionPaymentRequests`, `SemesterReports`)
+- [x] Uploads facture + relevé + QR
+- [x] Snapshot bancaire à la soumission
+- [x] Mise à jour `BankInformation` (dernière version)
+- [x] Statut initial `SUBMITTED`
+- [x] Page historique étudiant (liste + détail lecture seule)
 
 **Jalon :** capture soumission complète côté étudiant.
 
@@ -705,6 +705,9 @@ Objectif : tester tous les parcours sans données client.
 | 2026-06-25 | Statut étudiant pilote l'accès : `User.isActive = (status === ACTIVE)` |
 | 2026-06-25 | Champs éditables par l'étudiant : téléphone + infos bancaires (académique géré par l'admin) |
 | 2026-06-25 | Phase 1 livrée : CRUD universités + étudiants, profil éditable, gestion statut/accès |
+| 2026-06-26 | Uploads stockés hors `public/` sous `<repo>/uploads/<studentId>/<kind>/` ; servis par `/api/uploads/[...path]` avec contrôle d'accès (étudiant = son dossier, admin = tout) — persistance Replit à vérifier (cf. §13) |
+| 2026-06-26 | `serverActions.bodySizeLimit` bumpé à `30mb` pour permettre 3 uploads de 10 MB |
+| 2026-06-26 | Phase 2 livrée : soumission groupée (paiement + rapport), snapshot bancaire + maj `BankInformation`, page détail historique lecture seule |
 
 ---
 

@@ -1,4 +1,7 @@
+import Link from "next/link";
+
 import { StatusBadge } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -56,6 +59,7 @@ export default async function StudentHistoryPage() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Submitted</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Details</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -70,6 +74,17 @@ export default async function StudentHistoryPage() {
                     <TableCell>{formatDate(request.submittedAt)}</TableCell>
                     <TableCell>
                       <StatusBadge status={request.status} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        render={
+                          <Link href={`/student/history/${request.id}`} />
+                        }
+                      >
+                        View
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
