@@ -56,18 +56,51 @@ La BDD Replit n'est en pratique **pas accessible depuis l'environnement local**.
 | Framework | **Next.js 15** (App Router) |
 | Langage | **TypeScript** |
 | ORM | **Prisma** (migrations versionnées dans Git) |
-| Base locale | **PostgreSQL 16** via Docker (`docker-compose.yml` à la racine) |
+| Base locale | **Supabase PostgreSQL** (projet *schoolarship app*, org *Techma hosted db*) |
+| Base locale (fallback) | **PostgreSQL 16** via Docker (`docker-compose.yml` — optionnel) |
 | Base production | PostgreSQL Replit (`DATABASE_URL` dans les secrets) |
 | Auth | **Auth.js v5** (Credentials) — rôles `STUDENT` / `ADMIN` |
 | UI | **Tailwind CSS + shadcn/ui** |
 | Formulaires | React Hook Form + Zod |
 | Export | xlsx ou csv-stringify |
 
-### Environnement local — PostgreSQL (Docker)
+### Environnement local — PostgreSQL (Supabase)
 
-> **Pas besoin de MCP Docker.** Les agents IA et développeurs utilisent le **terminal** (`docker compose`). Aucune configuration MCP supplémentaire n'est requise.
+> **Scénario A :** Supabase remplace Docker pour le développement local.
+> La production Replit reste sur PostgreSQL intégré — seules les variables
+> `DATABASE_URL` / `DIRECT_URL` changent.
 
-La BDD Replit n'est pas accessible depuis l'extérieur. Postgres tourne en local via Docker ; seul `DATABASE_URL` change au déploiement.
+| Élément | Valeur |
+|---------|--------|
+| Fournisseur | Supabase (projet **schoolarship app**) |
+| Région | `us-west-2` |
+| Réf. projet | `mbospbzkupmjoitmchrv` |
+| ORM | Prisma — connexion poolée (`DATABASE_URL`, port 6543) + directe (`DIRECT_URL`, port 5432) pour les migrations |
+
+**`DATABASE_URL` locale** (pooler transaction, voir `.env.example`) :
+```
+postgresql://postgres.mbospbzkupmjoitmchrv:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true
+```
+
+**`DIRECT_URL` locale** (connexion directe pour `prisma migrate`) :
+```
+postgresql://postgres.mbospbzkupmjoitmchrv:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres
+```
+
+**Commandes :**
+```bash
+cp .env.example .env   # remplir DATABASE_URL, DIRECT_URL, AUTH_SECRET
+npm install
+npm run db:seed        # schéma déjà appliqué sur Supabase
+npm run dev
+```
+
+Si Prisma signale une migration en attente alors que les tables existent :
+```bash
+npx prisma migrate resolve --applied 20260625190228_init
+```
+
+### Environnement local — PostgreSQL (Docker, optionnel)
 
 | Élément | Valeur |
 |---------|--------|
@@ -112,7 +145,7 @@ docker compose exec postgres pg_isready -U scholarship -d scholarship
 
 ```
 ┌─────────────────┐     migrations Git      ┌─────────────────┐
-│  Local (Docker) │ ──────────────────────► │  Replit (prod)  │
+│  Local (Supabase)│ ──────────────────────► │  Replit (prod)  │
 │  Postgres       │     même schéma ORM     │  Postgres       │
 │  Cursor dev     │     DATABASE_URL seul   │  déploiement    │
 └─────────────────┘       change            └─────────────────┘
@@ -120,9 +153,9 @@ docker compose exec postgres pg_isready -U scholarship -d scholarship
 
 ### 3.4 Setup local requis
 
-1. **Docker** installé et daemon actif (`docker --version`, `docker compose version`)
-2. Lancer Postgres : `docker compose up -d` (voir §3.2)
-3. Fichier `.env.local` avec `DATABASE_URL` (copier depuis `.env.example`)
+1. **Supabase** : accès au projet *schoolarship app* (mots de passe dans le dashboard)
+2. Optionnel : **Docker** pour Postgres local hors-ligne (`docker compose up -d`)
+3. Fichier `.env` avec `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET` (copier depuis `.env.example`)
 4. Commandes npm (à ajouter au `package.json` lors du scaffolding) :
    - `db:migrate` — `prisma migrate dev`
    - `db:seed` — données de test
@@ -133,7 +166,7 @@ docker compose exec postgres pg_isready -U scholarship -d scholarship
 ### 3.5 Migration vers Replit (fin de projet)
 
 1. Pousser le repo sur GitHub / importer dans Replit
-2. Configurer `DATABASE_URL` dans les secrets Replit
+2. Configurer `DATABASE_URL` et `DIRECT_URL` (même valeur que `DATABASE_URL` sur Replit) dans les secrets Replit
 3. Exécuter `migrate deploy` (équivalent prod)
 4. Exécuter le script d'import client si tableur reçu
 5. Configurer les variables d'environnement (auth secret, etc.)
@@ -687,7 +720,7 @@ Objectif : tester tous les parcours sans données client.
 | 2026-06-24 | Pas de login donateur ni université |
 | 2026-06-24 | Étudiants déjà boursiers — pas de candidature |
 | 2026-06-25 | Dev Cursor/local d'abord, budget Replit ≤ 50 USD |
-| 2026-06-25 | PostgreSQL Docker local → même migrations sur Replit |
+| 2026-06-26 | Supabase (scénario A) pour dev local ; Replit inchangé en prod |
 | 2026-06-25 | Option A semestres : `semester_label` sur soumissions, pas de table calendrier MVP |
 | 2026-06-25 | Pas de `semester_type` |
 | 2026-06-25 | Un spreadsheet actif suffit pour le lancement |
