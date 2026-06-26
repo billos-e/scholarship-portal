@@ -23,5 +23,9 @@ if [[ -z "${AUTH_SECRET:-}" ]]; then
   exit 1
 fi
 
-npm run db:deploy
+npm run db:deploy || {
+  echo "Migration failed — baselining existing Supabase schema (first deploy)..."
+  npx prisma migrate resolve --applied 20260625190228_init
+  npm run db:deploy
+}
 npm run build
