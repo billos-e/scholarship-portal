@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Prisma, StudentStatus } from "@prisma/client";
-import { Search } from "lucide-react";
+import { Pencil, Search } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -137,6 +137,7 @@ export default async function AdminStudentsPage({
               No students match your filters.
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -145,6 +146,7 @@ export default async function AdminStudentsPage({
                   <TableHead>University</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Access</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -180,10 +182,21 @@ export default async function AdminStudentsPage({
                         </Badge>
                       )}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        render={<Link href={`/admin/students/${s.id}`} />}
+                      >
+                        <Pencil />
+                        Edit
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

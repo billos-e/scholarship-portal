@@ -6,6 +6,7 @@ const navItems = [
   { href: "/admin/requests", label: "Payment Requests" },
   { href: "/admin/students", label: "Students" },
   { href: "/admin/universities", label: "Universities" },
+  { href: "/admin/export", label: "Export" },
 ];
 
 export default async function AdminLayout({

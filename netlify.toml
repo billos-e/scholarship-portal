@@ -5,5 +5,11 @@
 [build.environment]
   NODE_VERSION = "20"
 
+[context.production.environment]
+  UPLOAD_BACKEND = "blobs"
+
+[context.deploy-preview.environment]
+  UPLOAD_BACKEND = "blobs"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

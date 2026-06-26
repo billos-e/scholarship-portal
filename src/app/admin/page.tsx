@@ -161,6 +161,7 @@ export default async function AdminDashboard() {
               Inbox is clear. Total paid to date: {paidCount}.
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -210,6 +211,7 @@ export default async function AdminDashboard() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

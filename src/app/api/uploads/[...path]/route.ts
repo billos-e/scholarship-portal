@@ -2,15 +2,8 @@ import path from "node:path";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  mimeForFilename,
-  readUploadStream,
-  resolveUploadPath,
-} from "@/lib/uploads";
+import { readUpload } from "@/lib/uploads";
 
-// File access is enforced here: students only read their own folder, admins
-// can read anything. The on-disk layout (<studentId>/<kind>/<file>) means we
-// can authorize on the path's first segment.
 export async function GET(
   _request: Request,
   ctx: { params: Promise<{ path: string[] }> },
@@ -26,7 +19,7 @@ export async function GET(
   }
 
   const relPath = segments.map(decodeURIComponent).join("/");
-  const resolved = await resolveUploadPath(relPath);
+  const resolved = await readUpload(relPath);
   if (!resolved) {
     return new Response("Not found", { status: 404 });
   }
@@ -43,13 +36,12 @@ export async function GET(
     return new Response("Forbidden", { status: 403 });
   }
 
-  const stream = readUploadStream(resolved.absPath);
-  const filename = path.basename(resolved.absPath);
+  const filename = path.basename(relPath);
 
-  return new Response(stream as unknown as ReadableStream, {
+  return new Response(resolved.body, {
     status: 200,
     headers: {
-      "Content-Type": mimeForFilename(filename),
+      "Content-Type": resolved.contentType,
       "Content-Length": String(resolved.size),
       "Content-Disposition": `inline; filename="${filename}"`,
       "Cache-Control": "private, max-age=60",
