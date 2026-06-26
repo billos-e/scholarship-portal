@@ -1,3 +1,5 @@
+import { ChevronRight } from "lucide-react";
+
 const TEST_ACCOUNTS = [
   {
     role: "Admin",
@@ -13,8 +15,9 @@ const TEST_ACCOUNTS = [
 
 export function TestCredentials() {
   return (
-    <details className="rounded-lg border border-dashed bg-muted/40 px-4 py-3 text-sm">
-      <summary className="cursor-pointer font-medium text-muted-foreground marker:content-none [&::-webkit-details-marker]:hidden">
+    <details className="group rounded-lg border border-dashed bg-muted/40 px-4 py-3 text-sm">
+      <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-muted-foreground marker:content-none [&::-webkit-details-marker]:hidden">
+        <ChevronRight className="size-4 shrink-0 transition-transform group-open:rotate-90" />
         Test credentials
       </summary>
       <ul className="mt-3 space-y-3 text-muted-foreground">
