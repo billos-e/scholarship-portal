@@ -621,12 +621,12 @@ Objectif : tester tous les parcours sans données client.
 
 ### Phase 3 — Dashboard admin & workflow (Jour 4)
 
-- [ ] Liste demandes + filtres (semestre, statut, université)
-- [ ] Page détail avec documents et rapport
-- [ ] Transitions de statut + horodatage
-- [ ] Notes internes admin
-- [ ] `Mark as Paid` → entrée `PaymentHistory`
-- [ ] KPIs tableau de bord admin
+- [x] Liste demandes + filtres (semestre, statut, université, recherche étudiant)
+- [x] Page détail avec documents et rapport
+- [x] Transitions de statut + horodatage (`reviewedAt`, `approvedAt`, `paidAt`)
+- [x] Notes internes admin (sur la demande et sur le paiement)
+- [x] `Mark as Paid` → entrée `PaymentHistory` (upsert idempotent, date personnalisable)
+- [x] KPIs tableau de bord admin (semestre courant + lifetime + boîte "Needs attention")
 
 **Jalon :** capture workflow Submitted → Paid.
 
@@ -741,6 +741,9 @@ Objectif : tester tous les parcours sans données client.
 | 2026-06-26 | Uploads stockés hors `public/` sous `<repo>/uploads/<studentId>/<kind>/` ; servis par `/api/uploads/[...path]` avec contrôle d'accès (étudiant = son dossier, admin = tout) — persistance Replit à vérifier (cf. §13) |
 | 2026-06-26 | `serverActions.bodySizeLimit` bumpé à `30mb` pour permettre 3 uploads de 10 MB |
 | 2026-06-26 | Phase 2 livrée : soumission groupée (paiement + rapport), snapshot bancaire + maj `BankInformation`, page détail historique lecture seule |
+| 2026-06-26 | Transitions de statut admin contraintes par une whitelist explicite (`SUBMITTED↔UNDER_REVIEW↔APPROVED→PAID`) — pas de saut, retour arrière possible avant paiement |
+| 2026-06-26 | `Mark as Paid` = upsert `PaymentHistory` (clé : `tuitionPaymentRequestId`) — idempotent et permet de corriger la date du paiement sans dupliquer |
+| 2026-06-26 | Phase 3 livrée : liste filtrée des demandes, page détail admin avec workflow & notes internes, KPIs semestre courant + lifetime sur le dashboard |
 
 ---
 
