@@ -1,0 +1,13 @@
+{
+  "email": "Email",
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "studentId": "Student ID",
+  "phone": "Phone",
+  "university": "University",
+  "degreeProgram": "Degree Program",
+  "yearOfStudy": "Year of Study",
+  "currentSemesterLabel": "Current Semester",
+  "gpa": "GPA",
+  "status": "Status"
+}

@@ -1,18 +1,19 @@
-import { createReadStream } from "node:fs";
-import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
+
+import { mimeForFilename } from "@/lib/upload-meta";
+import { storageRead, storageSave } from "@/lib/upload-storage";
 
 /**
  * File upload helpers.
  *
  * Files are stored outside `public/` so they are not served as static assets.
- * Access goes through `/api/uploads/[...path]` which enforces authorization
- * (see that route). The on-disk path is:
+ * Access goes through `/api/uploads/[...path]` which enforces authorization.
  *
- *   <UPLOAD_ROOT>/<studentId>/<kind>/<token>-<safeName>
+ * Local dev: filesystem under UPLOAD_DIR (default `<repo>/uploads`).
+ * Netlify prod: set UPLOAD_BACKEND=blobs (Netlify Blobs store).
  *
- * The string stored in the database is the path relative to `UPLOAD_ROOT`,
+ * The string stored in the database is the path relative to the storage root,
  * e.g. `clx123/invoices/ab12cd34-tuition-fall-2026.pdf`.
  */
 
@@ -38,12 +39,6 @@ export const KIND_LABELS: Record<UploadKind, string> = {
   qr: "QR payment image",
 };
 
-export function getUploadRoot(): string {
-  return process.env.UPLOAD_DIR
-    ? path.resolve(process.env.UPLOAD_DIR)
-    : path.resolve(process.cwd(), "uploads");
-}
-
 function safeFilename(name: string): string {
   const base = path
     .basename(name)
@@ -51,6 +46,15 @@ function safeFilename(name: string): string {
     .replace(/-+/g, "-")
     .slice(0, 80);
   return base.length > 0 ? base : "file";
+}
+
+export function buildUploadRelativePath(
+  opts: { studentId: string; kind: UploadKind },
+  originalName: string,
+): string {
+  const token = randomBytes(8).toString("hex");
+  const filename = `${token}-${safeFilename(originalName)}`;
+  return path.posix.join(opts.studentId, opts.kind, filename);
 }
 
 export function validateUpload(
@@ -87,54 +91,28 @@ export async function saveUpload(
     throw new Error(check.error);
   }
 
-  const root = getUploadRoot();
-  const dir = path.join(root, opts.studentId, opts.kind);
-  await mkdir(dir, { recursive: true });
-
-  const token = randomBytes(8).toString("hex");
-  const filename = `${token}-${safeFilename(file.name)}`;
-  const absPath = path.join(dir, filename);
+  const relativePath = buildUploadRelativePath(opts, file.name);
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(absPath, buffer);
+  const contentType = file.type || mimeForFilename(file.name);
 
-  return path.posix.join(opts.studentId, opts.kind, filename);
+  await storageSave(relativePath, buffer, contentType);
+  return relativePath;
 }
 
-const MIME_BY_EXT: Record<string, string> = {
-  ".pdf": "application/pdf",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-};
-
-export function mimeForFilename(name: string): string {
-  return MIME_BY_EXT[path.extname(name).toLowerCase()] ?? "application/octet-stream";
+export async function readUpload(relativePath: string) {
+  return storageRead(relativePath);
 }
 
-/**
- * Resolve a stored relative path to an absolute path on disk.
- * Returns null if the path escapes the upload root or does not exist.
- */
-export async function resolveUploadPath(
-  relativePath: string,
-): Promise<{ absPath: string; ownerStudentId: string; size: number } | null> {
-  const root = getUploadRoot();
-  const absPath = path.resolve(root, relativePath);
-  if (!absPath.startsWith(root + path.sep)) return null;
-
-  const rel = path.relative(root, absPath);
-  const [ownerStudentId] = rel.split(path.sep);
-  if (!ownerStudentId) return null;
-
-  try {
-    const s = await stat(absPath);
-    if (!s.isFile()) return null;
-    return { absPath, ownerStudentId, size: s.size };
-  } catch {
-    return null;
-  }
+/** @deprecated Use readUpload instead. */
+export async function resolveUploadPath(relativePath: string) {
+  const result = await readUpload(relativePath);
+  if (!result) return null;
+  return {
+    ownerStudentId: result.ownerStudentId,
+    size: result.size,
+    contentType: result.contentType,
+    body: result.body,
+  };
 }
 
-export function readUploadStream(absPath: string) {
-  return createReadStream(absPath);
-}
+export { getUploadRoot, mimeForFilename } from "@/lib/upload-meta";

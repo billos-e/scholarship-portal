@@ -180,6 +180,7 @@ export default async function AdminRequestsPage({
               No requests match your filters.
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -229,6 +230,7 @@ export default async function AdminRequestsPage({
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
