@@ -7,6 +7,7 @@ import type { NextAuthConfig } from "next-auth";
  * relies on Node APIs, so that it can run in the Edge middleware.
  */
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
