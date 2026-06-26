@@ -136,7 +136,21 @@ src/
 - [ ] Phase 3 — Admin workflow (request list, filters, status transitions, notes)
 - [ ] Phase 4 — Export, import, polish, Replit deployment
 
-## Deploying to Replit (end of project)
+## Deploying to Netlify (production)
+
+1. Merge this branch into `main` and connect the repo in Netlify (or use `netlify link`).
+2. Install the **Supabase** extension and link the *schoolarship app* project (Next.js framework).
+3. In **Site configuration → Environment variables**, add (from Supabase → Database):
+   - `DATABASE_URL` — Transaction pooler URI (port `6543`, `?pgbouncer=true`)
+   - `DIRECT_URL` — Direct connection URI (port `5432`)
+   - `AUTH_SECRET` — `openssl rand -base64 32`
+   - `UPLOAD_DIR` — `/tmp/uploads` (ephemeral on serverless; migrate to Blobs for durable storage)
+4. Build runs `scripts/netlify-build.sh` (`prisma migrate deploy` + `next build`).
+5. After first deploy, seed if needed: run `npm run db:seed` locally against the Supabase DB, or via Netlify CLI.
+
+Local dev with Netlify env injection: `netlify dev` (after `netlify link`).
+
+## Deploying to Replit (legacy)
 
 1. Push the repo to GitHub / import into Replit.
 2. Set `DATABASE_URL`, `DIRECT_URL` (same value as `DATABASE_URL` on Replit),
