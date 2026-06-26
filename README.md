@@ -13,14 +13,15 @@ document uploads, and payment tracking.
 | -------- | --------------------------------------- |
 | Framework| Next.js 16 (App Router) + TypeScript    |
 | ORM      | Prisma 6 (versioned migrations)         |
-| Database | PostgreSQL via **Supabase** (local dev), Replit (prod) |
+| Database | PostgreSQL via **Supabase** (local dev + production on Netlify) |
 | Auth     | Auth.js v5 (Credentials) — `STUDENT` / `ADMIN` |
 | UI       | Tailwind CSS v4 + shadcn/ui (Base UI)   |
 | Forms    | React Hook Form + Zod                   |
 
-**Guiding principle:** one codebase. Only `DATABASE_URL` (and `DIRECT_URL` for
-Supabase pooling) change between environments. Production stays on Replit
-PostgreSQL — Supabase is for local development only.
+**Guiding principle:** one codebase. Only `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`,
+and `UPLOAD_DIR` change between environments. Local dev and Netlify production both
+use the same Supabase Postgres project; Docker Postgres remains an optional offline
+fallback.
 
 ## Local setup
 
@@ -93,7 +94,7 @@ login is refused while historical data is preserved.
 | `npm run start`    | Start the production server                  |
 | `npm run lint`     | ESLint                                       |
 | `npm run db:migrate` | Create/apply a dev migration               |
-| `npm run db:deploy`  | Apply migrations in production (Replit)    |
+| `npm run db:deploy`  | Apply migrations in production (Netlify build) |
 | `npm run db:seed`    | Seed test data                             |
 | `npm run db:studio`  | Open Prisma Studio                         |
 | `npm run db:reset`   | Reset the database (drops data)            |
@@ -110,7 +111,9 @@ src/
     login/             # login page + form
     student/           # student portal (dashboard, profile, submit, history)
     admin/             # admin dashboard (requests, students, universities)
-    api/auth/[...nextauth]/route.ts
+    api/
+      auth/[...nextauth]/route.ts
+      uploads/[...path]/route.ts   # authorized file download
   auth.ts              # Auth.js full config (Node runtime, Credentials)
   auth.config.ts       # edge-safe config (callbacks, route authorization)
   proxy.ts             # route protection middleware (Next 16 "proxy")
@@ -120,7 +123,8 @@ src/
   lib/
     prisma.ts          # Prisma client singleton
     auth/              # password hashing + session helpers
-    actions/           # server actions
+    actions/           # server actions (students, submissions, requests, …)
+    uploads.ts         # file validation + storage helpers
     format.ts          # currency/date formatting
 ```
 
@@ -132,25 +136,37 @@ src/
 - [x] **Phase 1 — Profiles & reference data:** admin CRUD for universities and
       students (with account provisioning, status/access management, password
       reset) and student-side profile editing (phone + bank info).
-- [ ] Phase 2 — Semester submission (payment request + report + uploads)
-- [ ] Phase 3 — Admin workflow (request list, filters, status transitions, notes)
-- [ ] Phase 4 — Export, import, polish, Replit deployment
+- [x] **Phase 2 — Semester submission:** grouped payment + report form, invoice /
+      transcript / QR uploads, bank snapshot, student history (list + read-only
+      detail).
+- [x] **Phase 3 — Admin workflow:** filtered request list, detail page with
+      documents, status transitions (`Submitted` → `Under Review` → `Approved` →
+      `Paid`), internal notes, dashboard KPIs.
+- [ ] Phase 4 — Export, import, polish, durable file storage (Netlify Blobs)
 
 ## Deploying to Netlify (production)
 
-1. Merge this branch into `main` and connect the repo in Netlify (or use `netlify link`).
-2. Install the **Supabase** extension and link the *schoolarship app* project (Next.js framework).
-3. In **Site configuration → Environment variables**, add (from Supabase → Database):
-   - `DATABASE_URL` — Transaction pooler URI (port `6543`, `?pgbouncer=true`)
-   - `DIRECT_URL` — Direct connection URI (port `5432`)
+Production is deployed from `main` on Netlify (`scholarship-portal-app.netlify.app`).
+
+1. Connect the GitHub repo in Netlify (branch: `main`, framework: Next.js).
+2. In **Build settings**, leave **Publish directory** empty (or `.next`) — `netlify.toml`
+   sets `publish = ".next"`. Do **not** set it to `/` or the repo root.
+3. Install the **Supabase** extension and link the *schoolarship app* project.
+4. In **Site configuration → Environment variables**, set (from Supabase → Database):
+   - `DATABASE_URL` — Transaction pooler URI (port `6543`, `?pgbouncer=true`, host `aws-1-us-west-2`)
+   - `DIRECT_URL` — Direct connection URI (port `5432`, host `aws-1-us-west-2`)
    - `AUTH_SECRET` — `openssl rand -base64 32`
-   - `UPLOAD_DIR` — `/tmp/uploads` (ephemeral on serverless; migrate to Blobs for durable storage)
-4. Build runs `scripts/netlify-build.sh` (`prisma migrate deploy` + `next build`).
-5. After first deploy, seed if needed: run `npm run db:seed` locally against the Supabase DB, or via Netlify CLI.
+   - `UPLOAD_DIR` — `/tmp/uploads` (ephemeral on serverless; migrate to Blobs in phase 4)
+   - `AUTH_URL` — `https://scholarship-portal-app.netlify.app` (optional; `trustHost` is enabled in code)
+5. Build runs `scripts/netlify-build.sh` (`prisma migrate deploy` + `next build`).
+6. After first deploy, seed if needed: run `npm run db:seed` locally against the Supabase DB, or via Netlify CLI.
 
 Local dev with Netlify env injection: `netlify dev` (after `netlify link`).
 
-## Deploying to Replit (legacy)
+## Deploying to Replit (legacy / alternate)
+
+Replit was the original target; production currently runs on Netlify + Supabase.
+These steps remain valid if you deploy elsewhere with a plain Postgres URL:
 
 1. Push the repo to GitHub / import into Replit.
 2. Set `DATABASE_URL`, `DIRECT_URL` (same value as `DATABASE_URL` on Replit),
@@ -159,5 +175,5 @@ Local dev with Netlify env injection: `netlify dev` (after `netlify link`).
 4. Run `npm run db:seed` (or the client import script) if needed.
 5. Test the critical flows in production.
 
-No business-logic change should be required between local and Replit — only
+No business-logic change should be required between environments — only
 configuration and data.

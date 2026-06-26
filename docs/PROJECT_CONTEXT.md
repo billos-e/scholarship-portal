@@ -1,7 +1,7 @@
 # Student Scholarship Portal — Contexte projet
 
 > Mémoire partagée pour l'équipe TECHMA et les agents IA.  
-> Dernière mise à jour : 25 juin 2026
+> Dernière mise à jour : 26 juin 2026
 
 ---
 
@@ -16,9 +16,9 @@
 | **Budget Replit (interne)** | ≤ 50 USD — développement prompt-efficient |
 | **Délai interne** | ~1 semaine (call d'équipe) |
 | **Délai contractuel** | < 20 jours après kickoff + paiement + infos nécessaires |
-| **Plateforme** | Replit (app full-stack + DB intégrée, **pas Airtable**) |
+| **Plateforme** | **Netlify** (prod) + **Supabase** PostgreSQL ; Replit initialement prévu |
 | **Développeur assigné** | Bill (Osee Bill AHOGNONVI) |
-| **État du repo** | Docker Postgres configuré ; documentation ; pas encore d'app Next.js |
+| **État du repo** | Phases 0–3 livrées sur `main` ; prod Netlify ; phase 4 (export, Blobs) en cours |
 
 ---
 
@@ -108,7 +108,7 @@ Trois modes à supporter :
 ### Stack cible
 - **Next.js 15** + TypeScript + **Prisma** + **Auth.js** + Tailwind/shadcn
 - Local : PostgreSQL 16 via **Docker** (`docker-compose.yml`) + ORM avec migrations
-- Prod : Replit + PostgreSQL (`DATABASE_URL` dans secrets)
+- Prod : **Netlify** + PostgreSQL **Supabase** (`DATABASE_URL` / `DIRECT_URL` dans les secrets du site)
 - Auth : login séparé étudiant / admin ; comptes étudiants créés par admin
 - Uploads : factures, relevés, images QR
 - UI : responsive, simple, mobile-friendly, **anglais**

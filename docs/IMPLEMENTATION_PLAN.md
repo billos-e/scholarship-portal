@@ -2,7 +2,7 @@
 
 > Document opérationnel pour développeurs et agents IA.  
 > Pas de code — uniquement les instructions nécessaires pour construire la plateforme.  
-> Dernière mise à jour : 25 juin 2026
+> Dernière mise à jour : 26 juin 2026
 
 **Documents liés :**
 - [`PROJECT_CONTEXT.md`](./PROJECT_CONTEXT.md) — contexte métier, contraintes, dépendances client
@@ -58,7 +58,7 @@ La BDD Replit n'est en pratique **pas accessible depuis l'environnement local**.
 | ORM | **Prisma** (migrations versionnées dans Git) |
 | Base locale | **Supabase PostgreSQL** (projet *schoolarship app*, org *Techma hosted db*) |
 | Base locale (fallback) | **PostgreSQL 16** via Docker (`docker-compose.yml` — optionnel) |
-| Base production | PostgreSQL Replit (`DATABASE_URL` dans les secrets) |
+| Base production | **Netlify** + PostgreSQL **Supabase** (même projet que le dev local) |
 | Auth | **Auth.js v5** (Credentials) — rôles `STUDENT` / `ADMIN` |
 | UI | **Tailwind CSS + shadcn/ui** |
 | Formulaires | React Hook Form + Zod |
@@ -66,9 +66,9 @@ La BDD Replit n'est en pratique **pas accessible depuis l'environnement local**.
 
 ### Environnement local — PostgreSQL (Supabase)
 
-> **Scénario A :** Supabase remplace Docker pour le développement local.
-> La production Replit reste sur PostgreSQL intégré — seules les variables
-> `DATABASE_URL` / `DIRECT_URL` changent.
+> **Scénario A :** Supabase pour le développement local **et** la production Netlify.
+> Docker Postgres reste un fallback hors-ligne. Seules les variables d'environnement
+> (`DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `UPLOAD_DIR`) changent.
 
 | Élément | Valeur |
 |---------|--------|
@@ -84,7 +84,7 @@ postgresql://postgres.mbospbzkupmjoitmchrv:[PASSWORD]@aws-1-us-west-2.pooler.sup
 
 **`DIRECT_URL` locale** (connexion directe pour `prisma migrate`) :
 ```
-postgresql://postgres.mbospbzkupmjoitmchrv:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres
+postgresql://postgres.mbospbzkupmjoitmchrv:[PASSWORD]@aws-1-us-west-2.pooler.supabase.com:5432/postgres
 ```
 
 **Commandes :**
@@ -638,12 +638,13 @@ Objectif : tester tous les parcours sans données client.
 - [ ] Script import spreadsheet (si fichier reçu)
 - [ ] Polish UI mobile + responsive
 - [ ] Tests manuels parcours complets
-- [ ] Déploiement Replit + `migrate deploy`
+- [x] Déploiement Netlify + `migrate deploy` (`netlify.toml`, `scripts/netlify-build.sh`, Supabase)
+- [ ] Stockage fichiers durable en prod (Netlify Blobs — actuellement `/tmp/uploads` éphémère)
 - [ ] Import données client si disponibles
-- [ ] Vérification prod (auth, uploads, exports)
+- [ ] Vérification prod complète (auth, uploads durables, exports)
 - [ ] Appliquer branding client si assets reçus
 
-**Jalon :** URL Replit fonctionnelle partagée au groupe.
+**Jalon :** URL Netlify fonctionnelle partagée au groupe (`scholarship-portal-app.netlify.app`).
 
 ---
 
@@ -678,9 +679,9 @@ Objectif : tester tous les parcours sans données client.
 - [ ] Export téléchargeable et lisible
 
 ### Technique
-- [ ] Migrations s'appliquent sur Replit sans modification de code
+- [ ] Migrations s'appliquent sur Netlify sans modification de code
 - [ ] Seed / import reproductibles
-- [ ] Uploads accessibles en prod
+- [ ] Uploads accessibles en prod (durable — Blobs pas encore en place)
 
 ---
 
@@ -707,7 +708,7 @@ Objectif : tester tous les parcours sans données client.
 | Colonnes inattendues dans le Excel | Champs manquants | Champs optionnels + itération import |
 | Dates semestre absentes | Pas de validation calendrier | Option A — `semester_label` texte |
 | Budget Replit dépassé | Coût | Dev 100 % local ; Replit en fin de semaine |
-| Uploads en prod Replit | Fichiers perdus au redeploy | Vérifier persistance Replit ou storage externe dès Phase 2 |
+| Uploads en prod Netlify | Fichiers perdus au redémarrage serverless (`/tmp`) | `UPLOAD_DIR=/tmp/uploads` en prod ; migrer vers Netlify Blobs en phase 4 |
 | UX trop complexe pour bénévoles | Adoption faible | Tests avec parcours admin minimal ; libellés clairs |
 
 ---
@@ -744,6 +745,7 @@ Objectif : tester tous les parcours sans données client.
 | 2026-06-26 | Transitions de statut admin contraintes par une whitelist explicite (`SUBMITTED↔UNDER_REVIEW↔APPROVED→PAID`) — pas de saut, retour arrière possible avant paiement |
 | 2026-06-26 | `Mark as Paid` = upsert `PaymentHistory` (clé : `tuitionPaymentRequestId`) — idempotent et permet de corriger la date du paiement sans dupliquer |
 | 2026-06-26 | Phase 3 livrée : liste filtrée des demandes, page détail admin avec workflow & notes internes, KPIs semestre courant + lifetime sur le dashboard |
+| 2026-06-26 | `main` consolidé : phases 2–3 + config Netlify/Supabase (#4, #5) — déploiement prod depuis `main` |
 
 ---
 
