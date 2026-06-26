@@ -79,7 +79,7 @@ La BDD Replit n'est en pratique **pas accessible depuis l'environnement local**.
 
 **`DATABASE_URL` locale** (pooler transaction, voir `.env.example`) :
 ```
-postgresql://postgres.mbospbzkupmjoitmchrv:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true
+postgresql://postgres.mbospbzkupmjoitmchrv:[PASSWORD]@aws-1-us-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true
 ```
 
 **`DIRECT_URL` locale** (connexion directe pour `prisma migrate`) :
