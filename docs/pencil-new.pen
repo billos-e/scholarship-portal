@@ -4088,7 +4088,8 @@
                               "fill": "$text-muted",
                               "content": "1",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4096,7 +4097,8 @@
                               "fill": "$text-muted",
                               "content": "2",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4104,7 +4106,8 @@
                               "fill": "$text-muted",
                               "content": "3",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4121,7 +4124,8 @@
                               "fill": "$text-muted",
                               "content": "5",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -4238,7 +4242,8 @@
                               "fill": "$text-muted",
                               "content": "1",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4246,7 +4251,8 @@
                               "fill": "$text-muted",
                               "content": "2",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4263,7 +4269,8 @@
                               "fill": "$text-muted",
                               "content": "4",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4271,7 +4278,8 @@
                               "fill": "$text-muted",
                               "content": "5",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -4388,7 +4396,8 @@
                               "fill": "$text-muted",
                               "content": "1",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4405,7 +4414,8 @@
                               "fill": "$text-muted",
                               "content": "3",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4413,7 +4423,8 @@
                               "fill": "$text-muted",
                               "content": "4",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4421,7 +4432,8 @@
                               "fill": "$text-muted",
                               "content": "5",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -4538,7 +4550,8 @@
                               "fill": "$text-muted",
                               "content": "1",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4546,7 +4559,8 @@
                               "fill": "$text-muted",
                               "content": "2",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4563,7 +4577,8 @@
                               "fill": "$text-muted",
                               "content": "4",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4571,7 +4586,8 @@
                               "fill": "$text-muted",
                               "content": "5",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -4688,7 +4704,8 @@
                               "fill": "$text-muted",
                               "content": "1",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4696,7 +4713,8 @@
                               "fill": "$text-muted",
                               "content": "2",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4704,7 +4722,8 @@
                               "fill": "$text-muted",
                               "content": "3",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -4721,7 +4740,8 @@
                               "fill": "$text-muted",
                               "content": "5",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
