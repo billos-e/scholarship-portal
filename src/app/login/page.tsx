@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { LoginForm } from "./login-form";
+import { TestCredentials } from "./test-credentials";
 
 export default function LoginPage() {
   return (
@@ -30,8 +31,9 @@ export default function LoginPage() {
               Enter your email and password to continue.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <LoginForm />
+            <TestCredentials />
           </CardContent>
         </Card>
       </div>
