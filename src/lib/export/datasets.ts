@@ -1,6 +1,17 @@
+import type { Prisma, RequestStatus, StudentStatus } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 
 import type { ExportRow } from "./spreadsheet";
+
+export type ExportFilters = {
+  q?: string;
+  universityId?: string;
+  status?: string;
+  semester?: string;
+  semesterId?: string;
+  year?: string;
+};
 
 function dateOnly(value: Date | null | undefined): string | null {
   if (!value) return null;
@@ -12,8 +23,61 @@ function dateTime(value: Date | null | undefined): string | null {
   return value.toISOString();
 }
 
-export async function fetchStudentsExportRows(): Promise<ExportRow[]> {
+function studentWhereFromFilters(
+  filters: ExportFilters,
+): Prisma.StudentWhereInput {
+  const where: Prisma.StudentWhereInput = {};
+  if (filters.q) {
+    where.OR = [
+      { firstName: { contains: filters.q, mode: "insensitive" } },
+      { lastName: { contains: filters.q, mode: "insensitive" } },
+      { studentId: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+  if (filters.universityId) where.universityId = filters.universityId;
+  if (
+    filters.status &&
+    ["ACTIVE", "GRADUATED", "INACTIVE"].includes(filters.status)
+  ) {
+    where.status = filters.status as StudentStatus;
+  }
+  return where;
+}
+
+function requestWhereFromFilters(
+  filters: ExportFilters,
+): Prisma.TuitionPaymentRequestWhereInput {
+  const where: Prisma.TuitionPaymentRequestWhereInput = {};
+  if (filters.semesterId) {
+    where.universitySemesterId = filters.semesterId;
+  } else if (filters.semester) {
+    where.semesterLabel = filters.semester;
+  } else if (filters.year) {
+    where.semesterLabel = { contains: filters.year };
+  }
+  if (
+    filters.status &&
+    ["SUBMITTED", "APPROVED", "PAID", "REJECTED"].includes(filters.status)
+  ) {
+    where.status = filters.status as RequestStatus;
+  }
+
+  const studentWhere = studentWhereFromFilters({
+    q: filters.q,
+    universityId: filters.universityId,
+  });
+  if (Object.keys(studentWhere).length > 0) {
+    where.student = { is: studentWhere };
+  }
+
+  return where;
+}
+
+export async function fetchStudentsExportRows(
+  filters: ExportFilters = {},
+): Promise<ExportRow[]> {
   const students = await prisma.student.findMany({
+    where: studentWhereFromFilters(filters),
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     include: {
       user: { select: { email: true, isActive: true } },
@@ -44,8 +108,11 @@ export async function fetchStudentsExportRows(): Promise<ExportRow[]> {
   }));
 }
 
-export async function fetchRequestsExportRows(): Promise<ExportRow[]> {
+export async function fetchRequestsExportRows(
+  filters: ExportFilters = {},
+): Promise<ExportRow[]> {
   const requests = await prisma.tuitionPaymentRequest.findMany({
+    where: requestWhereFromFilters(filters),
     orderBy: [{ submittedAt: "desc" }],
     include: {
       student: {
@@ -84,8 +151,15 @@ export async function fetchRequestsExportRows(): Promise<ExportRow[]> {
   }));
 }
 
-export async function fetchReportsExportRows(): Promise<ExportRow[]> {
+export async function fetchReportsExportRows(
+  filters: ExportFilters = {},
+): Promise<ExportRow[]> {
+  const requestWhere = requestWhereFromFilters(filters);
   const reports = await prisma.semesterReport.findMany({
+    where:
+      Object.keys(requestWhere).length > 0
+        ? { tuitionPaymentRequest: { is: requestWhere } }
+        : undefined,
     orderBy: [{ submittedAt: "desc" }],
     include: {
       student: {
@@ -127,14 +201,17 @@ export async function fetchReportsExportRows(): Promise<ExportRow[]> {
 
 export type ExportDataset = "students" | "requests" | "reports";
 
-export async function fetchExportRows(dataset: ExportDataset): Promise<ExportRow[]> {
+export async function fetchExportRows(
+  dataset: ExportDataset,
+  filters: ExportFilters = {},
+): Promise<ExportRow[]> {
   switch (dataset) {
     case "students":
-      return fetchStudentsExportRows();
+      return fetchStudentsExportRows(filters);
     case "requests":
-      return fetchRequestsExportRows();
+      return fetchRequestsExportRows(filters);
     case "reports":
-      return fetchReportsExportRows();
+      return fetchReportsExportRows(filters);
   }
 }
 

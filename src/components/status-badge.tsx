@@ -3,22 +3,25 @@ import type { RequestStatus } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const STATUS_CONFIG: Record<RequestStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<
+  RequestStatus,
+  { label: string; className: string }
+> = {
   SUBMITTED: {
     label: "Submitted",
-    className: "bg-slate-100 text-slate-700 border-slate-200",
-  },
-  UNDER_REVIEW: {
-    label: "Under Review",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
+    className: "border-border bg-muted text-muted-foreground",
   },
   APPROVED: {
     label: "Approved",
-    className: "bg-blue-100 text-blue-800 border-blue-200",
+    className: "border-info/30 bg-info-light text-info",
   },
   PAID: {
     label: "Paid",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    className: "border-success/30 bg-success-light text-success",
+  },
+  REJECTED: {
+    label: "Rejected",
+    className: "border-destructive/30 bg-destructive/10 text-destructive",
   },
 };
 

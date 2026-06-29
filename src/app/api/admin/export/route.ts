@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import {
   type ExportDataset,
+  type ExportFilters,
   fetchExportRows,
 } from "@/lib/export/datasets";
 import {
@@ -31,7 +32,16 @@ export async function GET(request: Request) {
     return new Response("Invalid format. Use csv or xlsx.", { status: 400 });
   }
 
-  const rows = await fetchExportRows(dataset);
+  const filters: ExportFilters = {
+    q: searchParams.get("q")?.trim() || undefined,
+    universityId: searchParams.get("uni") || searchParams.get("universityId") || undefined,
+    status: searchParams.get("status") || undefined,
+    semester: searchParams.get("semester") || undefined,
+    semesterId: searchParams.get("semesterId") || undefined,
+    year: searchParams.get("year") || undefined,
+  };
+
+  const rows = await fetchExportRows(dataset, filters);
   const stamp = new Date().toISOString().slice(0, 10);
   const baseName = `scholarship-${dataset}-${stamp}`;
 

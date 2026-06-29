@@ -9,34 +9,43 @@ import { storageRead, storageSave } from "@/lib/upload-storage";
  *
  * Files are stored outside `public/` so they are not served as static assets.
  * Access goes through `/api/uploads/[...path]` which enforces authorization.
- *
- * Local dev: filesystem under UPLOAD_DIR (default `<repo>/uploads`).
- * Netlify prod: set UPLOAD_BACKEND=blobs (Netlify Blobs store).
- *
- * The string stored in the database is the path relative to the storage root,
- * e.g. `clx123/invoices/ab12cd34-tuition-fall-2026.pdf`.
  */
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB per file
 
-export type UploadKind = "invoices" | "transcripts" | "qr";
+export type StudentUploadKind =
+  | "invoices"
+  | "transcripts"
+  | "qr"
+  | "profile-photo";
+
+export type UploadKind = StudentUploadKind | "university-image";
+
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const DOC_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 
 const ALLOWED_TYPES: Record<UploadKind, ReadonlySet<string>> = {
-  invoices: new Set(["application/pdf", "image/jpeg", "image/png"]),
-  transcripts: new Set(["application/pdf", "image/jpeg", "image/png"]),
-  qr: new Set(["image/jpeg", "image/png"]),
+  invoices: DOC_TYPES,
+  transcripts: DOC_TYPES,
+  qr: IMAGE_TYPES,
+  "profile-photo": IMAGE_TYPES,
+  "university-image": IMAGE_TYPES,
 };
 
 const ALLOWED_EXT: Record<UploadKind, ReadonlySet<string>> = {
   invoices: new Set([".pdf", ".jpg", ".jpeg", ".png"]),
   transcripts: new Set([".pdf", ".jpg", ".jpeg", ".png"]),
-  qr: new Set([".jpg", ".jpeg", ".png"]),
+  qr: new Set([".jpg", ".jpeg", ".png", ".webp"]),
+  "profile-photo": new Set([".jpg", ".jpeg", ".png", ".webp"]),
+  "university-image": new Set([".jpg", ".jpeg", ".png", ".webp"]),
 };
 
 export const KIND_LABELS: Record<UploadKind, string> = {
   invoices: "Invoice",
   transcripts: "Transcript",
   qr: "QR payment image",
+  "profile-photo": "Profile photo",
+  "university-image": "University image",
 };
 
 function safeFilename(name: string): string {
@@ -48,13 +57,30 @@ function safeFilename(name: string): string {
   return base.length > 0 ? base : "file";
 }
 
-export function buildUploadRelativePath(
-  opts: { studentId: string; kind: UploadKind },
+export function buildStudentUploadPath(
+  opts: { studentId: string; kind: StudentUploadKind },
   originalName: string,
 ): string {
   const token = randomBytes(8).toString("hex");
   const filename = `${token}-${safeFilename(originalName)}`;
   return path.posix.join(opts.studentId, opts.kind, filename);
+}
+
+export function buildUniversityImagePath(
+  universityId: string,
+  originalName: string,
+): string {
+  const token = randomBytes(8).toString("hex");
+  const filename = `${token}-${safeFilename(originalName)}`;
+  return path.posix.join("universities", universityId, filename);
+}
+
+/** @deprecated Use buildStudentUploadPath */
+export function buildUploadRelativePath(
+  opts: { studentId: string; kind: StudentUploadKind },
+  originalName: string,
+): string {
+  return buildStudentUploadPath(opts, originalName);
 }
 
 export function validateUpload(
@@ -74,24 +100,28 @@ export function validateUpload(
   const typeOk = ALLOWED_TYPES[kind].has(file.type);
   const extOk = ALLOWED_EXT[kind].has(ext);
   if (!typeOk && !extOk) {
+    const hint =
+      kind === "profile-photo" || kind === "university-image"
+        ? "JPG, PNG, or WebP."
+        : "PDF, JPG, or PNG.";
     return {
       ok: false,
-      error: `${KIND_LABELS[kind]} must be PDF, JPG, or PNG.`,
+      error: `${KIND_LABELS[kind]} must be ${hint}`,
     };
   }
   return { ok: true };
 }
 
-export async function saveUpload(
+export async function saveStudentUpload(
   file: File,
-  opts: { studentId: string; kind: UploadKind },
+  opts: { studentId: string; kind: StudentUploadKind },
 ): Promise<string> {
   const check = validateUpload(file, opts.kind);
   if (!check.ok) {
     throw new Error(check.error);
   }
 
-  const relativePath = buildUploadRelativePath(opts, file.name);
+  const relativePath = buildStudentUploadPath(opts, file.name);
   const buffer = Buffer.from(await file.arrayBuffer());
   const contentType = file.type || mimeForFilename(file.name);
 
@@ -99,20 +129,33 @@ export async function saveUpload(
   return relativePath;
 }
 
-export async function readUpload(relativePath: string) {
-  return storageRead(relativePath);
+export async function saveUniversityImage(
+  file: File,
+  universityId: string,
+): Promise<string> {
+  const check = validateUpload(file, "university-image");
+  if (!check.ok) {
+    throw new Error(check.error);
+  }
+
+  const relativePath = buildUniversityImagePath(universityId, file.name);
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const contentType = file.type || mimeForFilename(file.name);
+
+  await storageSave(relativePath, buffer, contentType);
+  return relativePath;
 }
 
-/** @deprecated Use readUpload instead. */
-export async function resolveUploadPath(relativePath: string) {
-  const result = await readUpload(relativePath);
-  if (!result) return null;
-  return {
-    ownerStudentId: result.ownerStudentId,
-    size: result.size,
-    contentType: result.contentType,
-    body: result.body,
-  };
+/** @deprecated Use saveStudentUpload */
+export async function saveUpload(
+  file: File,
+  opts: { studentId: string; kind: StudentUploadKind },
+): Promise<string> {
+  return saveStudentUpload(file, opts);
+}
+
+export async function readUpload(relativePath: string) {
+  return storageRead(relativePath);
 }
 
 export { getUploadRoot, mimeForFilename } from "@/lib/upload-meta";

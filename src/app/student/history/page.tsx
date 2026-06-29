@@ -1,98 +1,31 @@
 import Link from "next/link";
 
-import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireStudent } from "@/lib/auth/session";
-import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
-export default async function StudentHistoryPage() {
+export default async function StudentHistoryIndexPage() {
   const { student } = await requireStudent();
 
-  const requests = await prisma.tuitionPaymentRequest.findMany({
+  const first = await prisma.tuitionPaymentRequest.findFirst({
     where: { studentId: student.id },
     orderBy: { submittedAt: "desc" },
+    select: { id: true },
   });
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">History</h1>
-        <p className="text-muted-foreground">
-          Your past semester submissions and their statuses.
-        </p>
-      </div>
+  if (first) {
+    const { redirect } = await import("next/navigation");
+    redirect(`/student/history/${first.id}`);
+  }
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment requests</CardTitle>
-          <CardDescription>
-            {requests.length} submission{requests.length === 1 ? "" : "s"} on
-            record.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {requests.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              No submissions yet.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Semester</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell className="font-medium">
-                      {request.semesterLabel}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(request.amountDue.toString())}
-                    </TableCell>
-                    <TableCell>{formatDate(request.submittedAt)}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={request.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        render={
-                          <Link href={`/student/history/${request.id}`} />
-                        }
-                      >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+  return (
+    <EmptyState
+      title="No submissions yet"
+      description="Select a submission from the list or start a new semester submission."
+      action={
+        <Button render={<Link href="/student/submit" />}>New Submission</Button>
+      }
+    />
   );
 }

@@ -4,13 +4,9 @@ import path from "node:path";
 import { Readable } from "node:stream";
 
 import { getUploadRoot, mimeForFilename } from "@/lib/upload-meta";
+import { parseUploadPath } from "@/lib/upload-path";
 
 import type { UploadReadResult, UploadStorage } from "./types";
-
-function ownerFromRelativePath(relativePath: string): string | null {
-  const [ownerStudentId] = relativePath.split("/");
-  return ownerStudentId || null;
-}
 
 export class FilesystemUploadStorage implements UploadStorage {
   async saveAtPath(
@@ -32,8 +28,8 @@ export class FilesystemUploadStorage implements UploadStorage {
     const absPath = path.resolve(root, relativePath);
     if (!absPath.startsWith(root + path.sep)) return null;
 
-    const ownerStudentId = ownerFromRelativePath(relativePath);
-    if (!ownerStudentId) return null;
+    const pathInfo = parseUploadPath(relativePath);
+    if (!pathInfo) return null;
 
     try {
       const fileStat = await stat(absPath);
@@ -43,7 +39,7 @@ export class FilesystemUploadStorage implements UploadStorage {
       const body = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
       return {
-        ownerStudentId,
+        pathInfo,
         size: fileStat.size,
         contentType: mimeForFilename(path.basename(absPath)),
         body,

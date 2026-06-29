@@ -1,15 +1,11 @@
 import { getStore } from "@netlify/blobs";
 
 import { mimeForFilename } from "@/lib/upload-meta";
+import { parseUploadPath } from "@/lib/upload-path";
 
 import type { UploadReadResult, UploadStorage } from "./types";
 
 const STORE_NAME = "scholarship-uploads";
-
-function ownerFromRelativePath(relativePath: string): string | null {
-  const [ownerStudentId] = relativePath.split("/");
-  return ownerStudentId || null;
-}
 
 export class BlobUploadStorage implements UploadStorage {
   private async store() {
@@ -33,8 +29,8 @@ export class BlobUploadStorage implements UploadStorage {
   }
 
   async read(relativePath: string): Promise<UploadReadResult | null> {
-    const ownerStudentId = ownerFromRelativePath(relativePath);
-    if (!ownerStudentId) return null;
+    const pathInfo = parseUploadPath(relativePath);
+    if (!pathInfo) return null;
 
     const store = await this.store();
     const result = await store.getWithMetadata(relativePath, {
@@ -48,7 +44,7 @@ export class BlobUploadStorage implements UploadStorage {
       mimeForFilename(relativePath);
 
     return {
-      ownerStudentId,
+      pathInfo,
       size: buffer.byteLength,
       contentType,
       body: new Blob([buffer], { type: contentType }).stream(),
