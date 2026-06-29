@@ -1,14 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { requireAdmin } from "@/lib/auth/session";
 
-const navItems = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/requests", label: "Payment Requests" },
-  { href: "/admin/students", label: "Students" },
-  { href: "/admin/universities", label: "Universities" },
-  { href: "/admin/export", label: "Export" },
-];
-
 export default async function AdminLayout({
   children,
 }: {
@@ -18,11 +10,8 @@ export default async function AdminLayout({
 
   return (
     <AppShell
-      brand="Scholarship Portal"
-      roleLabel="Admin"
+      variant="admin"
       email={user.email ?? ""}
-      homeHref="/admin"
-      navItems={navItems}
     >
       {children}
     </AppShell>

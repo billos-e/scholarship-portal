@@ -26,12 +26,22 @@ import { Textarea } from "@/components/ui/textarea";
 type University = {
   id: string;
   name: string;
+  city?: string | null;
+  country?: string | null;
+  addressLine?: string | null;
+  websiteUrl?: string | null;
   hasSummerSemester: boolean;
   isActive: boolean;
   notes: string | null;
 };
 
-export function UniversityDialog({ university }: { university?: University }) {
+export function UniversityDialog({
+  university,
+  trigger,
+}: {
+  university?: University;
+  trigger?: React.ReactElement;
+}) {
   const isEdit = Boolean(university);
   const action = isEdit ? updateUniversity : createUniversity;
   const [open, setOpen] = useState(false);
@@ -51,26 +61,20 @@ export function UniversityDialog({ university }: { university?: University }) {
     });
   }
 
+  const defaultTrigger = isEdit ? (
+    <Button variant="ghost" size="icon-sm" aria-label="Edit">
+      <Pencil />
+    </Button>
+  ) : (
+    <Button>
+      <Plus /> New University
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          isEdit ? (
-            <Button variant="ghost" size="icon-sm" aria-label="Edit" />
-          ) : (
-            <Button />
-          )
-        }
-      >
-        {isEdit ? (
-          <Pencil />
-        ) : (
-          <>
-            <Plus /> New University
-          </>
-        )}
-      </DialogTrigger>
-      <DialogContent>
+      <DialogTrigger render={trigger ?? defaultTrigger} />
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit university" : "Add university"}
@@ -93,6 +97,45 @@ export function UniversityDialog({ university }: { university?: University }) {
               defaultValue={university?.name}
               placeholder="Chulalongkorn University"
               required
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                name="city"
+                defaultValue={university?.city ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Input
+                id="country"
+                name="country"
+                defaultValue={university?.country ?? ""}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="addressLine">Address</Label>
+            <Input
+              id="addressLine"
+              name="addressLine"
+              defaultValue={university?.addressLine ?? ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="websiteUrl">Website URL</Label>
+            <Input
+              id="websiteUrl"
+              name="websiteUrl"
+              type="url"
+              defaultValue={university?.websiteUrl ?? ""}
+              placeholder="https://www.example.ac.th"
             />
           </div>
 

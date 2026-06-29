@@ -157,6 +157,7 @@ export async function updateStudent(
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
+  revalidatePath(`/admin/students/${id}/edit`);
   return { success: true };
 }
 
@@ -216,5 +217,67 @@ export async function resetStudentPassword(
   const passwordHash = await hashPassword(password);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
 
+  return { success: true };
+}
+
+export async function archiveStudent(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  const status = formData.get("status") as "INACTIVE" | "GRADUATED";
+  if (!id || !["INACTIVE", "GRADUATED"].includes(status)) {
+    return { error: "Invalid archive request." };
+  }
+
+  const student = await prisma.student.findUnique({ where: { id } });
+  if (!student) return { error: "Student not found." };
+
+  await prisma.$transaction([
+    prisma.student.update({ where: { id }, data: { status } }),
+    prisma.user.update({
+      where: { id: student.userId },
+      data: { isActive: false },
+    }),
+  ]);
+
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${id}`);
+  return { success: true };
+}
+
+export async function uploadStudentPhoto(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  const file = formData.get("photo");
+  if (!id) return { error: "Missing student id." };
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Please choose a photo to upload." };
+  }
+
+  const { validateUpload, saveStudentUpload } = await import("@/lib/uploads");
+  const check = validateUpload(file, "profile-photo");
+  if (!check.ok) return { error: check.error };
+
+  try {
+    const photoUrl = await saveStudentUpload(file, {
+      studentId: id,
+      kind: "profile-photo",
+    });
+    await prisma.student.update({ where: { id }, data: { photoUrl } });
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to upload photo.",
+    };
+  }
+
+  revalidatePath(`/admin/students/${id}`);
+  revalidatePath(`/admin/students/${id}/edit`);
   return { success: true };
 }

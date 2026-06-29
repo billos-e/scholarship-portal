@@ -37,6 +37,13 @@ enum RequestStatus {
   PAID
 }
 
+enum TermCode {
+  FALL
+  SPRING
+  SUMMER
+  WINTER
+}
+
 // ---------------------------------------------------------------------------
 // Reference data
 // ---------------------------------------------------------------------------
@@ -44,15 +51,42 @@ enum RequestStatus {
 model University {
   id                String    @id @default(cuid())
   name              String    @unique
+  city              String?
+  country           String?
+  addressLine       String?
+  websiteUrl        String?
+  imageUrl          String?
   hasSummerSemester Boolean   @default(true)
   isActive          Boolean   @default(true)
   notes             String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  students Student[]
+  students  Student[]
+  semesters UniversitySemester[]
 
   @@map("universities")
+}
+
+model UniversitySemester {
+  id           String   @id @default(cuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  academicYear String
+  termCode     TermCode
+  label        String
+  startDate    DateTime @db.Date
+  endDate      DateTime @db.Date
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tuitionPaymentRequests TuitionPaymentRequest[]
+  semesterReports      SemesterReport[]
+
+  @@index([universityId])
+  @@index([startDate])
+  @@map("university_semesters")
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +125,7 @@ model Student {
   yearOfStudy           String?
   currentSemesterLabel  String?
   gpa                   Decimal?      @db.Decimal(3, 2)
+  photoUrl              String?
   status                StudentStatus @default(ACTIVE)
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
@@ -139,8 +174,8 @@ model TuitionPaymentRequest {
   promptpayNumber   String?
   qrPaymentImageUrl String?
 
-  // Reserved for future university calendar feature (see plan §4.4).
   universitySemesterId String?
+  universitySemester   UniversitySemester? @relation(fields: [universitySemesterId], references: [id])
 
   submittedAt DateTime  @default(now())
   reviewedAt  DateTime?
@@ -188,8 +223,8 @@ model SemesterReport {
   reflectionChallenge   String?
   reflectionAdditional  String?
 
-  // Reserved for future university calendar feature.
   universitySemesterId String?
+  universitySemester   UniversitySemester? @relation(fields: [universitySemesterId], references: [id])
 
   submittedAt DateTime @default(now())
   createdAt   DateTime @default(now())

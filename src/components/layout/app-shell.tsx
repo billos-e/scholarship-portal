@@ -1,56 +1,71 @@
-import Link from "next/link";
+"use client";
 
-import { NavLink, type NavItem } from "@/components/layout/nav-link";
-import { SignOutButton } from "@/components/layout/sign-out-button";
+import { useCallback, useState } from "react";
+
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { MobileNav } from "@/components/layout/mobile-nav";
+
+const COOKIE_NAME = "sidebar-collapsed";
+
+function readCollapsedCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${COOKIE_NAME}=`))
+    ?.split("=")[1] === "true";
+}
+
+function writeCollapsedCookie(collapsed: boolean) {
+  document.cookie = `${COOKIE_NAME}=${collapsed}; path=/; max-age=31536000; SameSite=Lax`;
+}
 
 type AppShellProps = {
-  brand: string;
-  roleLabel: string;
+  variant: "student" | "admin";
   email: string;
-  homeHref: string;
-  navItems: NavItem[];
+  displayName?: string;
   children: React.ReactNode;
 };
 
 export function AppShell({
-  brand,
-  roleLabel,
+  variant,
   email,
-  homeHref,
-  navItems,
+  displayName,
   children,
 }: AppShellProps) {
+  const [collapsed, setCollapsed] = useState(() =>
+    typeof document !== "undefined" ? readCollapsedCookie() : false,
+  );
+
+  const toggle = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      writeCollapsedCookie(next);
+      return next;
+    });
+  }, []);
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
-          <Link href={homeHref} className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-              SP
-            </span>
-            <span className="hidden font-semibold sm:inline">{brand}</span>
-          </Link>
+    <div className="flex min-h-screen">
+      <AppSidebar
+        variant={variant}
+        email={email}
+        displayName={displayName}
+        collapsed={collapsed}
+        onToggle={toggle}
+      />
 
-          <span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-foreground">
-            {roleLabel}
-          </span>
-
-          <div className="ml-auto flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground md:inline">
-              {email}
-            </span>
-            <SignOutButton />
-          </div>
-        </div>
-
-        <nav className="mx-auto flex w-full max-w-6xl items-center gap-1 overflow-x-auto px-3 pb-2">
-          {navItems.map((item) => (
-            <NavLink key={item.href} item={item} exact={item.href === homeHref} />
-          ))}
-        </nav>
-      </header>
-
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <MobileNav variant={variant} />
+        <main
+          className={
+            variant === "student"
+              ? "flex-1 p-4 pb-20 md:p-8 md:pb-8"
+              : "flex-1 p-4 md:p-8"
+          }
+        >
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

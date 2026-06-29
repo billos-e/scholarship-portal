@@ -3,13 +3,27 @@
 import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function SignOutButton() {
+type SignOutButtonProps = {
+  className?: string;
+  showLabel?: boolean;
+};
+
+export function SignOutButton({
+  className,
+  showLabel = true,
+}: SignOutButtonProps) {
   return (
     <form action="/api/logout" method="post">
-      <Button type="submit" variant="ghost" size="sm" className="gap-2">
+      <Button
+        type="submit"
+        variant="ghost"
+        size="sm"
+        className={cn("gap-2", className)}
+      >
         <LogOut className="size-4" />
-        <span className="hidden sm:inline">Sign out</span>
+        {showLabel ? <span>Sign out</span> : null}
       </Button>
     </form>
   );

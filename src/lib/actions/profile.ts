@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import { saveStudentUpload, validateUpload } from "@/lib/uploads";
 
 export type ActionState = {
   error?: string;
@@ -70,6 +71,38 @@ export async function updateOwnBank(
     update: parsed.data,
     create: { studentId: student.id, ...parsed.data },
   });
+
+  revalidatePath("/student/profile");
+  return { success: true };
+}
+
+export async function uploadOwnPhoto(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { student } = await requireStudent();
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Please choose a photo to upload." };
+  }
+
+  const check = validateUpload(file, "profile-photo");
+  if (!check.ok) return { error: check.error };
+
+  try {
+    const photoUrl = await saveStudentUpload(file, {
+      studentId: student.id,
+      kind: "profile-photo",
+    });
+    await prisma.student.update({
+      where: { id: student.id },
+      data: { photoUrl },
+    });
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to upload photo.",
+    };
+  }
 
   revalidatePath("/student/profile");
   return { success: true };

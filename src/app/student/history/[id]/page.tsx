@@ -14,6 +14,8 @@ import {
 import { requireStudent } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { uploadPublicUrl } from "@/lib/upload-path";
+import { StatusStepper } from "@/components/status-stepper";
 import {
   ACTIVITY_OPTIONS,
   CHALLENGE_OPTIONS,
@@ -59,7 +61,7 @@ function FileLink({
       </dt>
       <dd>
         <a
-          href={`/api/uploads/${url}`}
+          href={uploadPublicUrl(url)}
           target="_blank"
           rel="noreferrer noopener"
           className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
@@ -159,6 +161,7 @@ export default async function StudentSubmissionDetailPage({
           <StatusBadge status={request.status} />
         </CardHeader>
         <CardContent className="space-y-6">
+          <StatusStepper status={request.status} compact className="mb-2" />
           <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <Field
               label="Amount due"

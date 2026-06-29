@@ -1,7 +1,11 @@
 import Link from "next/link";
 import type { Prisma, StudentStatus } from "@prisma/client";
-import { Pencil, Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 
+import { ExportButton } from "@/components/export-button";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/layout/page-header";
+import { Pagination } from "@/components/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +26,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth/session";
+import {
+  buildPageUrl,
+  pageOffset,
+  parsePage,
+  PAGE_SIZE,
+  totalPages,
+} from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { StudentStatusBadge } from "@/components/student-status-badge";
 import { StudentCreateDialog } from "./student-create-dialog";
@@ -30,6 +41,7 @@ type SearchParams = {
   q?: string;
   uni?: string;
   status?: string;
+  page?: string;
 };
 
 const STATUS_VALUES: StudentStatus[] = ["ACTIVE", "GRADUATED", "INACTIVE"];
@@ -45,6 +57,7 @@ export default async function AdminStudentsPage({
   const q = params.q?.trim() ?? "";
   const uni = params.uni ?? "";
   const status = params.status ?? "";
+  const page = parsePage(params.page);
 
   const where: Prisma.StudentWhereInput = {};
   if (q) {
@@ -59,10 +72,15 @@ export default async function AdminStudentsPage({
     where.status = status as StudentStatus;
   }
 
-  const [students, universities] = await Promise.all([
+  const filterParams = { q, uni, status };
+
+  const [total, students, universities] = await Promise.all([
+    prisma.student.count({ where }),
     prisma.student.findMany({
       where,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      skip: pageOffset(page),
+      take: PAGE_SIZE,
       include: { university: true, user: true },
     }),
     prisma.university.findMany({
@@ -72,22 +90,27 @@ export default async function AdminStudentsPage({
     }),
   ]);
 
+  const pages = totalPages(total);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
-          <p className="text-muted-foreground">
-            Search, create, and manage student accounts.
-          </p>
-        </div>
-        <StudentCreateDialog universities={universities} />
-      </div>
+      <PageHeader
+        title="Students"
+        description="Search, create, and manage student accounts."
+        actions={
+          <>
+            <ExportButton dataset="students" params={filterParams} />
+            <StudentCreateDialog universities={universities} />
+          </>
+        }
+      />
 
       <Card>
         <CardHeader>
           <CardTitle>All students</CardTitle>
-          <CardDescription>{students.length} matching student(s).</CardDescription>
+          <CardDescription>
+            {total} matching student{total === 1 ? "" : "s"}.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -133,70 +156,74 @@ export default async function AdminStudentsPage({
           </form>
 
           {students.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              No students match your filters.
-            </div>
+            <EmptyState title="No students match your filters" />
           ) : (
-            <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Student ID</TableHead>
-                  <TableHead>University</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Access</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        href={`/admin/students/${s.id}`}
-                        className="hover:text-primary hover:underline"
-                      >
-                        {s.firstName} {s.lastName}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{s.studentId ?? "—"}</TableCell>
-                    <TableCell>{s.university?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <StudentStatusBadge status={s.status} />
-                    </TableCell>
-                    <TableCell>
-                      {s.user.isActive ? (
-                        <Badge
-                          variant="outline"
-                          className="border-emerald-200 bg-emerald-100 text-emerald-800"
-                        >
-                          Enabled
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="border-slate-200 bg-slate-100 text-slate-600"
-                        >
-                          Disabled
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        render={<Link href={`/admin/students/${s.id}`} />}
-                      >
-                        <Pencil />
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Student ID</TableHead>
+                      <TableHead>University</TableHead>
+                      <TableHead>Program</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Access</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {students.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-medium">
+                          <Link
+                            href={`/admin/students/${s.id}`}
+                            className="hover:text-primary hover:underline"
+                          >
+                            {s.firstName} {s.lastName}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{s.studentId ?? "—"}</TableCell>
+                        <TableCell>{s.university?.name ?? "—"}</TableCell>
+                        <TableCell>{s.degreeProgram ?? "—"}</TableCell>
+                        <TableCell>
+                          <StudentStatusBadge status={s.status} />
+                        </TableCell>
+                        <TableCell>
+                          {s.user.isActive ? (
+                            <Badge
+                              variant="outline"
+                              className="border-success/30 bg-success-light text-success"
+                            >
+                              Enabled
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Disabled</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            render={<Link href={`/admin/students/${s.id}`} />}
+                          >
+                            <Eye />
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <Pagination
+                currentPage={page}
+                totalPages={pages}
+                buildHref={(p) =>
+                  buildPageUrl("/admin/students", filterParams, p)
+                }
+              />
+            </>
           )}
         </CardContent>
       </Card>

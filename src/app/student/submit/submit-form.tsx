@@ -20,6 +20,8 @@ import {
   WELLBEING_QUESTIONS,
 } from "@/lib/submissions/constants";
 
+type SemesterOption = { id: string; label: string };
+
 type Defaults = {
   semesterLabel: string;
   bankAccountName: string;
@@ -91,7 +93,13 @@ function WellbeingRow({
   );
 }
 
-export function SubmissionForm({ defaults }: { defaults: Defaults }) {
+export function SubmissionForm({
+  defaults,
+  semesters = [],
+}: {
+  defaults: Defaults;
+  semesters?: SemesterOption[];
+}) {
   const [state, formAction] = useActionState<SubmissionState, FormData>(
     createSubmission,
     {},
@@ -110,24 +118,50 @@ export function SubmissionForm({ defaults }: { defaults: Defaults }) {
           description="Which semester this submission is for."
         />
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="semesterLabel">Semester *</Label>
-            <Input
-              id="semesterLabel"
-              name="semesterLabel"
-              required
-              list="semester-suggestions"
-              defaultValue={defaults.semesterLabel}
-              placeholder="Fall 2026"
-            />
-            <datalist id="semester-suggestions">
-              {SEMESTER_LABEL_SUGGESTIONS.map((label) => (
-                <option key={label} value={label} />
-              ))}
-            </datalist>
-            <p className="text-xs text-muted-foreground">
-              Use the term name your university uses, e.g. <em>Fall 2026</em>.
-            </p>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="semester">Semester *</Label>
+            {semesters.length > 0 ? (
+              <>
+                <NativeSelect
+                  id="semester"
+                  name="universitySemesterId"
+                  required
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select a semester
+                  </option>
+                  {semesters.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <p className="text-xs text-muted-foreground">
+                  Choose from your university&apos;s active semesters.
+                </p>
+              </>
+            ) : (
+              <>
+                <Input
+                  id="semesterLabel"
+                  name="semesterLabel"
+                  required
+                  list="semester-suggestions"
+                  defaultValue={defaults.semesterLabel}
+                  placeholder="Fall 2026"
+                />
+                <datalist id="semester-suggestions">
+                  {SEMESTER_LABEL_SUGGESTIONS.map((label) => (
+                    <option key={label} value={label} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-muted-foreground">
+                  No semesters configured for your university yet — enter the term
+                  name manually, e.g. <em>Fall 2026</em>.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </section>

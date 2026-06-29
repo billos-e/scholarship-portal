@@ -60,41 +60,45 @@ function multiSelect(
   return Array.from(new Set(raw.filter((v) => allowedSet.has(v))));
 }
 
-const submissionSchema = z.object({
-  semesterLabel: z
-    .string()
-    .trim()
-    .min(1, "Semester label is required.")
-    .max(40, "Semester label is too long."),
-  amountDue: z
-    .number({ message: "Tuition amount is required." })
-    .positive("Tuition amount must be greater than zero.")
-    .max(10_000_000, "Tuition amount looks too large."),
-  dueDate: z.date().optional(),
+const submissionSchema = z
+  .object({
+    semesterLabel: z.string().trim().max(40).optional(),
+    universitySemesterId: z.string().trim().optional(),
+    amountDue: z
+      .number({ message: "Tuition amount is required." })
+      .positive("Tuition amount must be greater than zero.")
+      .max(10_000_000, "Tuition amount looks too large."),
+    dueDate: z.date().optional(),
 
-  // Bank info (snapshot + last-known update)
-  bankAccountName: z.string().trim().optional(),
-  bankAccountNumber: z.string().trim().optional(),
-  bankName: z.string().trim().optional(),
-  promptpayNumber: z.string().trim().optional(),
+    // Bank info (snapshot + last-known update)
+    bankAccountName: z.string().trim().optional(),
+    bankAccountNumber: z.string().trim().optional(),
+    bankName: z.string().trim().optional(),
+    promptpayNumber: z.string().trim().optional(),
 
-  // Academic
-  gpa: z.number().min(0).max(4).optional(),
-  creditsCompleted: z.number().int().min(0).max(60).optional(),
-  passedAllCourses: z.boolean().optional(),
+    // Academic
+    gpa: z.number().min(0).max(4).optional(),
+    creditsCompleted: z.number().int().min(0).max(60).optional(),
+    passedAllCourses: z.boolean().optional(),
 
-  // Wellbeing (1..5)
-  wellbeingPhysical: z.number().int().min(1).max(5).optional(),
-  wellbeingMental: z.number().int().min(1).max(5).optional(),
-  wellbeingFinancial: z.number().int().min(1).max(5).optional(),
-  wellbeingStress: z.number().int().min(1).max(5).optional(),
-  wellbeingConfidence: z.number().int().min(1).max(5).optional(),
+    // Wellbeing (1..5)
+    wellbeingPhysical: z.number().int().min(1).max(5).optional(),
+    wellbeingMental: z.number().int().min(1).max(5).optional(),
+    wellbeingFinancial: z.number().int().min(1).max(5).optional(),
+    wellbeingStress: z.number().int().min(1).max(5).optional(),
+    wellbeingConfidence: z.number().int().min(1).max(5).optional(),
 
-  // Reflections
-  reflectionAchievement: z.string().trim().max(4000).optional(),
-  reflectionChallenge: z.string().trim().max(4000).optional(),
-  reflectionAdditional: z.string().trim().max(4000).optional(),
-});
+    // Reflections
+    reflectionAchievement: z.string().trim().max(4000).optional(),
+    reflectionChallenge: z.string().trim().max(4000).optional(),
+    reflectionAdditional: z.string().trim().max(4000).optional(),
+  })
+  .refine(
+    (d) =>
+      (d.universitySemesterId && d.universitySemesterId.length > 0) ||
+      (d.semesterLabel && d.semesterLabel.length > 0),
+    { message: "Semester is required.", path: ["semesterLabel"] },
+  );
 
 function fileIfProvided(value: FormDataEntryValue | null): File | undefined {
   if (!(value instanceof File)) return undefined;
@@ -110,6 +114,7 @@ export async function createSubmission(
 
   const parsed = submissionSchema.safeParse({
     semesterLabel: trimmed(formData.get("semesterLabel")),
+    universitySemesterId: trimmed(formData.get("universitySemesterId")),
     amountDue: optionalNumber(formData.get("amountDue")),
     dueDate: optionalDate(formData.get("dueDate")),
 
@@ -161,6 +166,26 @@ export async function createSubmission(
   }
 
   const data = parsed.data;
+
+  if (data.universitySemesterId) {
+    const semester = await prisma.universitySemester.findFirst({
+      where: {
+        id: data.universitySemesterId,
+        isActive: true,
+        universityId: student.universityId ?? undefined,
+      },
+    });
+    if (!semester) {
+      return { error: "Please select a valid semester for your university." };
+    }
+    data.semesterLabel = semester.label;
+  }
+
+  if (!data.semesterLabel) {
+    return { error: "Semester is required." };
+  }
+
+  const semesterLabel = data.semesterLabel;
   const challenges = multiSelect(formData, "challenges", CHALLENGE_VALUES);
   const activities = multiSelect(formData, "activities", ACTIVITY_VALUES);
 
@@ -221,7 +246,8 @@ export async function createSubmission(
       const request = await tx.tuitionPaymentRequest.create({
         data: {
           studentId: student.id,
-          semesterLabel: data.semesterLabel,
+          semesterLabel,
+          universitySemesterId: data.universitySemesterId ?? null,
           amountDue: data.amountDue,
           dueDate: data.dueDate ?? null,
           invoiceFileUrl: invoiceFileUrl ?? null,
@@ -239,7 +265,8 @@ export async function createSubmission(
         data: {
           studentId: student.id,
           tuitionPaymentRequestId: request.id,
-          semesterLabel: data.semesterLabel,
+          semesterLabel,
+          universitySemesterId: data.universitySemesterId ?? null,
           gpa: data.gpa ?? null,
           creditsCompleted: data.creditsCompleted ?? null,
           passedAllCourses: data.passedAllCourses ?? null,
@@ -283,7 +310,7 @@ export async function createSubmission(
       if (!student.currentSemesterLabel) {
         await tx.student.update({
           where: { id: student.id },
-          data: { currentSemesterLabel: data.semesterLabel },
+          data: { currentSemesterLabel: semesterLabel },
         });
       }
 

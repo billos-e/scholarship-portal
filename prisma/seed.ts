@@ -1,4 +1,4 @@
-import { PrismaClient, RequestStatus, StudentStatus } from "@prisma/client";
+import { PrismaClient, RequestStatus, StudentStatus, TermCode } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -9,13 +9,31 @@ function hash(plain: string) {
   return bcrypt.hash(plain, 10);
 }
 
+async function upsertSemester(
+  universityId: string,
+  data: {
+    academicYear: string;
+    termCode: TermCode;
+    label: string;
+    startDate: Date;
+    endDate: Date;
+  },
+) {
+  const existing = await prisma.universitySemester.findFirst({
+    where: { universityId, label: data.label },
+  });
+  if (existing) return existing;
+  return prisma.universitySemester.create({
+    data: { universityId, ...data, isActive: true },
+  });
+}
+
 async function main() {
   console.log("Seeding database...");
 
   const adminPassword = await hash(DEFAULT_PASSWORD);
   const studentPassword = await hash(DEFAULT_PASSWORD);
 
-  // --- Admin -------------------------------------------------------------
   await prisma.user.upsert({
     where: { email: "admin@example.com" },
     update: {},
@@ -26,32 +44,90 @@ async function main() {
     },
   });
 
-  // --- Universities ------------------------------------------------------
   const chula = await prisma.university.upsert({
     where: { name: "Chulalongkorn University" },
-    update: {},
-    create: { name: "Chulalongkorn University", hasSummerSemester: true },
+    update: {
+      city: "Bangkok",
+      country: "Thailand",
+      addressLine: "254 Phayathai Road, Pathumwan",
+      websiteUrl: "https://www.chula.ac.th",
+      hasSummerSemester: true,
+      isActive: true,
+    },
+    create: {
+      name: "Chulalongkorn University",
+      city: "Bangkok",
+      country: "Thailand",
+      addressLine: "254 Phayathai Road, Pathumwan",
+      websiteUrl: "https://www.chula.ac.th",
+      hasSummerSemester: true,
+    },
   });
 
   const mahidol = await prisma.university.upsert({
     where: { name: "Mahidol University" },
-    update: {},
-    create: { name: "Mahidol University", hasSummerSemester: false },
+    update: {
+      city: "Nakhon Pathom",
+      country: "Thailand",
+      addressLine: "999 Phutthamonthon Sai 4 Road",
+      websiteUrl: "https://www.mahidol.ac.th",
+      hasSummerSemester: false,
+      isActive: true,
+    },
+    create: {
+      name: "Mahidol University",
+      city: "Nakhon Pathom",
+      country: "Thailand",
+      addressLine: "999 Phutthamonthon Sai 4 Road",
+      websiteUrl: "https://www.mahidol.ac.th",
+      hasSummerSemester: false,
+    },
+  });
+
+  const fall2026 = await upsertSemester(chula.id, {
+    academicYear: "2026",
+    termCode: "FALL",
+    label: "Fall 2026",
+    startDate: new Date("2026-08-15"),
+    endDate: new Date("2026-12-15"),
+  });
+
+  await upsertSemester(chula.id, {
+    academicYear: "2027",
+    termCode: "SPRING",
+    label: "Spring 2027",
+    startDate: new Date("2027-01-10"),
+    endDate: new Date("2027-05-20"),
+  });
+
+  await upsertSemester(chula.id, {
+    academicYear: "2026",
+    termCode: "SUMMER",
+    label: "Summer 2026",
+    startDate: new Date("2026-06-01"),
+    endDate: new Date("2026-07-31"),
+  });
+
+  await upsertSemester(mahidol.id, {
+    academicYear: "2026",
+    termCode: "FALL",
+    label: "Fall 2026",
+    startDate: new Date("2026-08-20"),
+    endDate: new Date("2026-12-10"),
   });
 
   const universities = [chula, mahidol];
+  const semesterLabel = fall2026.label;
 
-  // --- Students ----------------------------------------------------------
   const studentSeeds = [
     { first: "Anong", last: "Saetang", program: "Computer Science", year: "2", gpa: 3.72 },
     { first: "Kasem", last: "Phromma", program: "Civil Engineering", year: "3", gpa: 3.15 },
     { first: "Mali", last: "Chaiwong", program: "Nursing", year: "1", gpa: 3.9 },
     { first: "Niran", last: "Boonmee", program: "Business Administration", year: "4", gpa: 2.95 },
-    { first: "Pim", last: "Srisuk", program: "Public Health", year: "2", gpa: 3.55 },
+    { first: "Pimchanok", last: "Srisuk", program: "Public Health", year: "2", gpa: 3.55 },
     { first: "Somchai", last: "Wattana", program: "Mechanical Engineering", year: "3", gpa: 3.0 },
   ];
 
-  const semesterLabel = "Fall 2026";
   const createdStudents = [];
 
   for (let i = 0; i < studentSeeds.length; i++) {
@@ -71,10 +147,13 @@ async function main() {
 
     const student = await prisma.student.upsert({
       where: { userId: user.id },
-      update: {},
+      update: {
+        studentId: `STU-2024-${String(847 + i).padStart(4, "0")}`,
+        currentSemesterLabel: semesterLabel,
+      },
       create: {
         userId: user.id,
-        studentId: `STU-${1000 + i}`,
+        studentId: `STU-2024-${String(847 + i).padStart(4, "0")}`,
         firstName: s.first,
         lastName: s.last,
         phone: `08${String(10000000 + i * 13579).slice(0, 8)}`,
@@ -98,7 +177,6 @@ async function main() {
     createdStudents.push(student);
   }
 
-  // --- A graduated student (access disabled, history preserved) ----------
   const gradUser = await prisma.user.upsert({
     where: { email: "graduated@example.com" },
     update: {},
@@ -114,7 +192,7 @@ async function main() {
     update: {},
     create: {
       userId: gradUser.id,
-      studentId: "STU-0999",
+      studentId: "STU-2024-0999",
       firstName: "Ploy",
       lastName: "Intara",
       universityId: chula.id,
@@ -126,7 +204,33 @@ async function main() {
     },
   });
 
-  // --- Payment requests at different statuses ---------------------------
+  const inactiveUser = await prisma.user.upsert({
+    where: { email: "inactive@example.com" },
+    update: {},
+    create: {
+      email: "inactive@example.com",
+      passwordHash: studentPassword,
+      role: "STUDENT",
+      isActive: false,
+    },
+  });
+  await prisma.student.upsert({
+    where: { userId: inactiveUser.id },
+    update: {},
+    create: {
+      userId: inactiveUser.id,
+      studentId: "STU-2024-0888",
+      firstName: "Wanida",
+      lastName: "Thongchai",
+      universityId: mahidol.id,
+      degreeProgram: "Medicine",
+      yearOfStudy: "2",
+      currentSemesterLabel: semesterLabel,
+      gpa: 3.4,
+      status: StudentStatus.INACTIVE,
+    },
+  });
+
   const statuses: RequestStatus[] = [
     RequestStatus.SUBMITTED,
     RequestStatus.UNDER_REVIEW,
@@ -148,7 +252,8 @@ async function main() {
       data: {
         studentId: student.id,
         semesterLabel,
-        amountDue: 25000 + i * 5000,
+        universitySemesterId: fall2026.id,
+        amountDue: 25000,
         dueDate: new Date("2026-09-15"),
         status: statuses[i],
         reviewedAt: i >= 1 ? new Date() : null,
@@ -160,13 +265,13 @@ async function main() {
       },
     });
 
-    // Linked semester report for the first two requests.
     if (i < 2) {
       await prisma.semesterReport.create({
         data: {
           studentId: student.id,
           tuitionPaymentRequestId: request.id,
           semesterLabel,
+          universitySemesterId: fall2026.id,
           gpa: Number(student.gpa ?? 3.0),
           creditsCompleted: 18,
           passedAllCourses: true,
@@ -185,7 +290,6 @@ async function main() {
     }
   }
 
-  // --- One fully paid request with payment history ----------------------
   const paidStudent = createdStudents[3];
   const paidExisting = await prisma.tuitionPaymentRequest.findFirst({
     where: { studentId: paidStudent.id, semesterLabel: "Spring 2026" },

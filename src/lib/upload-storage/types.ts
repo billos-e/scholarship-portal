@@ -1,5 +1,7 @@
+import type { UploadPathInfo } from "@/lib/upload-path";
+
 export type UploadReadResult = {
-  ownerStudentId: string;
+  pathInfo: UploadPathInfo;
   size: number;
   contentType: string;
   body: ReadableStream<Uint8Array>;

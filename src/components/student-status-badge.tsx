@@ -6,15 +6,15 @@ import { cn } from "@/lib/utils";
 const CONFIG: Record<StudentStatus, { label: string; className: string }> = {
   ACTIVE: {
     label: "Active",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    className: "border-success/30 bg-success-light text-success",
   },
   GRADUATED: {
     label: "Graduated",
-    className: "bg-blue-100 text-blue-800 border-blue-200",
+    className: "border-info/30 bg-info-light text-info",
   },
   INACTIVE: {
     label: "Inactive",
-    className: "bg-slate-100 text-slate-600 border-slate-200",
+    className: "border-border bg-muted text-muted-foreground",
   },
 };
 

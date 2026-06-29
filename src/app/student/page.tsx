@@ -1,6 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, FilePlus2, History } from "lucide-react";
+import {
+  ArrowRight,
+  FileText,
+  History,
+  User,
+} from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/stat-card";
+import { StatusStepper } from "@/components/status-stepper";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +19,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { requireStudent } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -17,93 +34,160 @@ import { prisma } from "@/lib/prisma";
 export default async function StudentDashboard() {
   const { student } = await requireStudent();
 
-  const latestRequest = await prisma.tuitionPaymentRequest.findFirst({
-    where: { studentId: student.id },
-    orderBy: { submittedAt: "desc" },
-  });
+  const [latestRequest, recentRequests] = await Promise.all([
+    prisma.tuitionPaymentRequest.findFirst({
+      where: { studentId: student.id },
+      orderBy: { submittedAt: "desc" },
+    }),
+    prisma.tuitionPaymentRequest.findMany({
+      where: { studentId: student.id },
+      orderBy: { submittedAt: "desc" },
+      take: 5,
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome, {student.firstName}
-        </h1>
-        <p className="text-muted-foreground">
-          {student.university?.name ?? "No university set"} ·{" "}
-          {student.degreeProgram ?? "—"}
-        </p>
-      </div>
+      <PageHeader
+        title={`Welcome, ${student.firstName}`}
+        description={`${student.university?.name ?? "No university set"} · ${student.degreeProgram ?? "—"}`}
+        actions={
+          <Button render={<Link href="/student/submit" />}>
+            New Submission
+            <ArrowRight />
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Latest payment request</CardTitle>
+          <CardTitle>Current Payment Request</CardTitle>
           <CardDescription>
             The status of your most recent semester submission.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           {latestRequest ? (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">
-                  {latestRequest.semesterLabel}
-                </p>
-                <p className="text-2xl font-semibold">
-                  {formatCurrency(latestRequest.amountDue.toString())}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Due {formatDate(latestRequest.dueDate)}
-                </p>
+            <>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    {latestRequest.semesterLabel}
+                  </p>
+                  <p className="text-2xl font-semibold">
+                    {formatCurrency(latestRequest.amountDue.toString())}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Due {formatDate(latestRequest.dueDate)}
+                  </p>
+                </div>
+                <StatusBadge status={latestRequest.status} />
               </div>
-              <StatusBadge status={latestRequest.status} />
-            </div>
+              <StatusStepper status={latestRequest.status} />
+              <Button
+                variant="outline"
+                size="sm"
+                render={
+                  <Link href={`/student/history/${latestRequest.id}`} />
+                }
+              >
+                View details
+              </Button>
+            </>
           ) : (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              No submissions yet. Start your first semester submission below.
-            </div>
+            <EmptyState
+              title="No submissions yet"
+              description="Start your first semester submission to track tuition and academic progress."
+              action={
+                <Button render={<Link href="/student/submit" />}>
+                  New Submission
+                </Button>
+              }
+            />
           )}
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FilePlus2 className="size-4 text-primary" />
-              New semester submission
-            </CardTitle>
-            <CardDescription>
-              Submit your tuition payment request and semester report.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" render={<Link href="/student/submit" />}>
-              Start submission <ArrowRight className="size-4" />
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Link href="/student/profile" className="block">
+          <StatCard
+            label="My Profile"
+            value="View"
+            subtext="Contact & bank details"
+            icon={User}
+            className="h-full transition-colors hover:border-primary/30"
+          />
+        </Link>
+        <Link href="/student/submit" className="block">
+          <StatCard
+            label="Semester Submission"
+            value="Submit"
+            subtext="Tuition & report"
+            icon={FileText}
+            className="h-full transition-colors hover:border-primary/30"
+          />
+        </Link>
+        <Link href="/student/history" className="block">
+          <StatCard
+            label="Payment History"
+            value={recentRequests.length}
+            subtext="Past submissions"
+            icon={History}
+            className="h-full transition-colors hover:border-primary/30"
+          />
+        </Link>
+      </div>
 
+      {recentRequests.length > 0 ? (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <History className="size-4 text-primary" />
-              Submission history
-            </CardTitle>
-            <CardDescription>
-              Review your past semesters and their payment statuses.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Recent Submissions</CardTitle>
+              <CardDescription>Your latest payment requests.</CardDescription>
+            </div>
             <Button
+              size="sm"
               variant="outline"
-              className="w-full"
               render={<Link href="/student/history" />}
             >
-              View history <ArrowRight className="size-4" />
+              View all
             </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Semester</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentRequests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell>
+                      <Link
+                        href={`/student/history/${request.id}`}
+                        className="font-medium hover:text-primary hover:underline"
+                      >
+                        {request.semesterLabel}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(request.amountDue.toString())}
+                    </TableCell>
+                    <TableCell>{formatDate(request.submittedAt)}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={request.status} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
-      </div>
+      ) : null}
     </div>
   );
 }

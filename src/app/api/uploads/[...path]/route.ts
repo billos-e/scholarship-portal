@@ -24,12 +24,14 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  if (session.user.role === "STUDENT") {
+  if (resolved.pathInfo.type === "university") {
+    // Any authenticated user may read university images.
+  } else if (session.user.role === "STUDENT") {
     const student = await prisma.student.findUnique({
       where: { userId: session.user.id },
       select: { id: true },
     });
-    if (!student || student.id !== resolved.ownerStudentId) {
+    if (!student || student.id !== resolved.pathInfo.ownerStudentId) {
       return new Response("Forbidden", { status: 403 });
     }
   } else if (session.user.role !== "ADMIN") {
