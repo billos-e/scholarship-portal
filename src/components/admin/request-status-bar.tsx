@@ -321,7 +321,7 @@ function SplitActionButton({
         {Icon ? <Icon className="size-3.5" /> : null}
         {label}
       </Button>
-      <DropdownMenu className="inline-flex items-stretch">
+      <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
             "inline-flex h-7 min-w-7 -ml-px items-center justify-center rounded-l-none rounded-r-lg border border-transparent border-l border-primary-foreground/20 bg-primary px-1.5 text-primary-foreground transition-colors",
