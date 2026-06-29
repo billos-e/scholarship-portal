@@ -11,10 +11,6 @@ const STATUS_CONFIG: Record<
     label: "Submitted",
     className: "border-border bg-muted text-muted-foreground",
   },
-  UNDER_REVIEW: {
-    label: "Under Review",
-    className: "border-warning/30 bg-warning-light text-warning",
-  },
   APPROVED: {
     label: "Approved",
     className: "border-info/30 bg-info-light text-info",
@@ -22,6 +18,10 @@ const STATUS_CONFIG: Record<
   PAID: {
     label: "Paid",
     className: "border-success/30 bg-success-light text-success",
+  },
+  REJECTED: {
+    label: "Rejected",
+    className: "border-destructive/30 bg-destructive/10 text-destructive",
   },
 };
 

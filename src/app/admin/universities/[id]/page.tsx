@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { Pencil, Users } from "lucide-react";
 
 import { ExportButton } from "@/components/export-button";
+import { UniversityStudentsTable } from "@/components/admin/university-students-table";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageHeader } from "@/components/layout/page-header";
-import { StudentStatusBadge } from "@/components/student-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,14 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { UniversityDialog } from "../university-dialog";
@@ -227,33 +219,14 @@ export default async function UniversityDetailPage({
           {university.students.length === 0 ? (
             <p className="text-sm text-muted-foreground">No students yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Student ID</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {university.students.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell>
-                      <Link
-                        href={`/admin/students/${s.id}`}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {s.firstName} {s.lastName}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{s.studentId ?? "—"}</TableCell>
-                    <TableCell>
-                      <StudentStatusBadge status={s.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <UniversityStudentsTable
+              rows={university.students.map((student) => ({
+                id: student.id,
+                name: `${student.firstName} ${student.lastName}`,
+                studentId: student.studentId,
+                status: student.status,
+              }))}
+            />
           )}
         </CardContent>
       </Card>

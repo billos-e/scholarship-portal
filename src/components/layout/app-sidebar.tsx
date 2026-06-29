@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { BrandMark } from "@/components/layout/brand-mark";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import {
   Tooltip,
@@ -24,6 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getInitials } from "@/lib/initials";
 import { cn } from "@/lib/utils";
 
 export type SidebarNavItem = {
@@ -36,7 +38,7 @@ const STUDENT_NAV: SidebarNavItem[] = [
   { href: "/student", label: "Dashboard", icon: LayoutDashboard },
   { href: "/student/profile", label: "My Profile", icon: User },
   { href: "/student/submit", label: "New Submission", icon: FilePlus2 },
-  { href: "/student/history", label: "Payment History", icon: History },
+  { href: "/student/history", label: "History", icon: History },
 ];
 
 const ADMIN_NAV: SidebarNavItem[] = [
@@ -77,19 +79,19 @@ function SidebarLink({
     <Link
       href={item.href}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        "flex h-11 items-center gap-3 rounded-lg px-3.5 text-sm font-medium transition-colors",
         collapsed && "justify-center px-2",
         isActive
           ? isAdmin
             ? "bg-sidebar-admin-accent text-sidebar-admin-accent-foreground"
             : "bg-sidebar-accent text-sidebar-accent-foreground"
           : isAdmin
-            ? "text-sidebar-admin-foreground/80 hover:bg-sidebar-admin-accent/60 hover:text-sidebar-admin-accent-foreground"
-            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+            ? "text-sidebar-admin-foreground/75 hover:bg-sidebar-admin-accent/50 hover:text-sidebar-admin-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
       )}
       aria-current={isActive ? "page" : undefined}
     >
-      <Icon className="size-5 shrink-0" />
+      <Icon className="size-[18px] shrink-0" />
       {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>
   );
@@ -116,6 +118,8 @@ export function AppSidebar({
   const pathname = usePathname();
   const navItems = getNavItems(variant);
   const isAdmin = variant === "admin";
+  const userLabel = displayName ?? email.split("@")[0] ?? "User";
+  const initials = getInitials(userLabel);
 
   function isActive(href: string) {
     if (href === "/student" || href === "/admin") {
@@ -128,52 +132,39 @@ export function AppSidebar({
     <TooltipProvider>
       <aside
         className={cn(
-          "hidden h-screen shrink-0 flex-col border-r transition-[width] duration-200 md:flex",
+          "hidden h-full shrink-0 flex-col border-r transition-[width] duration-200 md:flex",
           isAdmin
             ? "border-sidebar-admin bg-sidebar-admin text-sidebar-admin-foreground"
             : "border-sidebar-border bg-sidebar text-sidebar-foreground",
-          collapsed ? "w-[4.5rem]" : "w-60",
+          collapsed ? "w-[4.5rem]" : "w-[260px]",
         )}
       >
         <div
           className={cn(
-            "flex h-14 items-center border-b px-3",
-            isAdmin ? "border-sidebar-admin" : "border-sidebar-border",
+            "flex items-center gap-2.5 px-4 py-6",
+            collapsed && "flex-col px-3",
           )}
         >
-          <Link
-            href={isAdmin ? "/admin" : "/student"}
-            className={cn(
-              "flex min-w-0 flex-1 items-center gap-2",
-              collapsed && "justify-center",
-            )}
-          >
-            <span
-              className={cn(
-                "flex size-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
-                isAdmin
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-primary text-primary-foreground",
-              )}
-            >
-              SP
-            </span>
-            {!collapsed && (
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">Scholarship Portal</p>
-                <p className="truncate text-xs opacity-70">
-                  {isAdmin ? "Admin" : "Student"}
-                </p>
-              </div>
-            )}
-          </Link>
+          <BrandMark variant={isAdmin ? "admin" : "student"} size="sm" />
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-heading text-base font-bold">
+                {isAdmin ? "Admin Panel" : "Scholarship"}
+              </p>
+              <p className="truncate text-[11px] opacity-70">
+                {isAdmin ? "Scholarship Portal" : "Student Portal"}
+              </p>
+            </div>
+          )}
           {!collapsed && (
             <button
               type="button"
               onClick={onToggle}
               className={cn(
-                "ml-1 rounded-md p-1.5 opacity-70 transition-opacity hover:opacity-100",
-                isAdmin ? "hover:bg-sidebar-admin-accent" : "hover:bg-sidebar-accent",
+                "rounded-md border p-1.5 opacity-70 transition-opacity hover:opacity-100",
+                isAdmin
+                  ? "border-sidebar-admin-border hover:bg-sidebar-admin-accent/50"
+                  : "border-sidebar-border bg-background hover:bg-sidebar-accent",
               )}
               aria-label="Collapse sidebar"
             >
@@ -183,7 +174,7 @@ export function AppSidebar({
         </div>
 
         {collapsed && (
-          <div className="flex justify-center py-2">
+          <div className="flex justify-center pb-2">
             <button
               type="button"
               onClick={onToggle}
@@ -198,7 +189,7 @@ export function AppSidebar({
           </div>
         )}
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-4">
           {navItems.map((item) => (
             <SidebarLink
               key={item.href}
@@ -212,16 +203,35 @@ export function AppSidebar({
 
         <div
           className={cn(
-            "border-t p-3",
-            isAdmin ? "border-sidebar-admin" : "border-sidebar-border",
+            "p-4",
+            isAdmin ? "border-t border-sidebar-admin-border" : "border-t border-sidebar-border",
           )}
         >
           {!collapsed ? (
-            <div className="mb-2 rounded-lg bg-black/5 p-3 dark:bg-white/5">
-              <p className="truncate text-sm font-medium">
-                {displayName ?? email.split("@")[0]}
-              </p>
-              <p className="truncate text-xs opacity-70">{email}</p>
+            <div
+              className={cn(
+                "mb-3 flex items-center gap-3 rounded-lg border p-3",
+                isAdmin
+                  ? "border-sidebar-admin-border bg-black/10"
+                  : "border-sidebar-border bg-muted/40",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                  isAdmin
+                    ? "bg-sidebar-admin-accent text-sidebar-admin-accent-foreground"
+                    : "bg-brand-fuchsia-light text-primary",
+                )}
+              >
+                {initials}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-semibold">{userLabel}</p>
+                <p className="truncate text-[11px] opacity-70">
+                  {isAdmin ? "Administrator" : "Student"}
+                </p>
+              </div>
             </div>
           ) : null}
           <SignOutButton

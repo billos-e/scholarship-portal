@@ -10,6 +10,7 @@ export type ExportFilters = {
   status?: string;
   semester?: string;
   semesterId?: string;
+  year?: string;
 };
 
 function dateOnly(value: Date | null | undefined): string | null {
@@ -51,10 +52,12 @@ function requestWhereFromFilters(
     where.universitySemesterId = filters.semesterId;
   } else if (filters.semester) {
     where.semesterLabel = filters.semester;
+  } else if (filters.year) {
+    where.semesterLabel = { contains: filters.year };
   }
   if (
     filters.status &&
-    ["SUBMITTED", "UNDER_REVIEW", "APPROVED", "PAID"].includes(filters.status)
+    ["SUBMITTED", "APPROVED", "PAID", "REJECTED"].includes(filters.status)
   ) {
     where.status = filters.status as RequestStatus;
   }

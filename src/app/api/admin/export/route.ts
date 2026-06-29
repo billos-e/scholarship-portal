@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     status: searchParams.get("status") || undefined,
     semester: searchParams.get("semester") || undefined,
     semesterId: searchParams.get("semesterId") || undefined,
+    year: searchParams.get("year") || undefined,
   };
 
   const rows = await fetchExportRows(dataset, filters);

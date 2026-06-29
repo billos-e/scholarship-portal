@@ -32,9 +32,9 @@ enum StudentStatus {
 
 enum RequestStatus {
   SUBMITTED
-  UNDER_REVIEW
   APPROVED
   PAID
+  REJECTED
 }
 
 enum TermCode {
@@ -181,6 +181,7 @@ model TuitionPaymentRequest {
   reviewedAt  DateTime?
   approvedAt  DateTime?
   paidAt      DateTime?
+  rejectedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

@@ -1,71 +1,58 @@
 import Image from "next/image";
+import { GraduationCap } from "lucide-react";
 
+import { BrandMark } from "@/components/layout/brand-mark";
+import { LoginFeatureList } from "./login-feature-list";
 import { LoginForm } from "./login-form";
 import { TestCredentials } from "./test-credentials";
-
-const FEATURES = [
-  {
-    title: "Semester submissions",
-    description:
-      "Submit tuition payment requests and semester reports in one flow.",
-  },
-  {
-    title: "Track your progress",
-    description:
-      "Follow your request from submission through review, approval, and payment.",
-  },
-  {
-    title: "Secure access",
-    description:
-      "Your documents and bank details are protected behind authenticated access.",
-  },
-];
 
 export default function LoginPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-primary lg:flex lg:flex-col">
+      <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
         <Image
           src="/images/login-hero.jpg"
           alt=""
           fill
-          className="object-cover opacity-40"
+          className="object-cover"
           priority
         />
-        <div className="relative z-10 flex flex-1 flex-col justify-between p-10 text-primary-foreground">
-          <div>
-            <div className="mb-8 flex size-12 items-center justify-center rounded-xl bg-white/20 text-lg font-bold backdrop-blur">
-              SP
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/70" />
+
+        <div className="relative z-10 flex flex-1 flex-col justify-between p-12 text-white">
+          <div className="flex items-center gap-3">
+            <span className="flex size-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
+              <GraduationCap className="size-6 text-white" />
+            </span>
+            <span className="font-heading text-2xl font-bold">
               Scholarship Portal
+            </span>
+          </div>
+
+          <div className="max-w-md space-y-4">
+            <h1 className="font-heading text-[2.5rem] font-bold leading-tight text-white">
+              Your scholarship,
+              <br />
+              simplified.
             </h1>
-            <p className="mt-2 max-w-md text-primary-foreground/90">
-              Manage semester tuition requests and academic reports for
-              scholarship students.
+            <p className="text-lg text-white/75">
+              Manage your scholarship journey in one secure place.
             </p>
           </div>
 
-          <ul className="space-y-6">
-            {FEATURES.map((feature) => (
-              <li key={feature.title} className="max-w-sm">
-                <p className="font-semibold">{feature.title}</p>
-                <p className="mt-1 text-sm text-primary-foreground/80">
-                  {feature.description}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <LoginFeatureList />
+
+          <p className="text-xs text-white/35">
+            Scholarship management portal
+          </p>
         </div>
       </div>
 
-      <div className="flex flex-col justify-center px-6 py-12 sm:px-12">
+      <div className="flex flex-col justify-center bg-background px-6 py-12 sm:px-12 lg:px-16">
         <div className="mx-auto w-full max-w-sm space-y-8">
           <div className="lg:hidden">
-            <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
-              SP
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <BrandMark size="md" className="mb-4" />
+            <h1 className="font-heading text-2xl font-bold tracking-tight">
               Scholarship Portal
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -73,8 +60,8 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="hidden lg:block">
-            <h2 className="text-2xl font-semibold tracking-tight">
+          <div className="hidden space-y-2 lg:block">
+            <h2 className="font-heading text-[1.75rem] font-bold tracking-tight">
               Welcome back
             </h2>
             <p className="text-sm text-muted-foreground">

@@ -3,13 +3,14 @@ import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-type Tone = "primary" | "success" | "warning" | "info";
+type Tone = "primary" | "success" | "warning" | "info" | "accent";
 
 const TONE_CLASS: Record<Tone, string> = {
-  primary: "bg-primary/10 text-primary",
+  primary: "bg-brand-fuchsia-light text-primary",
   success: "bg-success-light text-success",
   warning: "bg-warning-light text-warning",
   info: "bg-info-light text-info",
+  accent: "bg-brand-orange-light text-accent",
 };
 
 type StatCardProps = {
@@ -30,12 +31,12 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card className={cn("", className)}>
-      <CardContent className="flex items-start gap-4 py-5">
+    <Card className={cn("border-border shadow-none", className)}>
+      <CardContent className="flex items-start gap-4 py-6">
         {Icon ? (
           <div
             className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-lg",
+              "flex size-11 shrink-0 items-center justify-center rounded-[10px]",
               TONE_CLASS[tone],
             )}
           >
@@ -43,8 +44,10 @@ export function StatCard({
           </div>
         ) : null}
         <div className="min-w-0">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-semibold tracking-tight">{value}</p>
+          <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
+          <p className="font-heading text-[1.75rem] font-bold leading-tight tracking-tight">
+            {value}
+          </p>
           {subtext ? (
             <p className="mt-0.5 text-xs text-muted-foreground">{subtext}</p>
           ) : null}

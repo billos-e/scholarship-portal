@@ -4,7 +4,7 @@ import { Pencil } from "lucide-react";
 
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageHeader } from "@/components/layout/page-header";
-import { StatusBadge } from "@/components/status-badge";
+import { PaymentRequestsTable } from "@/components/payment-requests-table";
 import { StudentStatusBadge } from "@/components/student-status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,16 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth/session";
-import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { ArchiveStudentButton } from "./archive-student-button";
 import { StudentPasswordForm } from "./student-password-form";
@@ -154,37 +145,16 @@ export default async function StudentDetailPage({
           {student.tuitionPaymentRequests.length === 0 ? (
             <p className="text-sm text-muted-foreground">No requests yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Semester</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {student.tuitionPaymentRequests.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell>
-                      <Link
-                        href={`/admin/requests/${r.id}`}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {r.semesterLabel}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(r.amountDue.toString())}
-                    </TableCell>
-                    <TableCell>{formatDate(r.submittedAt)}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={r.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <PaymentRequestsTable
+              rows={student.tuitionPaymentRequests.map((request) => ({
+                id: request.id,
+                semesterLabel: request.semesterLabel,
+                amountDue: request.amountDue.toString(),
+                submittedAt: request.submittedAt.toISOString(),
+                status: request.status,
+                href: `/admin/requests/${request.id}`,
+              }))}
+            />
           )}
         </CardContent>
       </Card>

@@ -1,14 +1,16 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  FileText,
+  ClipboardList,
   History,
+  Plus,
   User,
 } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
-import { StatCard } from "@/components/stat-card";
+import { PaymentRequestsTable } from "@/components/payment-requests-table";
+import { QuickActionCard } from "@/components/quick-action-card";
 import { StatusStepper } from "@/components/status-stepper";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -19,20 +21,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireStudent } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
+function greetingForHour(hour: number): string {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default async function StudentDashboard() {
   const { student } = await requireStudent();
+  const hour = new Date().getHours();
 
   const [latestRequest, recentRequests] = await Promise.all([
     prisma.tuitionPaymentRequest.findFirst({
@@ -46,52 +47,55 @@ export default async function StudentDashboard() {
     }),
   ]);
 
+  const semesterHint =
+    latestRequest?.semesterLabel ??
+    student.currentSemesterLabel ??
+    "Current semester";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
-        title={`Welcome, ${student.firstName}`}
-        description={`${student.university?.name ?? "No university set"} · ${student.degreeProgram ?? "—"}`}
+        size="lg"
+        title={`${greetingForHour(hour)}, ${student.firstName}`}
+        description={`${semesterHint} · ${student.university?.name ?? "No university set"}`}
         actions={
-          <Button render={<Link href="/student/submit" />}>
+          <Button className="h-11 gap-2 px-5" render={<Link href="/student/submit" />}>
+            <Plus className="size-4" />
             New Submission
-            <ArrowRight />
           </Button>
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Payment Request</CardTitle>
-          <CardDescription>
-            The status of your most recent semester submission.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <Card className="border-border shadow-none">
+        <CardContent className="flex flex-col gap-6 p-7 lg:flex-row lg:items-center lg:justify-between">
           {latestRequest ? (
             <>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    {latestRequest.semesterLabel}
+              <div className="min-w-0 flex-1 space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[13px] font-medium text-muted-foreground">
+                    Current Payment Request
                   </p>
-                  <p className="text-2xl font-semibold">
+                  <StatusBadge status={latestRequest.status} />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="font-heading text-xl font-bold">
+                    {latestRequest.semesterLabel} Tuition Payment
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Submitted on {formatDate(latestRequest.submittedAt)} · Amount:{" "}
                     {formatCurrency(latestRequest.amountDue.toString())}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Due {formatDate(latestRequest.dueDate)}
-                  </p>
                 </div>
-                <StatusBadge status={latestRequest.status} />
+                <StatusStepper status={latestRequest.status} variant="dots" />
               </div>
-              <StatusStepper status={latestRequest.status} />
               <Button
                 variant="outline"
-                size="sm"
+                className="h-10 shrink-0 px-4"
                 render={
                   <Link href={`/student/history/${latestRequest.id}`} />
                 }
               >
-                View details
+                View Details
               </Button>
             </>
           ) : (
@@ -108,38 +112,35 @@ export default async function StudentDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <Link href="/student/profile" className="block">
-          <StatCard
-            label="My Profile"
-            value="View"
-            subtext="Contact & bank details"
+          <QuickActionCard
+            title="My Profile"
+            description="Update contact & bank info"
             icon={User}
-            className="h-full transition-colors hover:border-primary/30"
+            tone="primary"
           />
         </Link>
         <Link href="/student/submit" className="block">
-          <StatCard
-            label="Semester Submission"
-            value="Submit"
-            subtext="Tuition & report"
-            icon={FileText}
-            className="h-full transition-colors hover:border-primary/30"
+          <QuickActionCard
+            title="Semester Submission"
+            description="Tuition payment & academic report"
+            icon={ClipboardList}
+            tone="accent"
           />
         </Link>
         <Link href="/student/history" className="block">
-          <StatCard
-            label="Payment History"
-            value={recentRequests.length}
-            subtext="Past submissions"
+          <QuickActionCard
+            title="Payment History"
+            description="View past submissions & status"
             icon={History}
-            className="h-full transition-colors hover:border-primary/30"
+            tone="info"
           />
         </Link>
       </div>
 
       {recentRequests.length > 0 ? (
-        <Card>
+        <Card className="border-border shadow-none">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Recent Submissions</CardTitle>
@@ -151,40 +152,20 @@ export default async function StudentDashboard() {
               render={<Link href="/student/history" />}
             >
               View all
+              <ArrowRight />
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Semester</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentRequests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell>
-                      <Link
-                        href={`/student/history/${request.id}`}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {request.semesterLabel}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(request.amountDue.toString())}
-                    </TableCell>
-                    <TableCell>{formatDate(request.submittedAt)}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={request.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <PaymentRequestsTable
+              rows={recentRequests.map((request) => ({
+                id: request.id,
+                semesterLabel: request.semesterLabel,
+                amountDue: request.amountDue.toString(),
+                submittedAt: request.submittedAt.toISOString(),
+                status: request.status,
+                href: `/student/history/${request.id}`,
+              }))}
+            />
           </CardContent>
         </Card>
       ) : null}

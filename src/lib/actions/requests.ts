@@ -13,18 +13,16 @@ export type RequestActionState = {
 };
 
 /**
- * Allowed status transitions for admins (plan §5.1):
- *   SUBMITTED    -> UNDER_REVIEW
- *   UNDER_REVIEW -> APPROVED
- *   APPROVED     -> PAID
- *
- * Backwards moves are also allowed (e.g. APPROVED -> UNDER_REVIEW) so a
- * mistake can be corrected, but jumping forward more than one step is not.
+ * Allowed status transitions for admins:
+ *   SUBMITTED -> APPROVED | REJECTED
+ *   APPROVED  -> PAID | SUBMITTED | REJECTED
+ *   REJECTED  -> SUBMITTED | APPROVED
+ *   PAID      -> (terminal)
  */
 const NEXT_STATUS: Record<RequestStatus, RequestStatus[]> = {
-  SUBMITTED: ["UNDER_REVIEW"],
-  UNDER_REVIEW: ["APPROVED", "SUBMITTED"],
-  APPROVED: ["PAID", "UNDER_REVIEW"],
+  SUBMITTED: ["APPROVED", "REJECTED"],
+  APPROVED: ["PAID", "SUBMITTED", "REJECTED"],
+  REJECTED: ["SUBMITTED", "APPROVED"],
   PAID: [],
 };
 
@@ -38,14 +36,9 @@ function pathsToRevalidate(requestId: string) {
   revalidatePath(`/admin/requests/${requestId}`);
 }
 
-/**
- * Updates the request status. The `paymentDate` field is only consumed when
- * the target status is `PAID`; it controls the `PaymentHistory.paymentDate`
- * row created by this action.
- */
 const transitionSchema = z.object({
   requestId: z.string().min(1, "Missing request id."),
-  nextStatus: z.enum(["SUBMITTED", "UNDER_REVIEW", "APPROVED", "PAID"]),
+  nextStatus: z.enum(["SUBMITTED", "APPROVED", "PAID", "REJECTED"]),
   paymentDate: z.string().trim().optional(),
 });
 
@@ -84,14 +77,18 @@ export async function transitionRequestStatus(
     status: nextStatus,
   };
 
-  if (nextStatus === "UNDER_REVIEW" && !request.reviewedAt) {
-    updates.reviewedAt = now;
-  }
   if (nextStatus === "APPROVED" && !request.approvedAt) {
     updates.approvedAt = now;
+    if (!request.reviewedAt) updates.reviewedAt = now;
+  }
+  if (nextStatus === "REJECTED" && !request.rejectedAt) {
+    updates.rejectedAt = now;
   }
   if (nextStatus === "PAID" && !request.paidAt) {
     updates.paidAt = now;
+  }
+  if (nextStatus === "SUBMITTED") {
+    updates.rejectedAt = null;
   }
 
   if (nextStatus === "PAID") {
@@ -132,10 +129,15 @@ export async function transitionRequestStatus(
       return { error: "Could not mark this request as paid." };
     }
   } else {
-    await prisma.tuitionPaymentRequest.update({
-      where: { id: request.id },
-      data: updates,
-    });
+    try {
+      await prisma.tuitionPaymentRequest.update({
+        where: { id: request.id },
+        data: updates,
+      });
+    } catch (err) {
+      console.error("transitionRequestStatus failed", err);
+      return { error: "Could not update this request status." };
+    }
   }
 
   pathsToRevalidate(request.id);

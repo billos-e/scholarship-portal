@@ -9,6 +9,7 @@ import {
   MOBILE_ADMIN_NAV,
   MOBILE_STUDENT_NAV,
 } from "@/components/layout/app-sidebar";
+import { BrandMark } from "@/components/layout/brand-mark";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,12 +39,10 @@ export function MobileNav({ variant }: MobileNavProps) {
   if (variant === "admin") {
     return (
       <>
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-card px-4 md:hidden">
           <Link href="/admin" className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-              SP
-            </span>
-            <span className="font-semibold">Admin</span>
+            <BrandMark variant="admin" size="sm" />
+            <span className="font-heading font-semibold">Admin</span>
           </Link>
           <Button
             size="icon"
@@ -98,7 +97,7 @@ export function MobileNav({ variant }: MobileNavProps) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card md:hidden"
       aria-label="Mobile navigation"
     >
       <div className="flex items-stretch justify-around">

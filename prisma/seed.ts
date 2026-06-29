@@ -1,4 +1,10 @@
-import { PrismaClient, RequestStatus, StudentStatus, TermCode } from "@prisma/client";
+import {
+  PrismaClient,
+  RequestStatus,
+  StudentStatus,
+  TermCode,
+  type UniversitySemester,
+} from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -26,6 +32,107 @@ async function upsertSemester(
   return prisma.universitySemester.create({
     data: { universityId, ...data, isActive: true },
   });
+}
+
+async function seedRequest(
+  studentId: string,
+  semester: UniversitySemester,
+  status: RequestStatus,
+  amountDue: number,
+  submittedAt: Date,
+) {
+  const existing = await prisma.tuitionPaymentRequest.findFirst({
+    where: {
+      studentId,
+      universitySemesterId: semester.id,
+    },
+  });
+  if (existing) return existing;
+
+  const bank = await prisma.bankInformation.findUnique({
+    where: { studentId },
+  });
+
+  const reviewedAt =
+    status === "APPROVED" || status === "PAID"
+      ? new Date(submittedAt.getTime() + 2 * 24 * 60 * 60 * 1000)
+      : null;
+  const approvedAt =
+    status === "APPROVED" || status === "PAID"
+      ? new Date(submittedAt.getTime() + 5 * 24 * 60 * 60 * 1000)
+      : null;
+  const paidAt =
+    status === "PAID"
+      ? new Date(submittedAt.getTime() + 10 * 24 * 60 * 60 * 1000)
+      : null;
+  const rejectedAt =
+    status === "REJECTED"
+      ? new Date(submittedAt.getTime() + 4 * 24 * 60 * 60 * 1000)
+      : null;
+
+  const request = await prisma.tuitionPaymentRequest.create({
+    data: {
+      studentId,
+      semesterLabel: semester.label,
+      universitySemesterId: semester.id,
+      amountDue,
+      dueDate: new Date(semester.startDate.getTime() + 30 * 24 * 60 * 60 * 1000),
+      status,
+      submittedAt,
+      reviewedAt,
+      approvedAt,
+      paidAt,
+      rejectedAt,
+      bankAccountName: bank?.bankAccountName,
+      bankAccountNumber: bank?.bankAccountNumber,
+      bankName: bank?.bankName,
+      promptpayNumber: bank?.promptpayNumber,
+    },
+  });
+
+  if (status !== "SUBMITTED") {
+    const student = await prisma.student.findUniqueOrThrow({
+      where: { id: studentId },
+    });
+
+    await prisma.semesterReport.create({
+      data: {
+        studentId,
+        tuitionPaymentRequestId: request.id,
+        semesterLabel: semester.label,
+        universitySemesterId: semester.id,
+        gpa: Number(student.gpa ?? 3.2),
+        creditsCompleted: 15 + (submittedAt.getMonth() % 6),
+        passedAllCourses: true,
+        wellbeingPhysical: 3 + (submittedAt.getMonth() % 3),
+        wellbeingMental: 3,
+        wellbeingFinancial: 2,
+        wellbeingStress: 3,
+        wellbeingConfidence: 4,
+        challenges: ["financial"],
+        activities: ["volunteering"],
+        reflectionAchievement: `Completed ${semester.label} coursework successfully.`,
+        reflectionChallenge: "Managing time between classes and part-time work.",
+        reflectionAdditional: "Thank you for the continued scholarship support.",
+      },
+    });
+  }
+
+  if (status === "PAID") {
+    await prisma.paymentHistory.create({
+      data: {
+        studentId,
+        tuitionPaymentRequestId: request.id,
+        semesterLabel: semester.label,
+        amountPaid: amountDue,
+        paymentStatus: "PAID",
+        paymentDate: paidAt ?? submittedAt,
+        internalNotes: `Paid for ${semester.label}.`,
+      },
+    });
+  }
+
+  return request;
 }
 
 async function main() {
@@ -84,37 +191,44 @@ async function main() {
     },
   });
 
-  const fall2026 = await upsertSemester(chula.id, {
-    academicYear: "2026",
-    termCode: "FALL",
-    label: "Fall 2026",
-    startDate: new Date("2026-08-15"),
-    endDate: new Date("2026-12-15"),
-  });
+  const semesterDefs: Array<{
+    universityId: string;
+    academicYear: string;
+    termCode: TermCode;
+    label: string;
+    startDate: string;
+    endDate: string;
+  }> = [
+    { universityId: chula.id, academicYear: "2024", termCode: "FALL", label: "Fall 2024", startDate: "2024-08-15", endDate: "2024-12-15" },
+    { universityId: chula.id, academicYear: "2025", termCode: "SPRING", label: "Spring 2025", startDate: "2025-01-10", endDate: "2025-05-20" },
+    { universityId: chula.id, academicYear: "2025", termCode: "FALL", label: "Fall 2025", startDate: "2025-08-15", endDate: "2025-12-15" },
+    { universityId: chula.id, academicYear: "2026", termCode: "SPRING", label: "Spring 2026", startDate: "2026-01-10", endDate: "2026-05-20" },
+    { universityId: chula.id, academicYear: "2026", termCode: "SUMMER", label: "Summer 2026", startDate: "2026-06-01", endDate: "2026-07-31" },
+    { universityId: chula.id, academicYear: "2026", termCode: "FALL", label: "Fall 2026", startDate: "2026-08-15", endDate: "2026-12-15" },
+    { universityId: chula.id, academicYear: "2027", termCode: "SPRING", label: "Spring 2027", startDate: "2027-01-10", endDate: "2027-05-20" },
+    { universityId: mahidol.id, academicYear: "2024", termCode: "FALL", label: "Fall 2024", startDate: "2024-08-20", endDate: "2024-12-10" },
+    { universityId: mahidol.id, academicYear: "2025", termCode: "SPRING", label: "Spring 2025", startDate: "2025-01-15", endDate: "2025-05-15" },
+    { universityId: mahidol.id, academicYear: "2025", termCode: "FALL", label: "Fall 2025", startDate: "2025-08-20", endDate: "2025-12-10" },
+    { universityId: mahidol.id, academicYear: "2026", termCode: "SPRING", label: "Spring 2026", startDate: "2026-01-15", endDate: "2026-05-15" },
+    { universityId: mahidol.id, academicYear: "2026", termCode: "FALL", label: "Fall 2026", startDate: "2026-08-20", endDate: "2026-12-10" },
+  ];
 
-  await upsertSemester(chula.id, {
-    academicYear: "2027",
-    termCode: "SPRING",
-    label: "Spring 2027",
-    startDate: new Date("2027-01-10"),
-    endDate: new Date("2027-05-20"),
-  });
+  const semesters: UniversitySemester[] = [];
+  for (const def of semesterDefs) {
+    semesters.push(
+      await upsertSemester(def.universityId, {
+        academicYear: def.academicYear,
+        termCode: def.termCode,
+        label: def.label,
+        startDate: new Date(def.startDate),
+        endDate: new Date(def.endDate),
+      }),
+    );
+  }
 
-  await upsertSemester(chula.id, {
-    academicYear: "2026",
-    termCode: "SUMMER",
-    label: "Summer 2026",
-    startDate: new Date("2026-06-01"),
-    endDate: new Date("2026-07-31"),
-  });
-
-  await upsertSemester(mahidol.id, {
-    academicYear: "2026",
-    termCode: "FALL",
-    label: "Fall 2026",
-    startDate: new Date("2026-08-20"),
-    endDate: new Date("2026-12-10"),
-  });
+  const fall2026 = semesters.find(
+    (s) => s.label === "Fall 2026" && s.universityId === chula.id,
+  )!;
 
   const universities = [chula, mahidol];
   const semesterLabel = fall2026.label;
@@ -126,6 +240,8 @@ async function main() {
     { first: "Niran", last: "Boonmee", program: "Business Administration", year: "4", gpa: 2.95 },
     { first: "Pimchanok", last: "Srisuk", program: "Public Health", year: "2", gpa: 3.55 },
     { first: "Somchai", last: "Wattana", program: "Mechanical Engineering", year: "3", gpa: 3.0 },
+    { first: "Siriporn", last: "Kaewta", program: "Law", year: "2", gpa: 3.45 },
+    { first: "Thanawat", last: "Rattanakul", program: "Architecture", year: "3", gpa: 3.28 },
   ];
 
   const createdStudents = [];
@@ -174,7 +290,7 @@ async function main() {
       },
     });
 
-    createdStudents.push(student);
+    createdStudents.push({ student, universityId: university.id, name: `${s.first} ${s.last}` });
   }
 
   const gradUser = await prisma.user.upsert({
@@ -231,96 +347,41 @@ async function main() {
     },
   });
 
-  const statuses: RequestStatus[] = [
-    RequestStatus.SUBMITTED,
-    RequestStatus.UNDER_REVIEW,
+  const statusCycle: RequestStatus[] = [
+    RequestStatus.PAID,
+    RequestStatus.PAID,
     RequestStatus.APPROVED,
+    RequestStatus.REJECTED,
+    RequestStatus.SUBMITTED,
   ];
 
-  for (let i = 0; i < statuses.length; i++) {
-    const student = createdStudents[i];
-    const bank = await prisma.bankInformation.findUnique({
-      where: { studentId: student.id },
-    });
+  let submissionCount = 0;
+  const submissionLabels = ["Fall 2025", "Spring 2026", "Fall 2026"];
 
-    const existing = await prisma.tuitionPaymentRequest.findFirst({
-      where: { studentId: student.id, semesterLabel },
-    });
-    if (existing) continue;
+  for (const { student, universityId, name } of createdStudents) {
+    const uniSemesters = semesters.filter(
+      (s) =>
+        s.universityId === universityId &&
+        submissionLabels.includes(s.label),
+    );
 
-    const request = await prisma.tuitionPaymentRequest.create({
-      data: {
-        studentId: student.id,
-        semesterLabel,
-        universitySemesterId: fall2026.id,
-        amountDue: 25000,
-        dueDate: new Date("2026-09-15"),
-        status: statuses[i],
-        reviewedAt: i >= 1 ? new Date() : null,
-        approvedAt: i >= 2 ? new Date() : null,
-        bankAccountName: bank?.bankAccountName,
-        bankAccountNumber: bank?.bankAccountNumber,
-        bankName: bank?.bankName,
-        promptpayNumber: bank?.promptpayNumber,
-      },
-    });
+    for (let j = 0; j < uniSemesters.length; j++) {
+      const semester = uniSemesters[j];
+      const status = statusCycle[(submissionCount + j) % statusCycle.length];
+      const amount = 22000 + (j % 4) * 2500 + (submissionCount % 3) * 1000;
+      const submittedAt = new Date(semester.startDate);
+      submittedAt.setDate(submittedAt.getDate() + 14);
 
-    if (i < 2) {
-      await prisma.semesterReport.create({
-        data: {
-          studentId: student.id,
-          tuitionPaymentRequestId: request.id,
-          semesterLabel,
-          universitySemesterId: fall2026.id,
-          gpa: Number(student.gpa ?? 3.0),
-          creditsCompleted: 18,
-          passedAllCourses: true,
-          wellbeingPhysical: 4,
-          wellbeingMental: 3,
-          wellbeingFinancial: 2,
-          wellbeingStress: 3,
-          wellbeingConfidence: 4,
-          challenges: ["financial", "transportation"],
-          activities: ["volunteering", "part_time_work"],
-          reflectionAchievement: "Maintained a strong GPA while working part-time.",
-          reflectionChallenge: "Balancing study and work; built a weekly schedule.",
-          reflectionAdditional: "Grateful for the scholarship support this semester.",
-        },
-      });
+      process.stdout.write(`  → ${name} / ${semester.label}\n`);
+      await seedRequest(student.id, semester, status, amount, submittedAt);
     }
-  }
 
-  const paidStudent = createdStudents[3];
-  const paidExisting = await prisma.tuitionPaymentRequest.findFirst({
-    where: { studentId: paidStudent.id, semesterLabel: "Spring 2026" },
-  });
-  if (!paidExisting) {
-    const paidRequest = await prisma.tuitionPaymentRequest.create({
-      data: {
-        studentId: paidStudent.id,
-        semesterLabel: "Spring 2026",
-        amountDue: 30000,
-        dueDate: new Date("2026-02-15"),
-        status: RequestStatus.PAID,
-        reviewedAt: new Date("2026-01-20"),
-        approvedAt: new Date("2026-01-25"),
-        paidAt: new Date("2026-02-01"),
-      },
-    });
-    await prisma.paymentHistory.create({
-      data: {
-        studentId: paidStudent.id,
-        tuitionPaymentRequestId: paidRequest.id,
-        semesterLabel: "Spring 2026",
-        amountPaid: 30000,
-        paymentStatus: "PAID",
-        paymentDate: new Date("2026-02-01"),
-        internalNotes: "Transfer completed via Bangkok Bank.",
-      },
-    });
+    submissionCount += 1;
   }
 
   console.log("Seed complete.");
+  console.log(`  Semesters: ${semesters.length}`);
+  console.log(`  Students:  ${createdStudents.length} active (+2 inactive/graduated)`);
   console.log("  Admin:   admin@example.com / password123");
   console.log("  Student: anong.saetang@example.com / password123");
 }
