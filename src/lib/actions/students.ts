@@ -5,53 +5,39 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/password";
+import { generateSecurePassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import {
+  readStudentProfileFromFormData,
+  validateStudentProfileCreate,
+  validateStudentProfileEdit,
+  type StudentProfileCreateData,
+  type StudentProfileFormData,
+} from "@/lib/validations/student-profile";
+import { validateUniversityContext } from "@/lib/validations/student-university";
 
 export type ActionState = {
   error?: string;
   success?: boolean;
+  generatedPassword?: string;
 };
 
-function optionalString(value: FormDataEntryValue | null): string | undefined {
-  const s = (value as string | null)?.trim();
-  return s && s.length > 0 ? s : undefined;
-}
-
-function optionalGpa(value: FormDataEntryValue | null): number | undefined {
-  const s = (value as string | null)?.trim();
-  if (!s) return undefined;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-const statusEnum = z.enum(["ACTIVE", "GRADUATED", "INACTIVE"]);
-
-const profileSchema = z.object({
-  firstName: z.string().trim().min(1, "First name is required."),
-  lastName: z.string().trim().min(1, "Last name is required."),
-  studentId: z.string().trim().optional(),
-  phone: z.string().trim().optional(),
-  universityId: z.string().trim().optional(),
-  degreeProgram: z.string().trim().optional(),
-  yearOfStudy: z.string().trim().optional(),
-  currentSemesterLabel: z.string().trim().optional(),
-  gpa: z.number().min(0).max(4).optional(),
-  status: statusEnum,
-});
-
-function parseProfile(formData: FormData) {
-  return profileSchema.safeParse({
-    firstName: formData.get("firstName"),
-    lastName: formData.get("lastName"),
-    studentId: optionalString(formData.get("studentId")),
-    phone: optionalString(formData.get("phone")),
-    universityId: optionalString(formData.get("universityId")),
-    degreeProgram: optionalString(formData.get("degreeProgram")),
-    yearOfStudy: optionalString(formData.get("yearOfStudy")),
-    currentSemesterLabel: optionalString(formData.get("currentSemesterLabel")),
-    gpa: optionalGpa(formData.get("gpa")),
-    status: formData.get("status") ?? "ACTIVE",
-  });
+function profileToStudentData(
+  data: StudentProfileFormData | StudentProfileCreateData,
+) {
+  const { universityId, ...rest } = data;
+  return {
+    firstName: rest.firstName || "",
+    lastName: rest.lastName || "",
+    studentId: rest.studentId ?? null,
+    phone: rest.phone ?? null,
+    degreeProgram: rest.degreeProgram ?? null,
+    yearOfStudy: rest.yearOfStudy ?? null,
+    currentSemesterLabel: rest.currentSemesterLabel ?? null,
+    gpa: rest.gpa ?? null,
+    status: rest.status,
+    universityId: universityId ?? null,
+  };
 }
 
 export async function createStudent(
@@ -61,21 +47,24 @@ export async function createStudent(
   await requireAdmin();
 
   const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const password = formData.get("password") as string;
-
-  const credsCheck = z
-    .object({
-      email: z.string().email("A valid email is required."),
-      password: z.string().min(8, "Temporary password must be at least 8 characters."),
-    })
-    .safeParse({ email, password });
-  if (!credsCheck.success) {
-    return { error: credsCheck.error.issues[0]?.message ?? "Invalid input." };
+  const emailCheck = z
+    .string()
+    .email("A valid email is required.")
+    .safeParse(email);
+  if (!emailCheck.success) {
+    return { error: emailCheck.error.issues[0]?.message ?? "Invalid email." };
   }
 
-  const parsed = parseProfile(formData);
+  const parsed = validateStudentProfileCreate(
+    readStudentProfileFromFormData(formData),
+  );
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { error: parsed.error };
+  }
+
+  const contextError = await validateUniversityContext(parsed.data);
+  if (contextError) {
+    return { error: contextError };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -90,20 +79,19 @@ export async function createStudent(
     if (dupId) return { error: "This Student ID is already in use." };
   }
 
+  const password = generateSecurePassword();
   const passwordHash = await hashPassword(password);
-  const { universityId, ...profile } = parsed.data;
+  const studentData = profileToStudentData(parsed.data);
 
   await prisma.user.create({
     data: {
       email,
       passwordHash,
       role: "STUDENT",
-      isActive: profile.status === "ACTIVE",
+      isActive: studentData.status === "ACTIVE",
       student: {
         create: {
-          ...profile,
-          gpa: parsed.data.gpa ?? null,
-          university: universityId ? { connect: { id: universityId } } : undefined,
+          ...studentData,
           bankInformation: { create: {} },
         },
       },
@@ -111,7 +99,7 @@ export async function createStudent(
   });
 
   revalidatePath("/admin/students");
-  return { success: true };
+  return { success: true, generatedPassword: password };
 }
 
 export async function updateStudent(
@@ -123,9 +111,16 @@ export async function updateStudent(
   const id = formData.get("id") as string;
   if (!id) return { error: "Missing student id." };
 
-  const parsed = parseProfile(formData);
+  const parsed = validateStudentProfileEdit(readStudentProfileFromFormData(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { error: parsed.error };
+  }
+
+  const contextError = await validateUniversityContext(parsed.data, {
+    studentId: id,
+  });
+  if (contextError) {
+    return { error: contextError };
   }
 
   const student = await prisma.student.findUnique({ where: { id } });
@@ -138,16 +133,12 @@ export async function updateStudent(
     if (dupId) return { error: "This Student ID is already in use." };
   }
 
-  // Status drives login access: only ACTIVE students can sign in.
-  const { universityId, ...rest } = parsed.data;
+  const studentData = profileToStudentData(parsed.data);
+
   await prisma.$transaction([
     prisma.student.update({
       where: { id },
-      data: {
-        ...rest,
-        gpa: parsed.data.gpa ?? null,
-        universityId: universityId ?? null,
-      },
+      data: studentData,
     }),
     prisma.user.update({
       where: { id: student.userId },
@@ -167,6 +158,11 @@ const bankSchema = z.object({
   bankName: z.string().trim().optional(),
   promptpayNumber: z.string().trim().optional(),
 });
+
+function optionalString(value: FormDataEntryValue | null): string | undefined {
+  const s = (value as string | null)?.trim();
+  return s && s.length > 0 ? s : undefined;
+}
 
 export async function updateStudentBank(
   _prev: ActionState,
@@ -217,6 +213,114 @@ export async function resetStudentPassword(
   const passwordHash = await hashPassword(password);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
 
+  return { success: true };
+}
+
+export async function saveStudentEdit(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  const userId = formData.get("userId") as string;
+  if (!id || !userId) return { error: "Missing student id." };
+
+  const parsed = validateStudentProfileEdit(
+    readStudentProfileFromFormData(formData),
+  );
+  if (!parsed.success) {
+    return { error: parsed.error };
+  }
+
+  const contextError = await validateUniversityContext(parsed.data, {
+    studentId: id,
+  });
+  if (contextError) {
+    return { error: contextError };
+  }
+
+  const student = await prisma.student.findUnique({ where: { id } });
+  if (!student) return { error: "Student not found." };
+
+  if (parsed.data.studentId) {
+    const dupId = await prisma.student.findFirst({
+      where: { studentId: parsed.data.studentId, NOT: { id } },
+    });
+    if (dupId) return { error: "This Student ID is already in use." };
+  }
+
+  const bankParsed = bankSchema.safeParse({
+    bankAccountName: optionalString(formData.get("bankAccountName")),
+    bankAccountNumber: optionalString(formData.get("bankAccountNumber")),
+    bankName: optionalString(formData.get("bankName")),
+    promptpayNumber: optionalString(formData.get("promptpayNumber")),
+  });
+  if (!bankParsed.success) {
+    return { error: "Invalid bank information." };
+  }
+
+  const password = optionalString(formData.get("password"));
+  if (password) {
+    const passwordCheck = z
+      .string()
+      .min(8, "New password must be at least 8 characters.")
+      .safeParse(password);
+    if (!passwordCheck.success) {
+      return {
+        error:
+          passwordCheck.error.issues[0]?.message ?? "Invalid password.",
+      };
+    }
+  }
+
+  const file = formData.get("photo");
+  let photoUrl: string | undefined;
+  if (file instanceof File && file.size > 0) {
+    const { validateUpload, saveStudentUpload } = await import("@/lib/uploads");
+    const check = validateUpload(file, "profile-photo");
+    if (!check.ok) return { error: check.error };
+
+    try {
+      photoUrl = await saveStudentUpload(file, {
+        studentId: id,
+        kind: "profile-photo",
+      });
+    } catch (err) {
+      return {
+        error: err instanceof Error ? err.message : "Failed to upload photo.",
+      };
+    }
+  }
+
+  const studentData = profileToStudentData(parsed.data);
+  const passwordHash = password ? await hashPassword(password) : undefined;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.student.update({
+      where: { id },
+      data: {
+        ...studentData,
+        ...(photoUrl ? { photoUrl } : {}),
+      },
+    });
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        isActive: parsed.data.status === "ACTIVE",
+        ...(passwordHash ? { passwordHash } : {}),
+      },
+    });
+    await tx.bankInformation.upsert({
+      where: { studentId: id },
+      update: bankParsed.data,
+      create: { studentId: id, ...bankParsed.data },
+    });
+  });
+
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${id}`);
+  revalidatePath(`/admin/students/${id}/edit`);
   return { success: true };
 }
 

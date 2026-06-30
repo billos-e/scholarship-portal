@@ -192,12 +192,14 @@ export async function createSubmission(
   // Files (all optional but validated when present).
   const invoiceFile = fileIfProvided(formData.get("invoiceFile"));
   const transcriptFile = fileIfProvided(formData.get("transcriptFile"));
-  const qrFile = fileIfProvided(formData.get("qrFile"));
+  const screenshotFile =
+    fileIfProvided(formData.get("screenshotFile")) ??
+    fileIfProvided(formData.get("qrFile"));
 
   for (const [file, kind] of [
     [invoiceFile, "invoices"] as const,
     [transcriptFile, "transcripts"] as const,
-    [qrFile, "qr"] as const,
+    [screenshotFile, "qr"] as const,
   ]) {
     if (!file) continue;
     const check = validateUpload(file, kind as UploadKind);
@@ -221,8 +223,8 @@ export async function createSubmission(
         kind: "transcripts",
       });
     }
-    if (qrFile) {
-      qrPaymentImageUrl = await saveUpload(qrFile, {
+    if (screenshotFile) {
+      qrPaymentImageUrl = await saveUpload(screenshotFile, {
         studentId: student.id,
         kind: "qr",
       });

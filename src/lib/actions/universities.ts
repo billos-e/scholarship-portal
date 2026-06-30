@@ -10,6 +10,7 @@ import { saveUniversityImage, validateUpload } from "@/lib/uploads";
 export type ActionState = {
   error?: string;
   success?: boolean;
+  universityId?: string;
 };
 
 const universitySchema = z.object({
@@ -32,7 +33,9 @@ function parseForm(formData: FormData) {
     addressLine: (formData.get("addressLine") as string) || undefined,
     websiteUrl: website && website.length > 0 ? website : undefined,
     hasSummerSemester: formData.get("hasSummerSemester") === "on",
-    isActive: formData.get("isActive") === "on",
+    isActive: formData.has("isActive")
+      ? formData.get("isActive") === "on"
+      : true,
     notes: (formData.get("notes") as string) || undefined,
   });
 }
@@ -55,9 +58,10 @@ export async function createUniversity(
     return { error: "A university with this name already exists." };
   }
 
-  await prisma.university.create({ data: parsed.data });
+  const university = await prisma.university.create({ data: parsed.data });
   revalidatePath("/admin/universities");
-  return { success: true };
+  revalidatePath(`/admin/universities/${university.id}`);
+  return { success: true, universityId: university.id };
 }
 
 export async function updateUniversity(
@@ -84,6 +88,7 @@ export async function updateUniversity(
   await prisma.university.update({ where: { id }, data: parsed.data });
   revalidatePath("/admin/universities");
   revalidatePath(`/admin/universities/${id}`);
+  revalidatePath(`/admin/universities/${id}/edit`);
   return { success: true };
 }
 
@@ -114,6 +119,7 @@ export async function uploadUniversityImage(
 
   revalidatePath(`/admin/universities/${id}`);
   revalidatePath("/admin/universities");
+  revalidatePath(`/admin/universities/${id}/edit`);
   return { success: true };
 }
 

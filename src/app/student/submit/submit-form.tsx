@@ -191,12 +191,23 @@ export function SubmissionForm({
             <Input id="dueDate" name="dueDate" type="date" />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="invoiceFile">Invoice (PDF / JPG / PNG, max 10 MB)</Label>
+            <Label htmlFor="invoiceFile">Invoice upload (PDF / JPG / PNG, max 10 MB)</Label>
             <Input
               id="invoiceFile"
               name="invoiceFile"
               type="file"
               accept="application/pdf,image/jpeg,image/png"
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="screenshotFile">
+              Screenshot upload (JPG / PNG, optional)
+            </Label>
+            <Input
+              id="screenshotFile"
+              name="screenshotFile"
+              type="file"
+              accept="image/jpeg,image/png"
             />
           </div>
         </div>
@@ -236,18 +247,6 @@ export function SubmissionForm({
               name="promptpayNumber"
               defaultValue={defaults.promptpayNumber}
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="qrFile">PromptPay QR image (JPG / PNG, optional)</Label>
-            <Input
-              id="qrFile"
-              name="qrFile"
-              type="file"
-              accept="image/jpeg,image/png"
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave empty to keep the QR code already on your profile.
-            </p>
           </div>
         </div>
       </section>

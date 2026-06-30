@@ -1,29 +1,52 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 
+import { ExportDialog } from "@/components/export-dialog";
 import { Button } from "@/components/ui/button";
-import type { ExportDataset } from "@/lib/export/datasets";
+import type { TableExportColumn } from "@/lib/export/table-columns";
+import type { ExportRow } from "@/lib/export/spreadsheet";
 
-type ExportButtonProps = {
-  dataset: ExportDataset;
-  params?: Record<string, string | undefined>;
+type TableExportButtonProps = {
+  columns: TableExportColumn[];
+  rows: ExportRow[];
+  filename: string;
+  sheetName?: string;
   label?: string;
+  disabled?: boolean;
 };
 
-export function ExportButton({
-  dataset,
-  params = {},
+export function TableExportButton({
+  columns,
+  rows,
+  filename,
+  sheetName,
   label = "Export",
-}: ExportButtonProps) {
-  const search = new URLSearchParams({ dataset, format: "csv" });
-  for (const [key, value] of Object.entries(params)) {
-    if (value) search.set(key, value);
-  }
-  const href = `/api/admin/export?${search.toString()}`;
+  disabled = false,
+}: TableExportButtonProps) {
+  const [open, setOpen] = useState(false);
+  const exportRows = useMemo(() => rows, [rows]);
 
   return (
-    <Button variant="outline" size="sm" render={<a href={href} download />}>
-      <Download />
-      {label}
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setOpen(true)}
+        disabled={disabled || exportRows.length === 0}
+      >
+        <Download />
+        {label}
+      </Button>
+      <ExportDialog
+        open={open}
+        onOpenChange={setOpen}
+        columns={columns}
+        rows={exportRows}
+        filename={filename}
+        sheetName={sheetName}
+      />
+    </>
   );
 }

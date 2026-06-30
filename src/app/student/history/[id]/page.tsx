@@ -173,9 +173,14 @@ export default async function StudentSubmissionDetailPage({
             <Field label="Approved" value={formatDate(request.approvedAt)} />
             <Field label="Paid" value={formatDate(request.paidAt)} />
             <FileLink
-              label="Invoice"
+              label="Invoice upload"
               url={request.invoiceFileUrl}
               icon={FileText}
+            />
+            <FileLink
+              label="Screenshot upload"
+              url={request.qrPaymentImageUrl}
+              icon={ImageIcon}
             />
           </dl>
           {payment ? (
@@ -203,11 +208,6 @@ export default async function StudentSubmissionDetailPage({
             <Field label="Account number" value={request.bankAccountNumber} />
             <Field label="Bank name" value={request.bankName} />
             <Field label="PromptPay" value={request.promptpayNumber} />
-            <FileLink
-              label="QR image"
-              url={request.qrPaymentImageUrl}
-              icon={ImageIcon}
-            />
           </dl>
         </CardContent>
       </Card>

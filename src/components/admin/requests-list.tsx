@@ -6,7 +6,7 @@ import type { RequestStatus } from "@prisma/client";
 
 import { SearchField } from "@/components/admin/search-field";
 import { ClientPagination } from "@/components/client-pagination";
-import { ExportButton } from "@/components/export-button";
+import { TableExportButton } from "@/components/export-button";
 import { EmptyState } from "@/components/empty-state";
 import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
@@ -39,19 +39,17 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTableSort } from "@/hooks/use-table-sort";
 
+import {
+  CLIENT_REQUEST_STATUSES,
+  REQUEST_STATUS_LABELS,
+} from "@/lib/request-status";
+import { REQUESTS_TABLE_COLUMNS } from "@/lib/export/table-columns";
+import { requestsToExportRows } from "@/lib/export/table-rows";
+
 const STATUS_VALUES: RequestStatus[] = [
-  "SUBMITTED",
-  "APPROVED",
-  "PAID",
+  ...CLIENT_REQUEST_STATUSES,
   "REJECTED",
 ];
-
-const STATUS_LABEL: Record<RequestStatus, string> = {
-  SUBMITTED: "Submitted",
-  APPROVED: "Approved",
-  PAID: "Paid",
-  REJECTED: "Rejected",
-};
 
 export type RequestRow = {
   id: string;
@@ -149,6 +147,16 @@ export function RequestsList({
     [sortedItems, page],
   );
 
+  const exportRows = useMemo(
+    () => requestsToExportRows(paginatedRequests),
+    [paginatedRequests],
+  );
+
+  const exportFilename = useMemo(() => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    return `payment-requests-page-${currentPage}-${stamp}`;
+  }, [currentPage]);
+
   useEffect(() => {
     setPage(1);
   }, [filters.q, filters.year, filters.semester, filters.uni, filters.status, sortKey, sortDirection]);
@@ -176,15 +184,11 @@ export function RequestsList({
         title="Payment Requests"
         description="Review submissions, update statuses, and record payments."
         actions={
-          <ExportButton
-            dataset="requests"
-            params={{
-              q: filters.q,
-              year: filters.year,
-              semester: filters.semester,
-              uni: filters.uni,
-              status: filters.status,
-            }}
+          <TableExportButton
+            columns={REQUESTS_TABLE_COLUMNS}
+            rows={exportRows}
+            filename={exportFilename}
+            sheetName="Payment requests"
           />
         }
       />
@@ -223,7 +227,7 @@ export function RequestsList({
                     : "text-muted-foreground hover:bg-muted",
                 )}
               >
-                {STATUS_LABEL[status]} ({tabCounts[index]})
+                {REQUEST_STATUS_LABELS[status]} ({tabCounts[index]})
               </button>
             ))}
           </div>

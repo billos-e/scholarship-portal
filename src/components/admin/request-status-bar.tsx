@@ -20,29 +20,31 @@ import {
   transitionRequestStatus,
   type RequestActionState,
 } from "@/lib/actions/requests";
+import {
+  CLIENT_REQUEST_STATUSES,
+  REQUEST_STATUS_LABELS,
+  requestStatusIndex,
+} from "@/lib/request-status";
 import { cn } from "@/lib/utils";
 
-const WORKFLOW_STEPS = ["Submitted", "Validation", "Payment"] as const;
-
-type StepVisual = "done" | "current" | "upcoming" | "approved" | "rejected";
+type StepVisual = "done" | "current" | "upcoming" | "rejected";
 
 function getStepVisuals(status: RequestStatus): StepVisual[] {
-  switch (status) {
-    case "SUBMITTED":
-      return ["current", "upcoming", "upcoming"];
-    case "APPROVED":
-      return ["done", "approved", "current"];
-    case "REJECTED":
-      return ["done", "rejected", "upcoming"];
-    case "PAID":
-      return ["done", "approved", "done"];
-    default:
-      return ["upcoming", "upcoming", "upcoming"];
+  if (status === "REJECTED") {
+    return ["done", "rejected", "upcoming", "upcoming"];
   }
+
+  const index = requestStatusIndex(status);
+  return CLIENT_REQUEST_STATUSES.map((_, stepIndex) => {
+    if (index < 0) return "upcoming";
+    if (stepIndex < index) return "done";
+    if (stepIndex === index) return index === CLIENT_REQUEST_STATUSES.length - 1 ? "done" : "current";
+    return "upcoming";
+  });
 }
 
 function connectorFilled(left: StepVisual): boolean {
-  return left === "done" || left === "approved" || left === "rejected";
+  return left === "done";
 }
 
 function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
@@ -53,13 +55,14 @@ function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
       className="flex min-w-0 flex-1 items-center"
       aria-label="Request workflow progress"
     >
-      {WORKFLOW_STEPS.map((label, index) => {
+      {CLIENT_REQUEST_STATUSES.map((stepStatus, index) => {
         const visual = visuals[index]!;
         const prevVisual = index > 0 ? visuals[index - 1]! : null;
+        const label = REQUEST_STATUS_LABELS[stepStatus];
 
         return (
           <li
-            key={label}
+            key={stepStatus}
             className="flex flex-1 flex-col items-center gap-1.5"
             aria-current={visual === "current" ? "step" : undefined}
           >
@@ -80,15 +83,11 @@ function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
 
               <StepCircle visual={visual} index={index} />
 
-              {index < WORKFLOW_STEPS.length - 1 ? (
+              {index < CLIENT_REQUEST_STATUSES.length - 1 ? (
                 <div
                   className={cn(
                     "h-0.5 flex-1 transition-colors",
-                    connectorFilled(visual)
-                      ? visual === "rejected"
-                        ? "bg-border"
-                        : "bg-primary"
-                      : "bg-border",
+                    connectorFilled(visual) ? "bg-primary" : "bg-border",
                   )}
                   aria-hidden
                 />
@@ -99,7 +98,6 @@ function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
               className={cn(
                 "text-center text-xs font-medium",
                 visual === "current" && "text-primary",
-                visual === "approved" && "text-primary",
                 visual === "rejected" && "text-destructive",
                 visual === "done" && "text-muted-foreground",
                 visual === "upcoming" && "text-muted-foreground",
@@ -127,8 +125,6 @@ function StepCircle({
         "flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors",
         visual === "done" &&
           "border-primary bg-primary text-primary-foreground",
-        visual === "approved" &&
-          "border-primary bg-primary text-primary-foreground",
         visual === "rejected" &&
           "border-destructive bg-destructive text-destructive-foreground",
         visual === "current" &&
@@ -137,7 +133,7 @@ function StepCircle({
           "border-border bg-muted text-muted-foreground",
       )}
     >
-      {visual === "done" || visual === "approved" ? (
+      {visual === "done" ? (
         <Check className="size-4" />
       ) : visual === "rejected" ? (
         <X className="size-4" />
@@ -209,8 +205,10 @@ export function RequestStatusBar({
         <RequestWorkflowStepper status={status} />
         <WorkflowActions
           status={status}
+          onMarkUnderReview={() => changeStatus("UNDER_REVIEW")}
           onApprove={() => changeStatus("APPROVED")}
           onReject={() => changeStatus("REJECTED")}
+          onReopen={() => changeStatus("SUBMITTED")}
           onMarkPaid={() => setShowPaidForm(true)}
         />
       </div>
@@ -237,7 +235,7 @@ export function RequestStatusBar({
               </p>
             </div>
             <div className="flex gap-2">
-              <PendingButton>Confirm payment</PendingButton>
+              <PendingButton>Mark as paid</PendingButton>
               <Button
                 type="button"
                 variant="ghost"
@@ -264,21 +262,38 @@ export function RequestStatusBar({
 
 function WorkflowActions({
   status,
+  onMarkUnderReview,
   onApprove,
   onReject,
+  onReopen,
   onMarkPaid,
 }: {
   status: RequestStatus;
+  onMarkUnderReview: () => void;
   onApprove: () => void;
   onReject: () => void;
+  onReopen: () => void;
   onMarkPaid: () => void;
 }) {
-  if (status === "SUBMITTED" || status === "REJECTED") {
+  if (status === "SUBMITTED") {
+    return (
+      <SplitActionButton
+        label="Mark under review"
+        onPrimary={onMarkUnderReview}
+        menuItems={[{ label: "Reject", onClick: onReject, destructive: true }]}
+      />
+    );
+  }
+
+  if (status === "UNDER_REVIEW") {
     return (
       <SplitActionButton
         label="Approve"
         onPrimary={onApprove}
-        menuItems={[{ label: "Reject", onClick: onReject, destructive: true }]}
+        menuItems={[
+          { label: "Back to submitted", onClick: onReopen },
+          { label: "Reject", onClick: onReject, destructive: true },
+        ]}
       />
     );
   }
@@ -286,12 +301,25 @@ function WorkflowActions({
   if (status === "APPROVED") {
     return (
       <SplitActionButton
-        label="Confirm payment"
+        label="Mark as paid"
         onPrimary={onMarkPaid}
         menuItems={[
+          { label: "Back to under review", onClick: onMarkUnderReview },
           { label: "Reject", onClick: onReject, destructive: true },
         ]}
         icon={Wallet}
+      />
+    );
+  }
+
+  if (status === "REJECTED") {
+    return (
+      <SplitActionButton
+        label="Reopen"
+        onPrimary={onReopen}
+        menuItems={[
+          { label: "Mark under review", onClick: onMarkUnderReview },
+        ]}
       />
     );
   }
@@ -330,7 +358,7 @@ function SplitActionButton({
         >
           <ChevronDown className="size-3.5" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuContent align="end" className="w-48">
           {menuItems.map((item) => (
             <DropdownMenuItem
               key={item.label}

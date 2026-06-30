@@ -32,6 +32,7 @@ enum StudentStatus {
 
 enum RequestStatus {
   SUBMITTED
+  UNDER_REVIEW
   APPROVED
   PAID
   REJECTED

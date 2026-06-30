@@ -33,7 +33,7 @@ export function SearchField({
           id={id}
           value={value}
           placeholder={placeholder}
-          className="pl-9"
+          className="border-border/80 bg-background pl-9 shadow-xs"
           onChange={(e) => onChange(e.target.value)}
         />
       </div>

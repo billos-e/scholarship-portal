@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { StudentStatus } from "@prisma/client";
 
+import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { StudentStatusBadge } from "@/components/student-status-badge";
 import {
@@ -34,6 +35,8 @@ const SORT_ACCESSORS: Record<SortKey, (row: UniversityStudentRow) => unknown> = 
 };
 
 export function UniversityStudentsTable({ rows }: UniversityStudentsTableProps) {
+  const router = useRouter();
+  const { startLoading } = useNavigationLoading();
   const { sortedItems, sortKey, sortDirection, onSort } = useTableSort<
     UniversityStudentRow,
     SortKey
@@ -42,6 +45,11 @@ export function UniversityStudentsTable({ rows }: UniversityStudentsTableProps) 
     SORT_ACCESSORS,
     { key: "name", direction: "asc" },
   );
+
+  function openStudent(id: string) {
+    startLoading();
+    router.push(`/admin/students/${id}`);
+  }
 
   return (
     <Table>
@@ -72,15 +80,12 @@ export function UniversityStudentsTable({ rows }: UniversityStudentsTableProps) 
       </TableHeader>
       <TableBody>
         {sortedItems.map((student) => (
-          <TableRow key={student.id}>
-            <TableCell>
-              <Link
-                href={`/admin/students/${student.id}`}
-                className="font-medium hover:text-primary hover:underline"
-              >
-                {student.name}
-              </Link>
-            </TableCell>
+          <TableRow
+            key={student.id}
+            className="cursor-pointer transition-colors hover:bg-muted/40"
+            onClick={() => openStudent(student.id)}
+          >
+            <TableCell className="font-medium">{student.name}</TableCell>
             <TableCell>{student.studentId ?? "—"}</TableCell>
             <TableCell>
               <StudentStatusBadge status={student.status} />

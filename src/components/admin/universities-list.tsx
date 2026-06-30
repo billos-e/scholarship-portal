@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { SearchField } from "@/components/admin/search-field";
 import { ClientPagination } from "@/components/client-pagination";
+import { TableExportButton } from "@/components/export-button";
 import { EmptyState } from "@/components/empty-state";
+import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,7 +23,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -33,6 +32,8 @@ import {
   paginateItems,
   type UniversityFilterState,
 } from "@/lib/client-filters";
+import { UNIVERSITIES_TABLE_COLUMNS } from "@/lib/export/table-columns";
+import { universitiesToExportRows } from "@/lib/export/table-rows";
 import { useTableSort } from "@/hooks/use-table-sort";
 
 export type UniversityRow = {
@@ -72,6 +73,8 @@ const UNIVERSITY_SORT_ACCESSORS: Record<
 };
 
 export function UniversitiesList({ universities }: { universities: UniversityRow[] }) {
+  const router = useRouter();
+  const { startLoading } = useNavigationLoading();
   const [filters, setFilters] = useState<UniversityFilterState>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
 
@@ -94,6 +97,16 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
     [sortedItems, page],
   );
 
+  const exportRows = useMemo(
+    () => universitiesToExportRows(paginatedUniversities),
+    [paginatedUniversities],
+  );
+
+  const exportFilename = useMemo(() => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    return `universities-page-${currentPage}-${stamp}`;
+  }, [currentPage]);
+
   useEffect(() => {
     setPage(1);
   }, [filters.q, filters.status, sortKey, sortDirection]);
@@ -102,12 +115,27 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
     setFilters((current) => ({ ...current, ...patch }));
   }
 
+  function openUniversity(id: string) {
+    startLoading();
+    router.push(`/admin/universities/${id}`);
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Universities"
         description="Manage partner universities and their semester calendars."
-        actions={<UniversityDialog />}
+        actions={
+          <>
+            <TableExportButton
+              columns={UNIVERSITIES_TABLE_COLUMNS}
+              rows={exportRows}
+              filename={exportFilename}
+              sheetName="Universities"
+            />
+            <UniversityDialog />
+          </>
+        }
       />
 
       <Card>
@@ -197,19 +225,17 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
                         direction={sortDirection}
                         onSort={onSort}
                       />
-                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedUniversities.map((university) => (
-                      <TableRow key={university.id}>
+                      <TableRow
+                        key={university.id}
+                        className="cursor-pointer transition-colors hover:bg-muted/40"
+                        onClick={() => openUniversity(university.id)}
+                      >
                         <TableCell className="font-medium">
-                          <Link
-                            href={`/admin/universities/${university.id}`}
-                            className="hover:text-primary hover:underline"
-                          >
-                            {university.name}
-                          </Link>
+                          {university.name}
                         </TableCell>
                         <TableCell>
                           {[university.city, university.country]
@@ -232,18 +258,6 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
                           ) : (
                             <Badge variant="outline">Inactive</Badge>
                           )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            render={
-                              <Link href={`/admin/universities/${university.id}`} />
-                            }
-                          >
-                            <Eye />
-                            View
-                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

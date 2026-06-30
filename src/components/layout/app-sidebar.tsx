@@ -6,7 +6,6 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Download,
   GraduationCap,
   History,
   Home,
@@ -46,7 +45,6 @@ const ADMIN_NAV: SidebarNavItem[] = [
   { href: "/admin/students", label: "Students", icon: Users },
   { href: "/admin/requests", label: "Payment Requests", icon: ClipboardList },
   { href: "/admin/universities", label: "Universities", icon: Building2 },
-  { href: "/admin/export", label: "Export", icon: Download },
 ];
 
 export function getNavItems(variant: "student" | "admin"): SidebarNavItem[] {

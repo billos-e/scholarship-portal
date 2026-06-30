@@ -16,6 +16,7 @@ import {
   DetailFileLink,
 } from "@/components/admin/detail-field";
 import { InvoiceDocument } from "@/components/admin/invoice-document";
+import { ScreenshotDocument } from "@/components/admin/screenshot-document";
 import { RequestDetailHero } from "@/components/admin/request-detail-hero";
 import { RequestSectionCard } from "@/components/admin/request-section-card";
 import {
@@ -84,13 +85,14 @@ export default async function AdminRequestDetailPage({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
           <InvoiceDocument url={request.invoiceFileUrl} />
+          <ScreenshotDocument url={request.qrPaymentImageUrl} />
 
           <BankCard
             accountName={request.bankAccountName}
             accountNumber={request.bankAccountNumber}
             bankName={request.bankName}
             promptpayNumber={request.promptpayNumber}
-            qrImageUrl={request.qrPaymentImageUrl}
+            qrImageUrl={null}
           />
 
           {report ? (

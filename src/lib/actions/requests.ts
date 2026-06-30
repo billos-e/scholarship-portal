@@ -14,15 +14,17 @@ export type RequestActionState = {
 
 /**
  * Allowed status transitions for admins:
- *   SUBMITTED -> APPROVED | REJECTED
- *   APPROVED  -> PAID | SUBMITTED | REJECTED
- *   REJECTED  -> SUBMITTED | APPROVED
- *   PAID      -> (terminal)
+ *   SUBMITTED     -> UNDER_REVIEW | REJECTED
+ *   UNDER_REVIEW  -> APPROVED | SUBMITTED | REJECTED
+ *   APPROVED      -> PAID | UNDER_REVIEW | REJECTED
+ *   REJECTED      -> SUBMITTED | UNDER_REVIEW
+ *   PAID          -> (terminal)
  */
 const NEXT_STATUS: Record<RequestStatus, RequestStatus[]> = {
-  SUBMITTED: ["APPROVED", "REJECTED"],
-  APPROVED: ["PAID", "SUBMITTED", "REJECTED"],
-  REJECTED: ["SUBMITTED", "APPROVED"],
+  SUBMITTED: ["UNDER_REVIEW", "REJECTED"],
+  UNDER_REVIEW: ["APPROVED", "SUBMITTED", "REJECTED"],
+  APPROVED: ["PAID", "UNDER_REVIEW", "REJECTED"],
+  REJECTED: ["SUBMITTED", "UNDER_REVIEW"],
   PAID: [],
 };
 
@@ -34,11 +36,19 @@ function pathsToRevalidate(requestId: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
   revalidatePath(`/admin/requests/${requestId}`);
+  revalidatePath("/student");
+  revalidatePath("/student/history");
 }
 
 const transitionSchema = z.object({
   requestId: z.string().min(1, "Missing request id."),
-  nextStatus: z.enum(["SUBMITTED", "APPROVED", "PAID", "REJECTED"]),
+  nextStatus: z.enum([
+    "SUBMITTED",
+    "UNDER_REVIEW",
+    "APPROVED",
+    "PAID",
+    "REJECTED",
+  ]),
   paymentDate: z.string().trim().optional(),
 });
 
@@ -77,9 +87,12 @@ export async function transitionRequestStatus(
     status: nextStatus,
   };
 
-  if (nextStatus === "APPROVED" && !request.approvedAt) {
-    updates.approvedAt = now;
+  if (nextStatus === "UNDER_REVIEW" && !request.reviewedAt) {
+    updates.reviewedAt = now;
+  }
+  if (nextStatus === "APPROVED") {
     if (!request.reviewedAt) updates.reviewedAt = now;
+    if (!request.approvedAt) updates.approvedAt = now;
   }
   if (nextStatus === "REJECTED" && !request.rejectedAt) {
     updates.rejectedAt = now;

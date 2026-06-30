@@ -2,9 +2,10 @@ import type { RequestStatus } from "@prisma/client";
 
 const STATUS_URGENCY: Record<RequestStatus, number> = {
   SUBMITTED: 0,
-  APPROVED: 1,
-  REJECTED: 2,
-  PAID: 3,
+  UNDER_REVIEW: 1,
+  APPROVED: 2,
+  REJECTED: 3,
+  PAID: 4,
 };
 
 type UrgentRequest = {
@@ -44,3 +45,5 @@ export function isRequestOverdue(dueDate: Date | null): boolean {
   due.setHours(0, 0, 0, 0);
   return due < today;
 }
+
+export const OPEN_REQUEST_STATUSES: RequestStatus[] = ["SUBMITTED", "UNDER_REVIEW"];

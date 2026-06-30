@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 
 import {
   Card,
@@ -21,6 +22,7 @@ const TONE_CLASS: Record<Tone, string> = {
 
 type RequestSectionCardProps = {
   title: string;
+  titleHref?: string;
   description?: string;
   icon: LucideIcon;
   tone?: Tone;
@@ -31,6 +33,7 @@ type RequestSectionCardProps = {
 
 export function RequestSectionCard({
   title,
+  titleHref,
   description,
   icon: Icon,
   tone = "primary",
@@ -57,7 +60,16 @@ export function RequestSectionCard({
           </div>
           <div className="min-w-0 space-y-0.5">
             <CardTitle className="font-heading text-base font-semibold">
-              {title}
+              {titleHref ? (
+                <Link
+                  href={titleHref}
+                  className="text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+                >
+                  {title}
+                </Link>
+              ) : (
+                title
+              )}
             </CardTitle>
             {description ? (
               <CardDescription className="text-[13px] leading-relaxed">

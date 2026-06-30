@@ -55,12 +55,16 @@ export function AppShell({
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <MobileNav variant={variant} />
+        <MobileNav
+          variant={variant}
+          email={email}
+          displayName={displayName}
+        />
         <main
           className={
             variant === "student"
-              ? "min-h-0 flex-1 overflow-y-auto p-4 pb-20 md:p-8 md:pb-8"
-              : "min-h-0 flex-1 overflow-y-auto p-4 md:p-8"
+              ? "min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8 md:pb-8"
+              : "min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8 md:pb-8"
           }
         >
           <div className="mx-auto w-full max-w-7xl">{children}</div>

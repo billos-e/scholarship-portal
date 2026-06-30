@@ -54,7 +54,9 @@ async function seedRequest(
   });
 
   const reviewedAt =
-    status === "APPROVED" || status === "PAID"
+    status === "UNDER_REVIEW" ||
+    status === "APPROVED" ||
+    status === "PAID"
       ? new Date(submittedAt.getTime() + 2 * 24 * 60 * 60 * 1000)
       : null;
   const approvedAt =
@@ -351,6 +353,7 @@ async function main() {
     RequestStatus.PAID,
     RequestStatus.PAID,
     RequestStatus.APPROVED,
+    RequestStatus.UNDER_REVIEW,
     RequestStatus.REJECTED,
     RequestStatus.SUBMITTED,
   ];

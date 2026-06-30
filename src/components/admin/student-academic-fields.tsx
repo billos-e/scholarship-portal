@@ -1,0 +1,262 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import type {
+  SemesterOption,
+  StudentAcademicOptions,
+} from "@/lib/student-academic-options";
+
+type UniversityOption = { id: string; name: string };
+
+type StudentAcademicFieldsProps = {
+  universities: UniversityOption[];
+  academicOptions: StudentAcademicOptions;
+  defaultUniversityId?: string | null;
+  defaultDegreeProgram?: string | null;
+  defaultSemesterLabel?: string | null;
+  defaultYearOfStudy?: string | null;
+  universityRequired?: boolean;
+  showUniversity?: boolean;
+  showProgram?: boolean;
+  showSemester?: boolean;
+  idPrefix?: string;
+  /** When set, university is controlled by the parent (e.g. split create form layout). */
+  universityId?: string;
+  onUniversityChange?: (id: string) => void;
+};
+
+function mergeProgramOptions(
+  programs: string[],
+  current?: string | null,
+): string[] {
+  if (!current?.trim()) return programs;
+  const set = new Set(programs);
+  set.add(current.trim());
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+function mergeSemesterOptions(
+  semesters: SemesterOption[],
+  currentLabel?: string | null,
+): SemesterOption[] {
+  if (!currentLabel?.trim()) return semesters;
+  if (semesters.some((s) => s.label === currentLabel)) return semesters;
+  return [
+    ...semesters,
+    {
+      id: `legacy-${currentLabel}`,
+      label: currentLabel,
+      academicYear: "",
+      startDate: "",
+      endDate: "",
+    },
+  ];
+}
+
+export function StudentAcademicFields({
+  universities,
+  academicOptions,
+  defaultUniversityId = "",
+  defaultDegreeProgram = "",
+  defaultSemesterLabel = "",
+  defaultYearOfStudy = "",
+  universityRequired = false,
+  showUniversity = true,
+  showProgram = true,
+  showSemester = true,
+  idPrefix = "",
+  universityId: controlledUniversityId,
+  onUniversityChange,
+}: StudentAcademicFieldsProps) {
+  const prefix = idPrefix ? `${idPrefix}-` : "";
+  const [internalUniversityId, setInternalUniversityId] = useState(
+    defaultUniversityId ?? "",
+  );
+  const [degreeProgram, setDegreeProgram] = useState(
+    defaultDegreeProgram ?? "",
+  );
+  const [semesterLabel, setSemesterLabel] = useState(
+    defaultSemesterLabel ?? "",
+  );
+  const [yearOfStudy, setYearOfStudy] = useState(defaultYearOfStudy ?? "");
+
+  const universityId = controlledUniversityId ?? internalUniversityId;
+
+  useEffect(() => {
+    if (controlledUniversityId === undefined) {
+      setInternalUniversityId(defaultUniversityId ?? "");
+    }
+    setDegreeProgram(defaultDegreeProgram ?? "");
+    setSemesterLabel(defaultSemesterLabel ?? "");
+    setYearOfStudy(defaultYearOfStudy ?? "");
+  }, [
+    controlledUniversityId,
+    defaultUniversityId,
+    defaultDegreeProgram,
+    defaultSemesterLabel,
+    defaultYearOfStudy,
+  ]);
+
+  const prevUniversityId = useRef(universityId);
+  useEffect(() => {
+    if (prevUniversityId.current !== universityId) {
+      prevUniversityId.current = universityId;
+      if (controlledUniversityId !== undefined) {
+        setDegreeProgram("");
+        setSemesterLabel("");
+      }
+    }
+  }, [universityId, controlledUniversityId]);
+
+  const programs = useMemo(
+    () =>
+      universityId
+        ? mergeProgramOptions(
+            academicOptions.programsByUniversity[universityId] ?? [],
+            defaultDegreeProgram,
+          )
+        : [],
+    [
+      universityId,
+      academicOptions.programsByUniversity,
+      defaultDegreeProgram,
+    ],
+  );
+
+  const semesters = useMemo(
+    () =>
+      universityId
+        ? mergeSemesterOptions(
+            academicOptions.semestersByUniversity[universityId] ?? [],
+            defaultSemesterLabel,
+          )
+        : [],
+    [
+      universityId,
+      academicOptions.semestersByUniversity,
+      defaultSemesterLabel,
+    ],
+  );
+
+  function handleUniversityChange(nextId: string) {
+    if (onUniversityChange) {
+      onUniversityChange(nextId);
+    } else {
+      setInternalUniversityId(nextId);
+    }
+    setDegreeProgram("");
+    setSemesterLabel("");
+  }
+
+  return (
+    <>
+      {showUniversity ? (
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor={`${prefix}universityId`}>
+            University
+            {universityRequired ? (
+              <span className="text-destructive"> *</span>
+            ) : null}
+          </Label>
+          <NativeSelect
+            id={`${prefix}universityId`}
+            name="universityId"
+            value={universityId}
+            onChange={(e) => handleUniversityChange(e.target.value)}
+            required={universityRequired}
+          >
+            <option value="">
+              {universityRequired ? "Select university…" : "— None —"}
+            </option>
+            {universities.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+      ) : null}
+
+      {showProgram ? (
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor={`${prefix}degreeProgram`}>Degree program</Label>
+          <NativeSelect
+            id={`${prefix}degreeProgram`}
+            name="degreeProgram"
+            value={degreeProgram}
+            onChange={(e) => setDegreeProgram(e.target.value)}
+            disabled={!universityId}
+          >
+            <option value="">
+              {!universityId
+                ? "Select a university first"
+                : programs.length === 0
+                  ? "No programs on record yet"
+                  : "Select program…"}
+            </option>
+            {programs.map((program) => (
+              <option key={program} value={program}>
+                {program}
+              </option>
+            ))}
+          </NativeSelect>
+          {universityId && programs.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Programs appear after students are imported or assigned at this
+              university.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor={`${prefix}yearOfStudy`}>Year of study</Label>
+        <Input
+          id={`${prefix}yearOfStudy`}
+          name="yearOfStudy"
+          value={yearOfStudy}
+          onChange={(e) => setYearOfStudy(e.target.value)}
+          placeholder="e.g. 2"
+        />
+      </div>
+
+      {showSemester ? (
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor={`${prefix}currentSemesterLabel`}>
+            Current semester
+          </Label>
+          <NativeSelect
+            id={`${prefix}currentSemesterLabel`}
+            name="currentSemesterLabel"
+            value={semesterLabel}
+            onChange={(e) => setSemesterLabel(e.target.value)}
+            disabled={!universityId}
+          >
+            <option value="">
+              {!universityId
+                ? "Select a university first"
+                : semesters.length === 0
+                  ? "No semesters configured"
+                  : "Select semester…"}
+            </option>
+            {semesters.map((semester) => (
+              <option key={semester.id} value={semester.label}>
+                {semester.label}
+                {semester.academicYear ? ` (${semester.academicYear})` : ""}
+              </option>
+            ))}
+          </NativeSelect>
+          {universityId && semesters.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Add semesters on the university profile before assigning one here.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  );
+}

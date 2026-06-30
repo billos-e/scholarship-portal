@@ -1,40 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Users } from "lucide-react";
+import { CalendarDays, Pencil, Users } from "lucide-react";
 
-import { ExportButton } from "@/components/export-button";
+import { ProfileInfoCard } from "@/components/admin/profile-info-card";
+import {
+  ProfileInfoField,
+  ProfileInfoGrid,
+} from "@/components/admin/profile-info-field";
+import { RequestSectionCard } from "@/components/admin/request-section-card";
+import { UniversityDetailHero } from "@/components/admin/university-detail-hero";
 import { UniversityStudentsTable } from "@/components/admin/university-students-table";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth/session";
+import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { UniversityDialog } from "../university-dialog";
-import { SemesterCreateForm } from "./semester-create-form";
 import { SemesterTable } from "./semester-table";
-import {
-  DeactivateUniversityButton,
-  UniversityImageForm,
-} from "./university-actions";
-
-function Field({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <div className="space-y-1">
-      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="text-sm">{value && value.length > 0 ? value : "—"}</dd>
-    </div>
-  );
-}
+import { DeactivateUniversityButton } from "./university-actions";
 
 export default async function UniversityDetailPage({
   params,
@@ -47,7 +29,12 @@ export default async function UniversityDetailPage({
   const university = await prisma.university.findUnique({
     where: { id },
     include: {
-      semesters: { orderBy: { startDate: "asc" } },
+      semesters: {
+        orderBy: { startDate: "asc" },
+        include: {
+          _count: { select: { tuitionPaymentRequests: true } },
+        },
+      },
       students: {
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
         take: 5,
@@ -58,6 +45,11 @@ export default async function UniversityDetailPage({
 
   if (!university) notFound();
 
+  const studentCount = university._count.students;
+  const semesterCount = university.semesters.length;
+  const studentsHref = `/admin/students?uni=${university.id}`;
+  const editHref = `/admin/universities/${id}/edit`;
+
   return (
     <div className="space-y-6">
       <Breadcrumb
@@ -67,43 +59,25 @@ export default async function UniversityDetailPage({
         ]}
       />
 
-      <PageHeader
-        title={university.name}
-        description={
-          [university.city, university.country].filter(Boolean).join(", ") ||
-          "University profile"
-        }
-        actions={
+      <UniversityDetailHero
+        name={university.name}
+        city={university.city}
+        country={university.country}
+        imageUrl={university.imageUrl}
+        isActive={university.isActive}
+        hasSummerSemester={university.hasSummerSemester}
+        studentCount={studentCount}
+        semesterCount={semesterCount}
+        headerAction={
           <>
-            {university.isActive ? (
-              <Badge
-                variant="outline"
-                className="border-success/30 bg-success-light text-success"
-              >
-                Active
-              </Badge>
-            ) : (
-              <Badge variant="outline">Inactive</Badge>
-            )}
-            <UniversityDialog
-              university={{
-                id: university.id,
-                name: university.name,
-                city: university.city,
-                country: university.country,
-                addressLine: university.addressLine,
-                websiteUrl: university.websiteUrl,
-                hasSummerSemester: university.hasSummerSemester,
-                isActive: university.isActive,
-                notes: university.notes,
-              }}
-              trigger={
-                <Button size="sm" variant="outline">
-                  <Pencil />
-                  Edit
-                </Button>
-              }
-            />
+            <Button
+              size="sm"
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              render={<Link href={editHref} />}
+            >
+              <Pencil className="size-3.5" />
+              Edit profile
+            </Button>
             <DeactivateUniversityButton
               universityId={university.id}
               isActive={university.isActive}
@@ -112,124 +86,105 @@ export default async function UniversityDetailPage({
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>University Profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <UniversityImageForm
-              universityId={university.id}
-              imageUrl={university.imageUrl}
-              name={university.name}
-            />
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Address" value={university.addressLine} />
-              <Field label="City" value={university.city} />
-              <Field label="Country" value={university.country} />
-              <Field
-                label="Website"
-                value={university.websiteUrl}
-              />
-              <Field
-                label="Summer semester"
-                value={university.hasSummerSemester ? "Yes" : "No"}
-              />
-              <Field label="Notes" value={university.notes} />
-            </dl>
+      <ProfileInfoCard title="University information">
+        <ProfileInfoGrid>
+          <ProfileInfoField label="Address" value={university.addressLine} />
+          <ProfileInfoField label="City" value={university.city} />
+          <ProfileInfoField label="Country" value={university.country} />
+          <ProfileInfoField label="Summer semester">
+            {university.hasSummerSemester ? "Yes" : "No"}
+          </ProfileInfoField>
+          <ProfileInfoField label="Website">
             {university.websiteUrl ? (
               <a
                 href={university.websiteUrl}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="text-sm font-medium text-primary hover:underline"
+                className="text-primary underline-offset-4 transition-colors hover:underline"
               >
-                Visit website
+                {university.websiteUrl.replace(/^https?:\/\//, "")}
               </a>
             ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              className="justify-start"
-              render={
-                <Link href={`/admin/students?uni=${university.id}`} />
-              }
-            >
-              <Users />
-              View all students ({university._count.students})
-            </Button>
-            <ExportButton
-              dataset="students"
-              params={{ uni: university.id }}
-              label="Export students"
-            />
-            <ExportButton
-              dataset="requests"
-              params={{ uni: university.id }}
-              label="Export requests"
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Semester Calendar</CardTitle>
-          <CardDescription>
-            Manage active semesters for student submissions. Sorted by start date.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <SemesterTable
-            semesters={university.semesters}
-            universityId={university.id}
+          </ProfileInfoField>
+          <ProfileInfoField
+            label="Partner since"
+            value={formatDate(university.createdAt)}
           />
-          <div className="border-t pt-6">
-            <h3 className="mb-3 text-sm font-semibold">Add semester</h3>
-            <SemesterCreateForm universityId={university.id} />
-          </div>
-        </CardContent>
-      </Card>
+          <ProfileInfoField
+            label="Students enrolled"
+            value={
+              studentCount === 0
+                ? "None"
+                : `${studentCount} on record`
+            }
+          />
+          <ProfileInfoField
+            label="Semesters configured"
+            value={
+              semesterCount === 0
+                ? "None"
+                : `${semesterCount} on record`
+            }
+          />
+          <ProfileInfoField
+            label="Notes"
+            value={university.notes}
+            className="sm:col-span-2 lg:col-span-3"
+          />
+        </ProfileInfoGrid>
+      </ProfileInfoCard>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Students</CardTitle>
-            <CardDescription>
-              {university._count.students} student
-              {university._count.students === 1 ? "" : "s"} at this university.
-            </CardDescription>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            render={<Link href={`/admin/students?uni=${university.id}`} />}
-          >
-            View all
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {university.students.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No students yet.</p>
-          ) : (
-            <UniversityStudentsTable
-              rows={university.students.map((student) => ({
-                id: student.id,
-                name: `${student.firstName} ${student.lastName}`,
-                studentId: student.studentId,
-                status: student.status,
-              }))}
-            />
-          )}
-        </CardContent>
-      </Card>
+      <RequestSectionCard
+        title="Semester calendar"
+        description={
+          semesterCount === 0
+            ? "No semesters configured yet."
+            : `${semesterCount} semester${semesterCount === 1 ? "" : "s"} on record. Sorted by start date.`
+        }
+        icon={CalendarDays}
+        tone="primary"
+      >
+        <SemesterTable
+          semesters={university.semesters.map((semester) => ({
+            id: semester.id,
+            label: semester.label,
+            academicYear: semester.academicYear,
+            termCode: semester.termCode,
+            startDate: semester.startDate,
+            endDate: semester.endDate,
+            isActive: semester.isActive,
+            canDelete: semester._count.tuitionPaymentRequests === 0,
+          }))}
+          universityId={university.id}
+        />
+      </RequestSectionCard>
+
+      <RequestSectionCard
+        title="Students"
+        titleHref={studentCount > 0 ? studentsHref : undefined}
+        description={
+          studentCount === 0
+            ? "No students enrolled at this university."
+            : `${studentCount} student${studentCount === 1 ? "" : "s"} enrolled. Showing up to 5.`
+        }
+        icon={Users}
+        tone="accent"
+      >
+        {university.students.length === 0 ? (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            No students are enrolled at this university yet.
+          </p>
+        ) : (
+          <UniversityStudentsTable
+            rows={university.students.map((student) => ({
+              id: student.id,
+              name: `${student.firstName} ${student.lastName}`,
+              studentId: student.studentId,
+              status: student.status,
+            }))}
+          />
+        )}
+      </RequestSectionCard>
     </div>
   );
 }

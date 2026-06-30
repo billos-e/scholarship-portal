@@ -1,13 +1,13 @@
-import { ExternalLink, FileText } from "lucide-react";
+import { ExternalLink, ImageIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-type InvoiceDocumentProps = {
+type ScreenshotDocumentProps = {
   url: string | null;
   className?: string;
 };
 
-export function InvoiceDocument({ url, className }: InvoiceDocumentProps) {
+export function ScreenshotDocument({ url, className }: ScreenshotDocumentProps) {
   if (!url) {
     return (
       <div
@@ -17,11 +17,11 @@ export function InvoiceDocument({ url, className }: InvoiceDocumentProps) {
         )}
       >
         <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <FileText className="size-5" />
+          <ImageIcon className="size-5" />
         </div>
         <div>
           <p className="text-sm font-medium text-muted-foreground">
-            Invoice upload
+            Screenshot upload
           </p>
           <p className="text-xs text-muted-foreground/80">No file uploaded</p>
         </div>
@@ -39,13 +39,13 @@ export function InvoiceDocument({ url, className }: InvoiceDocumentProps) {
         className,
       )}
     >
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-fuchsia-light text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-        <FileText className="size-5" />
+      <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-orange-light text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+        <ImageIcon className="size-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-foreground">Invoice upload</p>
+        <p className="text-sm font-semibold text-foreground">Screenshot upload</p>
         <p className="text-xs text-muted-foreground">
-          Official tuition document from the university
+          Payment screenshot submitted with this request
         </p>
       </div>
       <ExternalLink className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />

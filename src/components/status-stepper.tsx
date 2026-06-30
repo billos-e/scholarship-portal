@@ -1,20 +1,17 @@
 import type { RequestStatus } from "@prisma/client";
 import { Check, X } from "lucide-react";
 
+import {
+  CLIENT_REQUEST_STATUSES,
+  REQUEST_STATUS_LABELS,
+  requestStatusIndex,
+} from "@/lib/request-status";
 import { cn } from "@/lib/utils";
 
-const STEPS: { status: RequestStatus; label: string }[] = [
-  { status: "SUBMITTED", label: "Submitted" },
-  { status: "APPROVED", label: "Approved" },
-  { status: "PAID", label: "Paid" },
-];
-
-const STATUS_ORDER: RequestStatus[] = STEPS.map((s) => s.status);
-
-function stepIndex(status: RequestStatus): number {
-  if (status === "REJECTED") return -1;
-  return STATUS_ORDER.indexOf(status);
-}
+const STEPS = CLIENT_REQUEST_STATUSES.map((status) => ({
+  status,
+  label: REQUEST_STATUS_LABELS[status],
+}));
 
 type StatusStepperProps = {
   status: RequestStatus;
@@ -29,7 +26,7 @@ export function StatusStepper({
   variant = "default",
   className,
 }: StatusStepperProps) {
-  const current = stepIndex(status);
+  const current = requestStatusIndex(status);
   const rejected = status === "REJECTED";
 
   if (variant === "dots") {

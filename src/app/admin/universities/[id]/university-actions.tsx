@@ -28,10 +28,12 @@ export function UniversityImageForm({
   universityId,
   imageUrl,
   name,
+  showPreview = true,
 }: {
   universityId: string;
   imageUrl: string | null;
   name: string;
+  showPreview?: boolean;
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(
     uploadUniversityImage,
@@ -45,19 +47,21 @@ export function UniversityImageForm({
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-      <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-sm font-medium text-muted-foreground">
-        {imageUrl ? (
-          <Image
-            src={uploadPublicUrl(imageUrl)}
-            alt={name}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          name.slice(0, 2).toUpperCase()
-        )}
-      </div>
+      {showPreview ? (
+        <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-sm font-medium text-muted-foreground">
+          {imageUrl ? (
+            <Image
+              src={uploadPublicUrl(imageUrl)}
+              alt={name}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            name.slice(0, 2).toUpperCase()
+          )}
+        </div>
+      ) : null}
       <form action={formAction} className="space-y-2">
         <input type="hidden" name="id" value={universityId} />
         <div className="space-y-1">

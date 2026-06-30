@@ -27,7 +27,7 @@ import {
   matchesDashboardSubmission,
   type DashboardFilterState,
 } from "@/lib/client-filters";
-import { sortRequestsByUrgency } from "@/lib/request-urgency";
+import { sortRequestsByUrgency, OPEN_REQUEST_STATUSES } from "@/lib/request-urgency";
 
 type DashboardStudent = {
   universityId: string | null;
@@ -84,7 +84,7 @@ export function AdminDashboardView({
   const pendingReview = useMemo(
     () =>
       filteredRequests.filter((request) =>
-        ["SUBMITTED"].includes(request.status),
+        OPEN_REQUEST_STATUSES.includes(request.status),
       ).length,
     [filteredRequests],
   );
@@ -102,7 +102,7 @@ export function AdminDashboardView({
   const needsAttention = useMemo(() => {
     return sortRequestsByUrgency(
       filteredRequests
-        .filter((request) => request.status === "SUBMITTED")
+        .filter((request) => OPEN_REQUEST_STATUSES.includes(request.status))
         .map((request) => ({
           ...request,
           dueDate: request.dueDate ? new Date(request.dueDate) : null,

@@ -6,6 +6,11 @@ import { z } from "zod";
 import { requireStudent } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { saveStudentUpload, validateUpload } from "@/lib/uploads";
+import {
+  readStudentSelfProfileFromFormData,
+  validateStudentProfileSelfEdit,
+} from "@/lib/validations/student-profile";
+import { validateUniversityContext } from "@/lib/validations/student-university";
 
 export type ActionState = {
   error?: string;
@@ -17,29 +22,66 @@ function optionalString(value: FormDataEntryValue | null): string | undefined {
   return s && s.length > 0 ? s : undefined;
 }
 
-const contactSchema = z.object({
-  phone: z.string().trim().max(40).optional(),
-});
-
 export async function updateOwnProfile(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const { student } = await requireStudent();
+  const { user, student } = await requireStudent();
 
-  const parsed = contactSchema.safeParse({
-    phone: optionalString(formData.get("phone")),
-  });
+  const parsed = validateStudentProfileSelfEdit(
+    readStudentSelfProfileFromFormData(formData),
+  );
   if (!parsed.success) {
-    return { error: "Invalid contact information." };
+    return { error: parsed.error };
   }
 
-  await prisma.student.update({
-    where: { id: student.id },
-    data: { phone: parsed.data.phone ?? null },
+  const contextError = await validateUniversityContext(parsed.data, {
+    studentId: student.id,
   });
+  if (contextError) {
+    return { error: contextError };
+  }
+
+  if (parsed.data.studentId) {
+    const dupId = await prisma.student.findFirst({
+      where: { studentId: parsed.data.studentId, NOT: { id: student.id } },
+    });
+    if (dupId) return { error: "This Student ID is already in use." };
+  }
+
+  const email = parsed.data.email.toLowerCase();
+  if (email !== user.email) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return { error: "An account with this email already exists." };
+    }
+  }
+
+  const { email: _email, ...profileFields } = parsed.data;
+
+  await prisma.$transaction([
+    prisma.student.update({
+      where: { id: student.id },
+      data: {
+        firstName: profileFields.firstName,
+        lastName: profileFields.lastName,
+        studentId: profileFields.studentId ?? null,
+        phone: profileFields.phone ?? null,
+        universityId: profileFields.universityId ?? null,
+        degreeProgram: profileFields.degreeProgram ?? null,
+        yearOfStudy: profileFields.yearOfStudy ?? null,
+        currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
+        gpa: profileFields.gpa ?? null,
+      },
+    }),
+    prisma.user.update({
+      where: { id: user.id },
+      data: { email },
+    }),
+  ]);
 
   revalidatePath("/student/profile");
+  revalidatePath("/student/submit");
   return { success: true };
 }
 

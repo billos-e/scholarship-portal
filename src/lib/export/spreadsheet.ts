@@ -1,15 +1,34 @@
 import * as XLSX from "xlsx";
 
+import type { TableExportColumn } from "./table-columns";
+
 export type ExportRow = Record<string, string | number | boolean | null>;
 
-export function rowsToCsv(rows: ExportRow[]): string {
-  if (rows.length === 0) return "";
+export function pickExportColumns(
+  rows: ExportRow[],
+  columnKeys: string[],
+): ExportRow[] {
+  return rows.map((row) => {
+    const picked: ExportRow = {};
+    for (const key of columnKeys) {
+      picked[key] = row[key] ?? null;
+    }
+    return picked;
+  });
+}
 
-  const headers = Object.keys(rows[0]!);
+export function rowsToCsv(
+  rows: ExportRow[],
+  columns: TableExportColumn[],
+): string {
+  if (columns.length === 0) return "";
+
   const lines = [
-    headers.map(escapeCsvCell).join(","),
+    columns.map((column) => escapeCsvCell(column.label)).join(","),
     ...rows.map((row) =>
-      headers.map((h) => escapeCsvCell(row[h] ?? null)).join(","),
+      columns
+        .map((column) => escapeCsvCell(row[column.key] ?? null))
+        .join(","),
     ),
   ];
   return lines.join("\r\n");
@@ -22,22 +41,67 @@ function escapeCsvCell(value: unknown): string {
   return s;
 }
 
-export function rowsToXlsxBuffer(
+export function rowsToXlsxArray(
   rows: ExportRow[],
+  columns: TableExportColumn[],
   sheetName = "Export",
-): Buffer {
+): Uint8Array {
+  const sheetRows = rows.map((row) => {
+    const labeled: Record<string, string | number | boolean | null> = {};
+    for (const column of columns) {
+      labeled[column.label] = row[column.key] ?? null;
+    }
+    return labeled;
+  });
+
   const worksheet =
-    rows.length > 0
-      ? XLSX.utils.json_to_sheet(rows)
-      : XLSX.utils.aoa_to_sheet([[]]);
+    sheetRows.length > 0
+      ? XLSX.utils.json_to_sheet(sheetRows)
+      : XLSX.utils.aoa_to_sheet([columns.map((column) => column.label)]);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  return Buffer.from(
-    XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }),
+  const bytes = XLSX.write(workbook, { type: "array", bookType: "xlsx" });
+  return Uint8Array.from(bytes as number[]);
+}
+
+export function downloadExportFile(
+  rows: ExportRow[],
+  columns: TableExportColumn[],
+  format: "csv" | "xlsx",
+  filename: string,
+  sheetName = "Export",
+) {
+  const selectedColumns = columns;
+  const pickedRows = pickExportColumns(
+    rows,
+    selectedColumns.map((column) => column.key),
+  );
+
+  if (format === "csv") {
+    const csv = rowsToCsv(pickedRows, selectedColumns);
+    triggerDownload(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+      `${filename}.csv`,
+    );
+    return;
+  }
+
+  const buffer = rowsToXlsxArray(pickedRows, selectedColumns, sheetName);
+  triggerDownload(
+    new Blob([Uint8Array.from(buffer)], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }),
+    `${filename}.xlsx`,
   );
 }
 
-export function contentDisposition(filename: string): string {
-  const safe = filename.replace(/[^\w.-]+/g, "_");
-  return `attachment; filename="${safe}"`;
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }

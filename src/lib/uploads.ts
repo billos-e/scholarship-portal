@@ -43,7 +43,7 @@ const ALLOWED_EXT: Record<UploadKind, ReadonlySet<string>> = {
 export const KIND_LABELS: Record<UploadKind, string> = {
   invoices: "Invoice",
   transcripts: "Transcript",
-  qr: "QR payment image",
+  qr: "Screenshot upload",
   "profile-photo": "Profile photo",
   "university-image": "University image",
 };

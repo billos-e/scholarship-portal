@@ -19,6 +19,7 @@ export type RequestFilterState = {
 export type StudentFilterState = {
   q: string;
   uni: string;
+  program: string;
   status: string;
 };
 
@@ -142,11 +143,15 @@ export function filterStudents<
     lastName: string;
     studentId: string | null;
     universityId: string | null;
+    degreeProgram: string | null;
     status: StudentStatus;
   },
 >(students: T[], filters: StudentFilterState): T[] {
   return students.filter((student) => {
     if (filters.uni && student.universityId !== filters.uni) return false;
+    if (filters.program && student.degreeProgram !== filters.program) {
+      return false;
+    }
     if (filters.status && student.status !== filters.status) return false;
     if (!matchesStudentQuery(student, filters.q)) return false;
     return true;

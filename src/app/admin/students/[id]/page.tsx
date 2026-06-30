@@ -1,34 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { Pencil, Receipt } from "lucide-react";
 
-import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { PageHeader } from "@/components/layout/page-header";
-import { PaymentRequestsTable } from "@/components/payment-requests-table";
-import { StudentStatusBadge } from "@/components/student-status-badge";
-import { Button } from "@/components/ui/button";
+import { ProfileInfoCard } from "@/components/admin/profile-info-card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  ProfileInfoField,
+  ProfileInfoGrid,
+} from "@/components/admin/profile-info-field";
+import { RequestSectionCard } from "@/components/admin/request-section-card";
+import { StudentDetailHero } from "@/components/admin/student-detail-hero";
+import { StudentStatusBadge } from "@/components/student-status-badge";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { PaymentRequestsTable } from "@/components/payment-requests-table";
+import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth/session";
+import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { ArchiveStudentButton } from "./archive-student-button";
-import { StudentPasswordForm } from "./student-password-form";
-
-function Field({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <div className="space-y-1">
-      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="text-sm">{value && value.length > 0 ? value : "—"}</dd>
-    </div>
-  );
-}
 
 export default async function StudentDetailPage({
   params,
@@ -53,28 +41,39 @@ export default async function StudentDetailPage({
 
   if (!student) notFound();
 
+  const fullName = `${student.firstName} ${student.lastName}`;
+  const paymentCount = student.tuitionPaymentRequests.length;
+  const editHref = `/admin/students/${id}/edit`;
+  const bank = student.bankInformation;
+
   return (
     <div className="space-y-6">
       <Breadcrumb
         items={[
           { label: "Students", href: "/admin/students" },
-          { label: `${student.firstName} ${student.lastName}` },
+          { label: fullName },
         ]}
       />
 
-      <PageHeader
-        title={`${student.firstName} ${student.lastName}`}
-        description={`${student.user.email} · ${student.studentId ?? "No ID"}`}
-        actions={
+      <StudentDetailHero
+        firstName={student.firstName}
+        lastName={student.lastName}
+        studentIdNumber={student.studentId}
+        universityId={student.universityId}
+        universityName={student.university?.name ?? null}
+        degreeProgram={student.degreeProgram}
+        yearOfStudy={student.yearOfStudy}
+        status={student.status}
+        photoUrl={student.photoUrl}
+        headerAction={
           <>
-            <StudentStatusBadge status={student.status} />
             <Button
               size="sm"
-              variant="outline"
-              render={<Link href={`/admin/students/${id}/edit`} />}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              render={<Link href={editHref} />}
             >
-              <Pencil />
-              Edit
+              <Pencil className="size-3.5" />
+              Edit profile
             </Button>
             {student.status === "ACTIVE" ? (
               <ArchiveStudentButton studentId={id} />
@@ -83,91 +82,114 @@ export default async function StudentDetailPage({
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="First name" value={student.firstName} />
-              <Field label="Last name" value={student.lastName} />
-              <Field label="Phone" value={student.phone} />
-              <Field label="Email" value={student.user.email} />
-              <Field label="Student ID" value={student.studentId} />
-              <Field label="University" value={student.university?.name} />
-              <Field label="Degree program" value={student.degreeProgram} />
-              <Field label="Year of study" value={student.yearOfStudy} />
-              <Field
-                label="Current semester"
-                value={student.currentSemesterLabel}
-              />
-              <Field
-                label="GPA"
-                value={student.gpa ? student.gpa.toString() : null}
-              />
-            </dl>
-          </CardContent>
-        </Card>
+      <ProfileInfoCard title="Personal information">
+        <ProfileInfoGrid>
+          <ProfileInfoField label="First name" value={student.firstName} />
+          <ProfileInfoField label="Last name" value={student.lastName} />
+          <ProfileInfoField label="Student ID" value={student.studentId} />
+          <ProfileInfoField label="Email address">
+            <a
+              href={`mailto:${student.user.email}`}
+              className="text-primary underline-offset-4 transition-colors hover:underline"
+            >
+              {student.user.email}
+            </a>
+          </ProfileInfoField>
+          <ProfileInfoField label="Phone number" value={student.phone} />
+          <ProfileInfoField label="Account status">
+            <StudentStatusBadge status={student.status} />
+          </ProfileInfoField>
+          <ProfileInfoField
+            label="Member since"
+            value={formatDate(student.createdAt)}
+          />
+        </ProfileInfoGrid>
+      </ProfileInfoCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Bank information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Account name"
-                value={student.bankInformation?.bankAccountName}
-              />
-              <Field
-                label="Account number"
-                value={student.bankInformation?.bankAccountNumber}
-              />
-              <Field label="Bank name" value={student.bankInformation?.bankName} />
-              <Field
-                label="PromptPay"
-                value={student.bankInformation?.promptpayNumber}
-              />
-            </dl>
-          </CardContent>
-        </Card>
-      </div>
+      <ProfileInfoCard title="Academic information">
+        <ProfileInfoGrid>
+          <ProfileInfoField
+            label="University"
+            value={student.university?.name ?? null}
+          />
+          <ProfileInfoField
+            label="Degree program"
+            value={student.degreeProgram}
+          />
+          <ProfileInfoField
+            label="Year of study"
+            value={student.yearOfStudy}
+          />
+          <ProfileInfoField
+            label="Current semester"
+            value={student.currentSemesterLabel}
+          />
+          <ProfileInfoField
+            label="GPA"
+            value={student.gpa ? student.gpa.toString() : null}
+          />
+          <ProfileInfoField
+            label="Payment requests"
+            value={
+              paymentCount === 0
+                ? "None"
+                : `${paymentCount} on record`
+            }
+          />
+        </ProfileInfoGrid>
+      </ProfileInfoCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment History</CardTitle>
-          <CardDescription>
-            {student.tuitionPaymentRequests.length} request(s) on record.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {student.tuitionPaymentRequests.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No requests yet.</p>
-          ) : (
-            <PaymentRequestsTable
-              rows={student.tuitionPaymentRequests.map((request) => ({
-                id: request.id,
-                semesterLabel: request.semesterLabel,
-                amountDue: request.amountDue.toString(),
-                submittedAt: request.submittedAt.toISOString(),
-                status: request.status,
-                href: `/admin/requests/${request.id}`,
-              }))}
+      <ProfileInfoCard title="Bank information">
+        {bank?.bankName || bank?.bankAccountNumber ? (
+          <ProfileInfoGrid>
+            <ProfileInfoField label="Bank name" value={bank.bankName} />
+            <ProfileInfoField
+              label="Account holder"
+              value={bank.bankAccountName}
             />
-          )}
-        </CardContent>
-      </Card>
+            <ProfileInfoField
+              label="Account number"
+              value={bank.bankAccountNumber}
+            />
+            <ProfileInfoField
+              label="PromptPay"
+              value={bank.promptpayNumber}
+            />
+          </ProfileInfoGrid>
+        ) : (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            No bank details on file.
+          </p>
+        )}
+      </ProfileInfoCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Account</CardTitle>
-          <CardDescription>Reset the student&apos;s login password.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <StudentPasswordForm userId={student.userId} />
-        </CardContent>
-      </Card>
+      <RequestSectionCard
+        title="Payment history"
+        description={
+          paymentCount === 0
+            ? "No tuition payment requests on record."
+            : `${paymentCount} request${paymentCount === 1 ? "" : "s"} on record.`
+        }
+        icon={Receipt}
+        tone="accent"
+      >
+        {paymentCount === 0 ? (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            This student has not submitted any tuition payment requests yet.
+          </p>
+        ) : (
+          <PaymentRequestsTable
+            rows={student.tuitionPaymentRequests.map((request) => ({
+              id: request.id,
+              semesterLabel: request.semesterLabel,
+              amountDue: request.amountDue.toString(),
+              submittedAt: request.submittedAt.toISOString(),
+              status: request.status,
+              href: `/admin/requests/${request.id}`,
+            }))}
+          />
+        )}
+      </RequestSectionCard>
     </div>
   );
 }
