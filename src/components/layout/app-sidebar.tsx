@@ -126,11 +126,19 @@ export function AppSidebar({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  function handleSidebarClick(e: React.MouseEvent<HTMLElement>) {
+    const target = e.target as HTMLElement;
+    if (target.closest("a, button")) return;
+    onToggle();
+  }
+
   return (
     <TooltipProvider>
       <aside
+        onClick={handleSidebarClick}
+        aria-expanded={!collapsed}
         className={cn(
-          "hidden h-full shrink-0 flex-col border-r transition-[width] duration-200 md:flex",
+          "hidden h-full shrink-0 cursor-pointer flex-col border-r transition-[width] duration-200 md:flex",
           isAdmin
             ? "border-sidebar-admin bg-sidebar-admin text-sidebar-admin-foreground"
             : "border-sidebar-border bg-sidebar text-sidebar-foreground",
@@ -157,9 +165,12 @@ export function AppSidebar({
           {!collapsed && (
             <button
               type="button"
-              onClick={onToggle}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
               className={cn(
-                "rounded-md border p-1.5 opacity-70 transition-opacity hover:opacity-100",
+                "cursor-pointer rounded-md border p-1.5 opacity-70 transition-opacity hover:opacity-100",
                 isAdmin
                   ? "border-sidebar-admin-border hover:bg-sidebar-admin-accent/50"
                   : "border-sidebar-border bg-background hover:bg-sidebar-accent",
@@ -175,9 +186,12 @@ export function AppSidebar({
           <div className="flex justify-center pb-2">
             <button
               type="button"
-              onClick={onToggle}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
               className={cn(
-                "rounded-md p-1.5 opacity-70 hover:opacity-100",
+                "cursor-pointer rounded-md p-1.5 opacity-70 hover:opacity-100",
                 isAdmin ? "hover:bg-sidebar-admin-accent" : "hover:bg-sidebar-accent",
               )}
               aria-label="Expand sidebar"
