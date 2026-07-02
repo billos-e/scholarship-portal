@@ -20,7 +20,11 @@ import {
   groupTableColumnsByTable,
   type TableExportColumn,
 } from "@/lib/export/table-columns";
-import { downloadExportFile, type ExportRow } from "@/lib/export/spreadsheet";
+import {
+  downloadExportFile,
+  type ExportRow,
+  type ExportSheet,
+} from "@/lib/export/spreadsheet";
 import { cn } from "@/lib/utils";
 
 type ExportFormat = "csv" | "xlsx";
@@ -32,6 +36,7 @@ type ExportDialogProps = {
   rows: ExportRow[];
   filename: string;
   sheetName?: string;
+  extraSheets?: ExportSheet[];
   title?: string;
   description?: string;
 };
@@ -43,6 +48,7 @@ export function ExportDialog({
   rows,
   filename,
   sheetName = "Export",
+  extraSheets = [],
   title = "Export current page",
   description,
 }: ExportDialogProps) {
@@ -50,16 +56,33 @@ export function ExportDialog({
     () => groupTableColumnsByTable(columns),
     [columns],
   );
+  const singleColumnFields = useMemo(
+    () => groupedColumns.filter((group) => group.columns.length === 1).flatMap((group) => group.columns),
+    [groupedColumns],
+  );
+  const multiColumnGroups = useMemo(
+    () => groupedColumns.filter((group) => group.columns.length > 1),
+    [groupedColumns],
+  );
   const allKeys = useMemo(() => defaultTableColumnKeys(columns), [columns]);
 
   const [format, setFormat] = useState<ExportFormat>("csv");
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(allKeys),
   );
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const extraSheetNote =
+    extraSheets.length > 0
+      ? format === "xlsx"
+        ? ` Semester details are included on a separate Excel tab.`
+        : ` Semester details are included in a ZIP with separate CSV files.`
+      : "";
 
   const resolvedDescription =
     description ??
-    `Export ${rows.length} row${rows.length === 1 ? "" : "s"} from this page. Choose which table fields to include.`;
+    `Export ${rows.length} row${rows.length === 1 ? "" : "s"} from this page. Choose which table fields to include.${extraSheetNote}`;
 
   const allSelected = selected.size === allKeys.length;
   const noneSelected = selected.size === 0;
@@ -68,6 +91,7 @@ export function ExportDialog({
     if (next) {
       setSelected(new Set(allKeys));
       setFormat("csv");
+      setExportError(null);
     }
     onOpenChange(next);
   }
@@ -96,14 +120,55 @@ export function ExportDialog({
     setSelected(checked ? new Set(allKeys) : new Set());
   }
 
-  function handleExport() {
-    if (noneSelected) return;
+  async function handleExport() {
+    if (noneSelected || exporting) return;
 
     const selectedColumns = columns.filter((column) =>
       selected.has(column.key),
     );
-    downloadExportFile(rows, selectedColumns, format, filename, sheetName);
-    handleOpenChange(false);
+
+    setExporting(true);
+    setExportError(null);
+
+    try {
+      await downloadExportFile(
+        rows,
+        selectedColumns,
+        format,
+        filename,
+        sheetName,
+        extraSheets,
+      );
+      handleOpenChange(false);
+    } catch (error) {
+      setExportError(
+        error instanceof Error ? error.message : "Export failed. Please try again.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function renderField(column: TableExportColumn) {
+    const fieldId = `export-field-${column.key}`;
+    return (
+      <div key={column.key} className="flex items-start gap-2">
+        <Checkbox
+          id={fieldId}
+          checked={selected.has(column.key)}
+          onCheckedChange={(checked) =>
+            toggleColumn(column.key, checked === true)
+          }
+        />
+        <Label
+          htmlFor={fieldId}
+          className={cn("flex flex-col gap-0.5 font-normal leading-snug")}
+        >
+          <span>{column.label}</span>
+          <span className="text-xs text-muted-foreground">{column.column}</span>
+        </Label>
+      </div>
+    );
   }
 
   return (
@@ -143,7 +208,13 @@ export function ExportDialog({
           </div>
 
           <div className="space-y-4">
-            {groupedColumns.map((group) => {
+            {singleColumnFields.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {singleColumnFields.map((column) => renderField(column))}
+              </div>
+            ) : null}
+
+            {multiColumnGroups.map((group) => {
               const tableKeys = group.columns.map((column) => column.key);
               const tableSelected = tableKeys.filter((key) => selected.has(key));
               const tableAllSelected = tableSelected.length === tableKeys.length;
@@ -173,45 +244,27 @@ export function ExportDialog({
                   </div>
 
                   <div className="grid gap-2 pl-6 sm:grid-cols-2">
-                    {group.columns.map((column) => {
-                      const fieldId = `export-field-${column.key}`;
-                      return (
-                        <div key={column.key} className="flex items-start gap-2">
-                          <Checkbox
-                            id={fieldId}
-                            checked={selected.has(column.key)}
-                            onCheckedChange={(checked) =>
-                              toggleColumn(column.key, checked === true)
-                            }
-                          />
-                          <Label
-                            htmlFor={fieldId}
-                            className={cn(
-                              "flex flex-col gap-0.5 font-normal leading-snug",
-                            )}
-                          >
-                            <span>{column.label}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {column.column}
-                            </span>
-                          </Label>
-                        </div>
-                      );
-                    })}
+                    {group.columns.map((column) => renderField(column))}
                   </div>
                 </section>
               );
             })}
           </div>
+
+          {exportError ? (
+            <p className="text-sm text-destructive">{exportError}</p>
+          ) : null}
         </div>
 
         <DialogFooter className="border-t">
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleExport} disabled={noneSelected || rows.length === 0}>
+          <Button onClick={handleExport} disabled={noneSelected || rows.length === 0 || exporting}>
             <Download />
-            Download {format === "csv" ? "CSV" : "Excel"}
+            {exporting
+              ? "Exporting…"
+              : `Download ${format === "csv" ? (extraSheets.length > 0 ? "ZIP" : "CSV") : "Excel"}`}
           </Button>
         </DialogFooter>
       </DialogContent>

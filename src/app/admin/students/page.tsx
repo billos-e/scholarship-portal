@@ -9,7 +9,11 @@ export default async function AdminStudentsPage() {
   const [students, universities, academicOptions] = await Promise.all([
     prisma.student.findMany({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      include: { university: true },
+      include: {
+        university: true,
+        user: { select: { email: true } },
+        bankInformation: true,
+      },
     }),
     prisma.university.findMany({
       where: { isActive: true },
@@ -25,11 +29,21 @@ export default async function AdminStudentsPage() {
         id: student.id,
         firstName: student.firstName,
         lastName: student.lastName,
+        email: student.user.email,
+        phone: student.phone,
         studentId: student.studentId,
+        memberSince: student.createdAt.toISOString(),
         universityId: student.universityId,
         universityName: student.university?.name ?? null,
         degreeProgram: student.degreeProgram,
+        yearOfStudy: student.yearOfStudy,
+        currentSemesterLabel: student.currentSemesterLabel,
+        gpa: student.gpa?.toString() ?? null,
         status: student.status,
+        bankAccountName: student.bankInformation?.bankAccountName ?? null,
+        bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,
+        bankName: student.bankInformation?.bankName ?? null,
+        promptpayNumber: student.bankInformation?.promptpayNumber ?? null,
       }))}
       universities={universities}
       academicOptions={academicOptions}

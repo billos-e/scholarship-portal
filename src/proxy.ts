@@ -10,6 +10,6 @@ export default proxy(() => {});
 export const config = {
   // Protect everything except Next.js internals, the auth API, logout, and static files.
   matcher: [
-    "/((?!api/auth|api/logout|_next/static|_next/image|favicon.ico|.*\\..*).*)",
+    "/((?!api/auth|api/health|api/logout|_next/static|_next/image|favicon.ico|.*\\..*).*)",
   ],
 };

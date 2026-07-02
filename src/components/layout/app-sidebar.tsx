@@ -13,6 +13,7 @@ import {
   User,
   FilePlus2,
   ClipboardList,
+  FileUp,
   Users,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ const ADMIN_NAV: SidebarNavItem[] = [
   { href: "/admin/students", label: "Students", icon: Users },
   { href: "/admin/requests", label: "Payment Requests", icon: ClipboardList },
   { href: "/admin/universities", label: "Universities", icon: Building2 },
+  { href: "/admin/import", label: "Import", icon: FileUp },
 ];
 
 export function getNavItems(variant: "student" | "admin"): SidebarNavItem[] {

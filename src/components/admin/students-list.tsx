@@ -46,11 +46,21 @@ export type StudentRow = {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
+  phone: string | null;
   studentId: string | null;
+  memberSince: string;
   universityId: string | null;
   universityName: string | null;
   degreeProgram: string | null;
+  yearOfStudy: string | null;
+  currentSemesterLabel: string | null;
+  gpa: string | null;
   status: StudentStatus;
+  bankAccountName: string | null;
+  bankAccountNumber: string | null;
+  bankName: string | null;
+  promptpayNumber: string | null;
 };
 
 type StudentsListProps = {

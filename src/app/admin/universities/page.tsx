@@ -8,7 +8,19 @@ export default async function AdminUniversitiesPage() {
   const universities = await prisma.university.findMany({
     orderBy: { name: "asc" },
     include: {
-      _count: { select: { students: true, semesters: true } },
+      semesters: {
+        orderBy: { startDate: "asc" },
+        select: {
+          id: true,
+          academicYear: true,
+          termCode: true,
+          label: true,
+          startDate: true,
+          endDate: true,
+          isActive: true,
+        },
+      },
+      _count: { select: { students: true } },
     },
   });
 
@@ -19,10 +31,21 @@ export default async function AdminUniversitiesPage() {
         name: university.name,
         city: university.city,
         country: university.country,
+        addressLine: university.addressLine,
+        websiteUrl: university.websiteUrl,
+        notes: university.notes,
         studentCount: university._count.students,
-        semesterCount: university._count.semesters,
         hasSummerSemester: university.hasSummerSemester,
         isActive: university.isActive,
+        semesters: university.semesters.map((semester) => ({
+          id: semester.id,
+          academicYear: semester.academicYear,
+          termCode: semester.termCode,
+          label: semester.label,
+          startDate: semester.startDate.toISOString(),
+          endDate: semester.endDate.toISOString(),
+          isActive: semester.isActive,
+        })),
       }))}
     />
   );

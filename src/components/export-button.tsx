@@ -6,13 +6,14 @@ import { Download } from "lucide-react";
 import { ExportDialog } from "@/components/export-dialog";
 import { Button } from "@/components/ui/button";
 import type { TableExportColumn } from "@/lib/export/table-columns";
-import type { ExportRow } from "@/lib/export/spreadsheet";
+import type { ExportRow, ExportSheet } from "@/lib/export/spreadsheet";
 
 type TableExportButtonProps = {
   columns: TableExportColumn[];
   rows: ExportRow[];
   filename: string;
   sheetName?: string;
+  extraSheets?: ExportSheet[];
   label?: string;
   disabled?: boolean;
 };
@@ -22,6 +23,7 @@ export function TableExportButton({
   rows,
   filename,
   sheetName,
+  extraSheets,
   label = "Export",
   disabled = false,
 }: TableExportButtonProps) {
@@ -46,6 +48,7 @@ export function TableExportButton({
         rows={exportRows}
         filename={filename}
         sheetName={sheetName}
+        extraSheets={extraSheets}
       />
     </>
   );

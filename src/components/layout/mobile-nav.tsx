@@ -26,6 +26,7 @@ function getAdminPageTitle(pathname: string): string {
   if (pathname.startsWith("/admin/students")) return "Students";
   if (pathname.startsWith("/admin/requests")) return "Payment requests";
   if (pathname.startsWith("/admin/universities")) return "Universities";
+  if (pathname.startsWith("/admin/import")) return "Import";
   return "Dashboard";
 }
 

@@ -1,8 +1,14 @@
-import * as XLSX from "xlsx";
-
 import type { TableExportColumn } from "./table-columns";
 
 export type ExportRow = Record<string, string | number | boolean | null>;
+
+export type ExportSheet = {
+  name: string;
+  columns: TableExportColumn[];
+  rows: ExportRow[];
+  /** Appended to the base filename for CSV multi-file exports (e.g. "semesters"). */
+  csvFilenameSuffix?: string;
+};
 
 export function pickExportColumns(
   rows: ExportRow[],
@@ -41,44 +47,43 @@ function escapeCsvCell(value: unknown): string {
   return s;
 }
 
-export function rowsToXlsxArray(
-  rows: ExportRow[],
-  columns: TableExportColumn[],
-  sheetName = "Export",
-): Uint8Array {
-  const sheetRows = rows.map((row) => {
-    const labeled: Record<string, string | number | boolean | null> = {};
-    for (const column of columns) {
-      labeled[column.label] = row[column.key] ?? null;
-    }
-    return labeled;
-  });
-
-  const worksheet =
-    sheetRows.length > 0
-      ? XLSX.utils.json_to_sheet(sheetRows)
-      : XLSX.utils.aoa_to_sheet([columns.map((column) => column.label)]);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  const bytes = XLSX.write(workbook, { type: "array", bookType: "xlsx" });
-  return Uint8Array.from(bytes as number[]);
-}
-
-export function downloadExportFile(
+export async function downloadExportFile(
   rows: ExportRow[],
   columns: TableExportColumn[],
   format: "csv" | "xlsx",
   filename: string,
   sheetName = "Export",
-) {
-  const selectedColumns = columns;
-  const pickedRows = pickExportColumns(
-    rows,
-    selectedColumns.map((column) => column.key),
-  );
+  extraSheets: ExportSheet[] = [],
+): Promise<void> {
+  const mainSheet: ExportSheet = { name: sheetName, columns, rows };
+  const allSheets = [mainSheet, ...extraSheets];
 
   if (format === "csv") {
-    const csv = rowsToCsv(pickedRows, selectedColumns);
+    if (extraSheets.length > 0) {
+      const response = await fetch("/api/export/csv-zip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename, sheets: allSheets }),
+      });
+
+      if (!response.ok) {
+        throw new Error("CSV export failed. Please try again.");
+      }
+
+      const blob = await response.blob();
+      if (blob.size === 0) {
+        throw new Error("CSV export produced an empty file. Please try again.");
+      }
+
+      triggerDownload(blob, `${filename}.zip`);
+      return;
+    }
+
+    const pickedRows = pickExportColumns(
+      rows,
+      columns.map((column) => column.key),
+    );
+    const csv = rowsToCsv(pickedRows, columns);
     triggerDownload(
       new Blob([csv], { type: "text/csv;charset=utf-8" }),
       `${filename}.csv`,
@@ -86,13 +91,22 @@ export function downloadExportFile(
     return;
   }
 
-  const buffer = rowsToXlsxArray(pickedRows, selectedColumns, sheetName);
-  triggerDownload(
-    new Blob([Uint8Array.from(buffer)], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    }),
-    `${filename}.xlsx`,
-  );
+  const response = await fetch("/api/export/xlsx", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename, sheets: allSheets }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Excel export failed. Please try again.");
+  }
+
+  const blob = await response.blob();
+  if (blob.size === 0) {
+    throw new Error("Excel export produced an empty file. Please try again.");
+  }
+
+  triggerDownload(blob, `${filename}.xlsx`);
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -103,5 +117,5 @@ function triggerDownload(blob: Blob, filename: string) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

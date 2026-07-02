@@ -32,8 +32,14 @@ import {
   paginateItems,
   type UniversityFilterState,
 } from "@/lib/client-filters";
-import { UNIVERSITIES_TABLE_COLUMNS } from "@/lib/export/table-columns";
-import { universitiesToExportRows } from "@/lib/export/table-rows";
+import {
+  UNIVERSITIES_TABLE_COLUMNS,
+  UNIVERSITY_SEMESTERS_TABLE_COLUMNS,
+} from "@/lib/export/table-columns";
+import {
+  universitiesToExportRows,
+  universitySemestersToExportRows,
+} from "@/lib/export/table-rows";
 import { useTableSort } from "@/hooks/use-table-sort";
 
 export type UniversityRow = {
@@ -41,10 +47,21 @@ export type UniversityRow = {
   name: string;
   city: string | null;
   country: string | null;
+  addressLine: string | null;
+  websiteUrl: string | null;
+  notes: string | null;
   studentCount: number;
-  semesterCount: number;
   hasSummerSemester: boolean;
   isActive: boolean;
+  semesters: {
+    id: string;
+    academicYear: string;
+    termCode: string;
+    label: string;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+  }[];
 };
 
 const EMPTY_FILTERS: UniversityFilterState = {
@@ -67,7 +84,7 @@ const UNIVERSITY_SORT_ACCESSORS: Record<
   name: (row) => row.name,
   location: (row) => [row.city, row.country].filter(Boolean).join(", "),
   students: (row) => row.studentCount,
-  semesters: (row) => row.semesterCount,
+  semesters: (row) => row.semesters.length,
   summer: (row) => row.hasSummerSemester,
   status: (row) => row.isActive,
 };
@@ -102,6 +119,38 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
     [paginatedUniversities],
   );
 
+  const semesterExportRows = useMemo(
+    () =>
+      universitySemestersToExportRows(
+        paginatedUniversities.flatMap((university) =>
+          university.semesters.map((semester) => ({
+            id: semester.id,
+            universityId: university.id,
+            universityName: university.name,
+            academicYear: semester.academicYear,
+            termCode: semester.termCode,
+            label: semester.label,
+            startDate: semester.startDate,
+            endDate: semester.endDate,
+            isActive: semester.isActive,
+          })),
+        ),
+      ),
+    [paginatedUniversities],
+  );
+
+  const exportExtraSheets = useMemo(
+    () => [
+      {
+        name: "Semesters",
+        columns: UNIVERSITY_SEMESTERS_TABLE_COLUMNS,
+        rows: semesterExportRows,
+        csvFilenameSuffix: "semesters",
+      },
+    ],
+    [semesterExportRows],
+  );
+
   const exportFilename = useMemo(() => {
     const stamp = new Date().toISOString().slice(0, 10);
     return `universities-page-${currentPage}-${stamp}`;
@@ -132,6 +181,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
               rows={exportRows}
               filename={exportFilename}
               sheetName="Universities"
+              extraSheets={exportExtraSheets}
             />
             <UniversityDialog />
           </>
@@ -243,7 +293,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
                             .join(", ") || "—"}
                         </TableCell>
                         <TableCell>{university.studentCount}</TableCell>
-                        <TableCell>{university.semesterCount}</TableCell>
+                        <TableCell>{university.semesters.length}</TableCell>
                         <TableCell>
                           {university.hasSummerSemester ? "Yes" : "No"}
                         </TableCell>

@@ -10,6 +10,7 @@ export default async function AdminRequestsPage() {
       orderBy: [{ submittedAt: "desc" }],
       include: {
         student: { include: { university: true } },
+        paymentHistory: { select: { internalNotes: true } },
       },
     }),
     prisma.university.findMany({
@@ -29,8 +30,12 @@ export default async function AdminRequestsPage() {
       requests={requests.map((request) => ({
         id: request.id,
         semesterLabel: request.semesterLabel,
+        amountDue: request.amountDue.toString(),
+        dueDate: request.dueDate?.toISOString() ?? null,
         submittedAt: request.submittedAt.toISOString(),
         status: request.status,
+        adminNotes: request.adminNotes,
+        internalNotes: request.paymentHistory?.internalNotes ?? null,
         student: {
           firstName: request.student.firstName,
           lastName: request.student.lastName,

@@ -3,6 +3,10 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 
 import { authConfig } from "@/auth.config";
+import {
+  DatabaseUnavailableError,
+  isDatabaseUnavailable,
+} from "@/lib/db/errors";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/password";
 
@@ -11,7 +15,7 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   ...authConfig,
   session: { strategy: "jwt" },
   providers: [
@@ -26,21 +30,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const { email, password } = parsed.data;
 
-        const user = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+          });
 
-        // Reject unknown users, disabled accounts, and bad passwords.
-        if (!user || !user.isActive) return null;
+          // Reject unknown users, disabled accounts, and bad passwords.
+          if (!user || !user.isActive) return null;
 
-        const valid = await verifyPassword(password, user.passwordHash);
-        if (!valid) return null;
+          const valid = await verifyPassword(password, user.passwordHash);
+          if (!valid) return null;
 
-        return {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-        };
+          if (user.role === "STUDENT") {
+            const student = await prisma.student.findUnique({
+              where: { userId: user.id },
+              select: { id: true, firstName: true, lastName: true },
+            });
+            if (!student) return null;
+
+            return {
+              id: user.id,
+              email: user.email,
+              role: user.role,
+              studentProfileId: student.id,
+              firstName: student.firstName,
+              lastName: student.lastName,
+            };
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          if (isDatabaseUnavailable(error)) {
+            throw new DatabaseUnavailableError();
+          }
+          throw error;
+        }
       },
     }),
   ],

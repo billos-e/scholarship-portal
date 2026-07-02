@@ -14,17 +14,45 @@ export const authConfig = {
   // Providers with their `authorize` logic are added in `auth.ts` (Node runtime).
   providers: [],
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id as string;
         token.role = user.role as Role;
+        if (user.studentProfileId) {
+          token.studentProfileId = user.studentProfileId;
+        }
+        if (user.firstName) {
+          token.firstName = user.firstName;
+          token.lastName = user.lastName;
+        }
       }
+
+      if (trigger === "update" && session) {
+        const updated = session as {
+          user?: { firstName?: string; lastName?: string };
+          firstName?: string;
+          lastName?: string;
+        };
+        const firstName = updated.user?.firstName ?? updated.firstName;
+        const lastName = updated.user?.lastName ?? updated.lastName;
+        if (firstName) token.firstName = firstName;
+        if (lastName) token.lastName = lastName;
+      }
+
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
+        if (token.studentProfileId) {
+          session.user.studentProfileId = token.studentProfileId as string;
+        }
+        if (token.firstName && token.lastName) {
+          session.user.firstName = token.firstName as string;
+          session.user.lastName = token.lastName as string;
+          session.user.displayName = `${token.firstName} ${token.lastName}`;
+        }
       }
       return session;
     },

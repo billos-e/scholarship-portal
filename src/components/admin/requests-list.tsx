@@ -54,8 +54,12 @@ const STATUS_VALUES: RequestStatus[] = [
 export type RequestRow = {
   id: string;
   semesterLabel: string;
+  amountDue: string;
+  dueDate: string | null;
   submittedAt: string;
   status: RequestStatus;
+  adminNotes: string | null;
+  internalNotes: string | null;
   student: {
     firstName: string;
     lastName: string;

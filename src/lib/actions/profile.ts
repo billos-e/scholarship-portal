@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
+import { syncStudentSession } from "@/lib/auth/sync-session";
 import { prisma } from "@/lib/prisma";
 import { saveStudentUpload, validateUpload } from "@/lib/uploads";
 import {
@@ -82,6 +83,10 @@ export async function updateOwnProfile(
 
   revalidatePath("/student/profile");
   revalidatePath("/student/submit");
+  await syncStudentSession(
+    profileFields.firstName,
+    profileFields.lastName,
+  );
   return { success: true };
 }
 

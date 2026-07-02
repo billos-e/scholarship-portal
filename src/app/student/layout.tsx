@@ -1,18 +1,21 @@
 import { AppShell } from "@/components/layout/app-shell";
-import { requireStudent } from "@/lib/auth/session";
+import {
+  requireStudentSession,
+  sessionDisplayName,
+} from "@/lib/auth/session";
 
 export default async function StudentLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, student } = await requireStudent();
+  const user = await requireStudentSession();
 
   return (
     <AppShell
       variant="student"
       email={user.email ?? ""}
-      displayName={`${student.firstName} ${student.lastName}`}
+      displayName={sessionDisplayName(user)}
     >
       {children}
     </AppShell>
