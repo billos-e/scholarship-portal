@@ -67,7 +67,7 @@ export function AppShell({
               : "min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8 md:pb-8"
           }
         >
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
+          <div className="w-full">{children}</div>
         </main>
       </div>
     </div>
