@@ -376,37 +376,41 @@ async function main() {
     },
   });
 
-  const statusCycle: RequestStatus[] = [
+  const fall2026Statuses: RequestStatus[] = [
     RequestStatus.PAID,
     RequestStatus.PAID,
     RequestStatus.APPROVED,
     RequestStatus.UNDER_REVIEW,
-    RequestStatus.REJECTED,
     RequestStatus.SUBMITTED,
+    RequestStatus.REJECTED,
+    RequestStatus.PAID,
+    RequestStatus.APPROVED,
   ];
 
-  let submissionCount = 0;
   const submissionLabels = ["Fall 2025", "Spring 2026", "Fall 2026"];
 
-  for (const { student, universityId, name } of createdStudents) {
+  for (let i = 0; i < createdStudents.length; i++) {
+    const { student, universityId, name } = createdStudents[i];
     const uniSemesters = semesters.filter(
       (s) =>
         s.universityId === universityId &&
         submissionLabels.includes(s.label),
     );
+    const fall2026Status = fall2026Statuses[i % fall2026Statuses.length];
 
     for (let j = 0; j < uniSemesters.length; j++) {
       const semester = uniSemesters[j];
-      const status = statusCycle[(submissionCount + j) % statusCycle.length];
-      const amount = 22000 + (j % 4) * 2500 + (submissionCount % 3) * 1000;
+      const status =
+        semester.label === "Fall 2026"
+          ? fall2026Status
+          : RequestStatus.PAID;
+      const amount = 22000 + (j % 4) * 2500 + (i % 3) * 1000;
       const submittedAt = new Date(semester.startDate);
       submittedAt.setDate(submittedAt.getDate() + 14);
 
-      process.stdout.write(`  → ${name} / ${semester.label}\n`);
+      process.stdout.write(`  → ${name} / ${semester.label} (${status})\n`);
       await seedRequest(student.id, semester, status, amount, submittedAt);
     }
-
-    submissionCount += 1;
   }
 
   console.log("Seed complete.");
