@@ -30,6 +30,14 @@ function getAdminPageTitle(pathname: string): string {
   return "Dashboard";
 }
 
+function getStudentPageTitle(pathname: string): string {
+  if (pathname.startsWith("/student/profile/edit")) return "Edit profile";
+  if (pathname.startsWith("/student/profile")) return "My profile";
+  if (pathname.startsWith("/student/submit")) return "New submission";
+  if (pathname.startsWith("/student/history")) return "Payment history";
+  return "Dashboard";
+}
+
 export function MobileNav({ variant, email, displayName }: MobileNavProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -215,34 +223,54 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
     );
   }
 
+  const pageTitle = getStudentPageTitle(pathname);
+
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur-md md:hidden"
-      aria-label="Mobile navigation"
-    >
-      <div className="flex items-stretch justify-around px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium transition-colors",
-                active ? "text-primary" : "text-muted-foreground",
-              )}
-              aria-current={active ? "page" : undefined}
-            >
-              {active ? (
-                <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-primary" />
-              ) : null}
-              <Icon className={cn("size-5", active && "text-primary")} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+    <>
+      <header className="student-mobile-header sticky top-0 z-30 border-b border-border/80 bg-card/95 backdrop-blur-md md:hidden">
+        <div className="flex h-14 items-center gap-3 px-4">
+          <Link href="/student" className="flex min-w-0 items-center gap-3">
+            <BrandMark variant="student" size="sm" />
+            <div className="min-w-0">
+              <p className="truncate font-heading text-sm font-semibold text-foreground">
+                {pageTitle}
+              </p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                Scholarship portal
+              </p>
+            </div>
+          </Link>
+        </div>
+      </header>
+
+      <nav
+        className="student-mobile-tabbar fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur-md md:hidden"
+        aria-label="Mobile navigation"
+      >
+        <div className="flex items-stretch justify-around px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1">
+          {items.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium transition-colors",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
+                aria-current={active ? "page" : undefined}
+              >
+                {active ? (
+                  <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-primary" />
+                ) : null}
+                <Icon className={cn("size-5", active && "text-primary")} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </>
   );
 }

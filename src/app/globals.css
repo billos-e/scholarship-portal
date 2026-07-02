@@ -239,6 +239,14 @@
     box-shadow: 0 -8px 24px -12px color-mix(in srgb, var(--foreground) 12%, transparent);
   }
 
+  .student-mobile-header {
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent);
+  }
+
+  .student-mobile-tabbar {
+    box-shadow: 0 -8px 24px -12px color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .admin-mobile-drawer {
       animation: none !important;

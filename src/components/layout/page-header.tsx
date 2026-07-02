@@ -38,7 +38,9 @@ export function PageHeader({
           <h1
             className={cn(
               "font-heading font-bold tracking-tight",
-              size === "lg" ? "text-[1.625rem] leading-tight" : "text-2xl",
+              size === "lg"
+                ? "text-xl leading-tight sm:text-[1.625rem]"
+                : "text-xl sm:text-2xl",
             )}
           >
             {title}
@@ -51,7 +53,7 @@ export function PageHeader({
         </div>
       </div>
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center [&_button]:w-full sm:[&_button]:w-auto [&_a]:w-full sm:[&_a]:w-auto">
           {actions}
         </div>
       ) : null}

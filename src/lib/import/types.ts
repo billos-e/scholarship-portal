@@ -50,6 +50,9 @@ export type ImportCommitResult = {
   semestersCreated?: number;
   semestersUpdated?: number;
   semestersSkipped?: number;
+  degreeProgramsCreated?: number;
+  degreeProgramsUpdated?: number;
+  degreeProgramsSkipped?: number;
 };
 
 export type ImportSecondarySheet = {
@@ -62,4 +65,5 @@ export type ImportSecondarySheet = {
 
 export type UniversitiesImportPreview = ImportPreviewResult & {
   semesters?: ImportPreviewResult;
+  degreePrograms?: ImportPreviewResult;
 };

@@ -9,10 +9,9 @@ import {
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
+import { LatestSubmissionCard } from "@/components/student/latest-submission-card";
 import { PaymentRequestsTable } from "@/components/payment-requests-table";
 import { QuickActionCard } from "@/components/quick-action-card";
-import { StatusStepper } from "@/components/status-stepper";
-import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,8 +21,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireStudent } from "@/lib/auth/session";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { getSubmissionEligibility } from "@/lib/submissions/eligibility";
 
 function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
@@ -34,11 +34,20 @@ function greetingForHour(hour: number): string {
 export default async function StudentDashboard() {
   const { student } = await requireStudent();
   const hour = new Date().getHours();
+  const eligibility = await getSubmissionEligibility(student);
 
   const [latestRequest, recentRequests] = await Promise.all([
     prisma.tuitionPaymentRequest.findFirst({
       where: { studentId: student.id },
-      orderBy: { submittedAt: "desc" },
+      orderBy: [{ submittedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        semesterLabel: true,
+        amountDue: true,
+        submittedAt: true,
+        dueDate: true,
+        status: true,
+      },
     }),
     prisma.tuitionPaymentRequest.findMany({
       where: { studentId: student.id },
@@ -48,71 +57,81 @@ export default async function StudentDashboard() {
   ]);
 
   const semesterHint =
-    latestRequest?.semesterLabel ??
+    eligibility.openRequest?.semesterLabel ??
     student.currentSemesterLabel ??
+    latestRequest?.semesterLabel ??
     "Current semester";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <PageHeader
         size="lg"
         title={`${greetingForHour(hour)}, ${student.firstName}`}
         description={`${semesterHint} · ${student.university?.name ?? "No university set"}`}
         actions={
-          <Button className="h-11 gap-2 px-5" render={<Link href="/student/submit" />}>
-            <Plus className="size-4" />
-            New Submission
-          </Button>
+          eligibility.canStart ? (
+            <Button className="h-11 gap-2 px-5" render={<Link href="/student/submit" />}>
+              <Plus className="size-4" />
+              New Submission
+            </Button>
+          ) : eligibility.missingProfileFields.length > 0 ? (
+            <Button
+              className="h-11 gap-2 px-5"
+              render={<Link href="/student/profile/edit" />}
+            >
+              <User className="size-4" />
+              Complete profile
+            </Button>
+          ) : eligibility.openRequest ? (
+            <Button
+              variant="outline"
+              className="h-11 gap-2 px-5"
+              render={
+                <Link href={`/student/history/${eligibility.openRequest.id}`} />
+              }
+            >
+              View active request
+            </Button>
+          ) : null
         }
       />
 
-      <Card className="border-border shadow-none">
-        <CardContent className="flex flex-col gap-6 p-7 lg:flex-row lg:items-center lg:justify-between">
-          {latestRequest ? (
-            <>
-              <div className="min-w-0 flex-1 space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-[13px] font-medium text-muted-foreground">
-                    Current Payment Request
-                  </p>
-                  <StatusBadge status={latestRequest.status} />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="font-heading text-xl font-bold">
-                    {latestRequest.semesterLabel} Tuition Payment
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Submitted on {formatDate(latestRequest.submittedAt)} · Amount:{" "}
-                    {formatCurrency(latestRequest.amountDue.toString())}
-                  </p>
-                </div>
-                <StatusStepper status={latestRequest.status} variant="dots" />
-              </div>
-              <Button
-                variant="outline"
-                className="h-10 shrink-0 px-4"
-                render={
-                  <Link href={`/student/history/${latestRequest.id}`} />
-                }
-              >
-                View Details
+      {latestRequest ? (
+        <LatestSubmissionCard
+          request={{
+            id: latestRequest.id,
+            semesterLabel: latestRequest.semesterLabel,
+            amountDue: latestRequest.amountDue.toString(),
+            submittedAt: latestRequest.submittedAt,
+            dueDate: latestRequest.dueDate,
+            status: latestRequest.status,
+          }}
+        />
+      ) : (
+        <EmptyState
+          title="No submissions yet"
+          description={
+            eligibility.canStart
+              ? "Start your first semester submission to track tuition and academic progress."
+              : eligibility.missingProfileFields.length > 0
+                ? "Complete your profile before starting your first submission."
+                : "Finish or resolve your current request before starting another."
+          }
+          action={
+            eligibility.canStart ? (
+              <Button render={<Link href="/student/submit" />}>
+                New Submission
               </Button>
-            </>
-          ) : (
-            <EmptyState
-              title="No submissions yet"
-              description="Start your first semester submission to track tuition and academic progress."
-              action={
-                <Button render={<Link href="/student/submit" />}>
-                  New Submission
-                </Button>
-              }
-            />
-          )}
-        </CardContent>
-      </Card>
+            ) : eligibility.missingProfileFields.length > 0 ? (
+              <Button render={<Link href="/student/profile/edit" />}>
+                Complete profile
+              </Button>
+            ) : null
+          }
+        />
+      )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
         <Link href="/student/profile" className="block">
           <QuickActionCard
             title="My Profile"
@@ -121,10 +140,25 @@ export default async function StudentDashboard() {
             tone="primary"
           />
         </Link>
-        <Link href="/student/submit" className="block">
+        <Link
+          href={
+            eligibility.canStart
+              ? "/student/submit"
+              : eligibility.openRequest
+                ? `/student/history/${eligibility.openRequest.id}`
+                : "/student/profile/edit"
+          }
+          className="block"
+        >
           <QuickActionCard
             title="Semester Submission"
-            description="Tuition payment & academic report"
+            description={
+              eligibility.canStart
+                ? "Tuition payment & academic report"
+                : eligibility.missingProfileFields.length > 0
+                  ? "Complete your profile first"
+                  : "Active request in progress"
+            }
             icon={ClipboardList}
             tone="accent"
           />
@@ -141,14 +175,15 @@ export default async function StudentDashboard() {
 
       {recentRequests.length > 0 ? (
         <Card className="border-border shadow-none">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <CardTitle>Recent Submissions</CardTitle>
               <CardDescription>Your latest payment requests.</CardDescription>
             </div>
             <Button
               size="sm"
               variant="outline"
+              className="w-full shrink-0 sm:w-auto"
               render={<Link href="/student/history" />}
             >
               View all

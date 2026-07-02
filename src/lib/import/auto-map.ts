@@ -87,3 +87,14 @@ export function getSemesterIdentityError(mapping: ColumnMapping): string | null 
 
   return "Map university ID or university name for each semester row.";
 }
+
+export function getDegreeProgramIdentityError(
+  mapping: ColumnMapping,
+): string | null {
+  const hasUniversityId = Boolean(mapping.university_id?.trim());
+  const hasUniversityName = Boolean(mapping.university_name?.trim());
+
+  if (hasUniversityId || hasUniversityName) return null;
+
+  return "Map university ID or university name for each degree program row.";
+}

@@ -38,34 +38,5 @@ export async function validateUniversityContext(
     }
   }
 
-  if (data.degreeProgram) {
-    const knownProgram = await prisma.student.findFirst({
-      where: {
-        universityId: data.universityId,
-        degreeProgram: { equals: data.degreeProgram, mode: "insensitive" },
-        ...(options?.studentId ? { NOT: { id: options.studentId } } : {}),
-      },
-      select: { id: true },
-    });
-    if (!knownProgram) {
-      const ownProgram =
-        options?.studentId &&
-        (await prisma.student.findFirst({
-          where: {
-            id: options.studentId,
-            universityId: data.universityId,
-            degreeProgram: {
-              equals: data.degreeProgram,
-              mode: "insensitive",
-            },
-          },
-          select: { id: true },
-        }));
-      if (!ownProgram) {
-        return "Degree program must match an existing program at this university.";
-      }
-    }
-  }
-
   return null;
 }

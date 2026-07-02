@@ -20,6 +20,14 @@ export default async function AdminUniversitiesPage() {
           isActive: true,
         },
       },
+      degreePrograms: {
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+        },
+      },
       _count: { select: { students: true } },
     },
   });
@@ -45,6 +53,11 @@ export default async function AdminUniversitiesPage() {
           startDate: semester.startDate.toISOString(),
           endDate: semester.endDate.toISOString(),
           isActive: semester.isActive,
+        })),
+        degreePrograms: university.degreePrograms.map((program) => ({
+          id: program.id,
+          name: program.name,
+          isActive: program.isActive,
         })),
       }))}
     />

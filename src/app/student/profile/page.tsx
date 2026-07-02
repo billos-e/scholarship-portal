@@ -1,93 +1,126 @@
+import Link from "next/link";
+import { Pencil } from "lucide-react";
+
+import { ProfileInfoCard } from "@/components/admin/profile-info-card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { PageHeader } from "@/components/layout/page-header";
+  ProfileInfoField,
+  ProfileInfoGrid,
+} from "@/components/admin/profile-info-field";
+import { StudentDetailHero } from "@/components/admin/student-detail-hero";
 import { StudentStatusBadge } from "@/components/student-status-badge";
+import { Button } from "@/components/ui/button";
 import { requireStudent } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
-import { getStudentAcademicOptions } from "@/lib/student-academic-options";
-import { BankForm, StudentProfileForm } from "./profile-forms";
-import { ProfilePhotoForm } from "./profile-photo-form";
+import { formatDate } from "@/lib/format";
 
 export default async function StudentProfilePage() {
   const { user, student } = await requireStudent();
-
-  const [universities, academicOptions] = await Promise.all([
-    prisma.university.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    getStudentAcademicOptions(),
-  ]);
+  const bank = student.bankInformation;
+  const fullName = `${student.firstName} ${student.lastName}`;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="My Profile"
-        description="View and update your personal, academic, and bank details."
+      <StudentDetailHero
+        firstName={student.firstName}
+        lastName={student.lastName}
+        studentIdNumber={student.studentId}
+        universityId={null}
+        universityName={student.university?.name ?? null}
+        degreeProgram={student.degreeProgram}
+        yearOfStudy={student.yearOfStudy}
+        currentSemesterLabel={student.currentSemesterLabel}
+        gpa={student.gpa ? student.gpa.toString() : null}
+        status={student.status}
+        photoUrl={student.photoUrl}
+        headerAction={
+          <Button
+            size="sm"
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto"
+            render={<Link href="/student/profile/edit" />}
+          >
+            <Pencil className="size-3.5" />
+            Edit profile
+          </Button>
+        }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>
-            Keep your contact and academic information up to date.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <ProfilePhotoForm
-            photoUrl={student.photoUrl}
-            name={`${student.firstName} ${student.lastName}`}
-          />
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Status
-            </p>
+      <ProfileInfoCard title="Personal information">
+        <ProfileInfoGrid>
+          <ProfileInfoField label="First name" value={student.firstName} />
+          <ProfileInfoField label="Last name" value={student.lastName} />
+          <ProfileInfoField label="Student ID" value={student.studentId} />
+          <ProfileInfoField label="Email address">
+            <a
+              href={`mailto:${user.email}`}
+              className="text-primary underline-offset-4 transition-colors hover:underline"
+            >
+              {user.email}
+            </a>
+          </ProfileInfoField>
+          <ProfileInfoField label="Phone number" value={student.phone} />
+          <ProfileInfoField label="Account status">
             <StudentStatusBadge status={student.status} />
-          </div>
-          <StudentProfileForm
-            profile={{
-              firstName: student.firstName,
-              lastName: student.lastName,
-              email: user.email ?? "",
-              studentId: student.studentId,
-              phone: student.phone,
-              universityId: student.universityId,
-              degreeProgram: student.degreeProgram,
-              yearOfStudy: student.yearOfStudy,
-              currentSemesterLabel: student.currentSemesterLabel,
-              gpa: student.gpa ? student.gpa.toString() : null,
-            }}
-            universities={universities}
-            academicOptions={academicOptions}
+          </ProfileInfoField>
+          <ProfileInfoField
+            label="Member since"
+            value={formatDate(student.createdAt)}
           />
-        </CardContent>
-      </Card>
+        </ProfileInfoGrid>
+      </ProfileInfoCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Bank information</CardTitle>
-          <CardDescription>
-            Used for tuition payments. Keep this current.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BankForm
-            bank={{
-              bankAccountName: student.bankInformation?.bankAccountName ?? null,
-              bankAccountNumber:
-                student.bankInformation?.bankAccountNumber ?? null,
-              bankName: student.bankInformation?.bankName ?? null,
-              promptpayNumber: student.bankInformation?.promptpayNumber ?? null,
-            }}
+      <ProfileInfoCard title="Academic information">
+        <ProfileInfoGrid>
+          <ProfileInfoField
+            label="University"
+            value={student.university?.name ?? null}
           />
-        </CardContent>
-      </Card>
+          <ProfileInfoField
+            label="Degree program"
+            value={student.degreeProgram}
+          />
+          <ProfileInfoField
+            label="Year of study"
+            value={student.yearOfStudy}
+          />
+          <ProfileInfoField
+            label="Current semester"
+            value={student.currentSemesterLabel}
+          />
+          <ProfileInfoField
+            label="GPA"
+            value={student.gpa ? student.gpa.toString() : null}
+          />
+        </ProfileInfoGrid>
+      </ProfileInfoCard>
+
+      <ProfileInfoCard title="Bank information">
+        {bank?.bankName || bank?.bankAccountNumber ? (
+          <ProfileInfoGrid>
+            <ProfileInfoField label="Bank name" value={bank.bankName} />
+            <ProfileInfoField
+              label="Account holder"
+              value={bank.bankAccountName}
+            />
+            <ProfileInfoField
+              label="Account number"
+              value={bank.bankAccountNumber}
+            />
+            <ProfileInfoField
+              label="PromptPay"
+              value={bank.promptpayNumber}
+            />
+          </ProfileInfoGrid>
+        ) : (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            No bank details on file.{" "}
+            <Link
+              href="/student/profile/edit"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Add bank information
+            </Link>
+          </p>
+        )}
+      </ProfileInfoCard>
     </div>
   );
 }

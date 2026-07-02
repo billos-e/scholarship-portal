@@ -55,9 +55,27 @@ function findSheetName(
   );
 }
 
+function parseOptionalSheet(
+  workbook: XLSX.WorkBook,
+  sheetName: string | undefined,
+  universitiesSheetName: string,
+): ParsedSpreadsheet | undefined {
+  if (!sheetName || sheetName === universitiesSheetName) {
+    return undefined;
+  }
+
+  const parsed = parseWorksheet(workbook.Sheets[sheetName]!);
+  if (parsed.headers.length === 0 || parsed.rows.length === 0) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
 export type ParsedUniversitiesWorkbook = {
   universities: ParsedSpreadsheet;
   semesters?: ParsedSpreadsheet;
+  degreePrograms?: ParsedSpreadsheet;
 };
 
 export function parseSpreadsheetBuffer(buffer: Buffer): ParsedSpreadsheet {
@@ -90,21 +108,34 @@ export function parseUniversitiesImportBuffer(
     "university_semesters",
     "university semesters",
   ]);
+  const degreeProgramsSheetName = findSheetName(sheetNames, [
+    "degree programs",
+    "degree_programs",
+    "degree-programs",
+    "programs",
+    "program",
+  ]);
 
   const universities = parseWorksheet(
     workbook.Sheets[universitiesSheetName]!,
   );
 
-  if (!semestersSheetName || semestersSheetName === universitiesSheetName) {
-    return { universities };
-  }
+  const semesters = parseOptionalSheet(
+    workbook,
+    semestersSheetName,
+    universitiesSheetName,
+  );
+  const degreePrograms = parseOptionalSheet(
+    workbook,
+    degreeProgramsSheetName,
+    universitiesSheetName,
+  );
 
-  const semesters = parseWorksheet(workbook.Sheets[semestersSheetName]!);
-  if (semesters.headers.length === 0 || semesters.rows.length === 0) {
-    return { universities };
-  }
-
-  return { universities, semesters };
+  return {
+    universities,
+    ...(semesters ? { semesters } : {}),
+    ...(degreePrograms ? { degreePrograms } : {}),
+  };
 }
 
 function findZipEntry(
@@ -132,6 +163,17 @@ async function parseCsvZipEntry(file: JSZip.JSZipObject): Promise<ParsedSpreadsh
   return parseWorksheet(workbook.Sheets[sheetName]!);
 }
 
+async function parseOptionalZipCsv(
+  entry: JSZip.JSZipObject | null,
+): Promise<ParsedSpreadsheet | undefined> {
+  if (!entry) return undefined;
+  const parsed = await parseCsvZipEntry(entry);
+  if (parsed.headers.length === 0 || parsed.rows.length === 0) {
+    return undefined;
+  }
+  return parsed;
+}
+
 export async function parseUniversitiesZipBuffer(
   buffer: Buffer,
 ): Promise<ParsedUniversitiesWorkbook> {
@@ -141,6 +183,13 @@ export async function parseUniversitiesZipBuffer(
     "university.csv",
   ]);
   const semestersEntry = findZipEntry(zip, ["semesters.csv", "semester.csv"]);
+  const degreeProgramsEntry = findZipEntry(zip, [
+    "degree-programs.csv",
+    "degree_programs.csv",
+    "degree programs.csv",
+    "programs.csv",
+    "program.csv",
+  ]);
 
   if (!universitiesEntry) {
     return {
@@ -149,14 +198,14 @@ export async function parseUniversitiesZipBuffer(
   }
 
   const universities = await parseCsvZipEntry(universitiesEntry);
-  if (!semestersEntry) {
-    return { universities };
-  }
+  const [semesters, degreePrograms] = await Promise.all([
+    parseOptionalZipCsv(semestersEntry),
+    parseOptionalZipCsv(degreeProgramsEntry),
+  ]);
 
-  const semesters = await parseCsvZipEntry(semestersEntry);
-  if (semesters.headers.length === 0 || semesters.rows.length === 0) {
-    return { universities };
-  }
-
-  return { universities, semesters };
+  return {
+    universities,
+    ...(semesters ? { semesters } : {}),
+    ...(degreePrograms ? { degreePrograms } : {}),
+  };
 }

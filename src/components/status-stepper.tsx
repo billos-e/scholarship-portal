@@ -32,7 +32,7 @@ export function StatusStepper({
   if (variant === "dots") {
     return (
       <ol
-        className={cn("flex w-full max-w-lg items-start gap-2", className)}
+        className={cn("flex w-full max-w-lg items-start gap-1 sm:gap-2", className)}
         aria-label="Request status progress"
       >
         {STEPS.map((step, index) => {
@@ -42,23 +42,23 @@ export function StatusStepper({
           return (
             <li
               key={step.status}
-              className="flex flex-1 flex-col items-center gap-1.5"
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 sm:gap-1.5"
               aria-current={active ? "step" : undefined}
             >
               <div
                 className={cn(
-                  "flex size-7 items-center justify-center rounded-full transition-colors",
+                  "flex size-6 shrink-0 items-center justify-center rounded-full transition-colors sm:size-7",
                   rejected && "bg-border opacity-40",
                   !rejected && done && "bg-primary text-primary-foreground",
                   !rejected && active && !done && "bg-primary text-primary-foreground",
                   !rejected && !done && !active && "bg-border",
                 )}
               >
-                {done && !rejected ? <Check className="size-3.5" /> : null}
+                {done && !rejected ? <Check className="size-3 sm:size-3.5" /> : null}
               </div>
               <span
                 className={cn(
-                  "text-center text-[11px]",
+                  "max-w-full truncate text-center text-[10px] leading-tight sm:text-[11px]",
                   active && !rejected
                     ? "font-medium text-primary"
                     : "text-muted-foreground",

@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { suggestColumnMapping, getMissingRequiredFields, getPaymentIdentityError, getSemesterIdentityError } from "@/lib/import/auto-map";
-import { getImportFields, getUniversitySemesterImportFields } from "@/lib/import/fields";
+import { suggestColumnMapping, getMissingRequiredFields, getPaymentIdentityError, getSemesterIdentityError, getDegreeProgramIdentityError } from "@/lib/import/auto-map";
+import { getImportFields, getUniversityDegreeProgramImportFields, getUniversitySemesterImportFields } from "@/lib/import/fields";
 import { commitImport, previewImport } from "@/lib/import/index";
 import {
   parseSpreadsheetBuffer,
@@ -20,6 +20,7 @@ import type {
   ImportSecondarySheet,
   ParsedSpreadsheet,
   UniversitiesImportPreview,
+  ImportFieldDef,
 } from "@/lib/import/types";
 
 const entitySchema = z.enum(["students", "universities", "payments"]);
@@ -37,7 +38,21 @@ export type ParseImportFileResult =
       suggestedMapping: ColumnMapping;
       rowCount: number;
       semesterSheet?: ImportSecondarySheet;
+      degreeProgramSheet?: ImportSecondarySheet;
     };
+
+function toSecondarySheet(
+  parsed: ParsedSpreadsheet,
+  fields: ImportFieldDef[],
+): ImportSecondarySheet {
+  return {
+    headers: parsed.headers,
+    rows: parsed.rows,
+    sampleRows: parsed.sampleRows,
+    suggestedMapping: suggestColumnMapping(parsed.headers, fields),
+    rowCount: parsed.rows.length,
+  };
+}
 
 export async function parseImportFile(
   formData: FormData,
@@ -78,15 +93,18 @@ export async function parseImportFile(
   const buffer = Buffer.from(await file.arrayBuffer());
   let parsed: ParsedSpreadsheet;
   let semesterParsed: ParsedSpreadsheet | undefined;
+  let degreeProgramParsed: ParsedSpreadsheet | undefined;
 
   if (entityParsed.data === "universities" && name.endsWith(".zip")) {
     const workbook = await parseUniversitiesZipBuffer(buffer);
     parsed = workbook.universities;
     semesterParsed = workbook.semesters;
+    degreeProgramParsed = workbook.degreePrograms;
   } else if (entityParsed.data === "universities") {
     const workbook = parseUniversitiesImportBuffer(buffer);
     parsed = workbook.universities;
     semesterParsed = workbook.semesters;
+    degreeProgramParsed = workbook.degreePrograms;
   } else {
     parsed = parseSpreadsheetBuffer(buffer);
   }
@@ -102,16 +120,17 @@ export async function parseImportFile(
     semesterParsed &&
     semesterParsed.headers.length > 0 &&
     semesterParsed.rows.length > 0
-      ? {
-          headers: semesterParsed.headers,
-          rows: semesterParsed.rows,
-          sampleRows: semesterParsed.sampleRows,
-          suggestedMapping: suggestColumnMapping(
-            semesterParsed.headers,
-            getUniversitySemesterImportFields(),
-          ),
-          rowCount: semesterParsed.rows.length,
-        }
+      ? toSecondarySheet(semesterParsed, getUniversitySemesterImportFields())
+      : undefined;
+
+  const degreeProgramSheet =
+    degreeProgramParsed &&
+    degreeProgramParsed.headers.length > 0 &&
+    degreeProgramParsed.rows.length > 0
+      ? toSecondarySheet(
+          degreeProgramParsed,
+          getUniversityDegreeProgramImportFields(),
+        )
       : undefined;
 
   return {
@@ -121,6 +140,7 @@ export async function parseImportFile(
     suggestedMapping,
     rowCount: parsed.rows.length,
     semesterSheet,
+    degreeProgramSheet,
   };
 }
 
@@ -131,6 +151,8 @@ export async function validateImportData(
   options?: {
     semesterMapping?: ColumnMapping;
     semesterRows?: Record<string, string>[];
+    degreeProgramMapping?: ColumnMapping;
+    degreeProgramRows?: Record<string, string>[];
   },
 ): Promise<{ error: string } | ImportPreviewResult | UniversitiesImportPreview> {
   await requireAdmin();
@@ -196,6 +218,36 @@ export async function validateImportData(
     }
   }
 
+  if (
+    entityParsed.data === "universities" &&
+    options?.degreeProgramRows?.length &&
+    options.degreeProgramMapping
+  ) {
+    const degreeProgramMappingParsed = mappingSchema.safeParse(
+      options.degreeProgramMapping,
+    );
+    if (!degreeProgramMappingParsed.success) {
+      return { error: "Invalid degree program column mapping." };
+    }
+
+    const missingProgramFields = getMissingRequiredFields(
+      degreeProgramMappingParsed.data,
+      getUniversityDegreeProgramImportFields(),
+    );
+    if (missingProgramFields.length > 0) {
+      return {
+        error: `Map required degree program fields: ${missingProgramFields.map((f) => f.label).join(", ")}.`,
+      };
+    }
+
+    const degreeProgramIdentityError = getDegreeProgramIdentityError(
+      degreeProgramMappingParsed.data,
+    );
+    if (degreeProgramIdentityError) {
+      return { error: degreeProgramIdentityError };
+    }
+  }
+
   return previewImport(
     entityParsed.data,
     rowsParsed.data,
@@ -203,6 +255,8 @@ export async function validateImportData(
     {
       semesterRows: options?.semesterRows,
       semesterMapping: options?.semesterMapping,
+      degreeProgramRows: options?.degreeProgramRows,
+      degreeProgramMapping: options?.degreeProgramMapping,
     },
   );
 }
@@ -215,6 +269,8 @@ export async function commitImportData(
     password?: string;
     semesterMapping?: ColumnMapping;
     semesterRows?: Record<string, string>[];
+    degreeProgramMapping?: ColumnMapping;
+    degreeProgramRows?: Record<string, string>[];
   },
 ): Promise<{ error: string } | ImportCommitResult> {
   await requireAdmin();
@@ -280,6 +336,36 @@ export async function commitImportData(
     }
   }
 
+  if (
+    entityParsed.data === "universities" &&
+    options?.degreeProgramRows?.length &&
+    options?.degreeProgramMapping
+  ) {
+    const degreeProgramMappingParsed = mappingSchema.safeParse(
+      options.degreeProgramMapping,
+    );
+    if (!degreeProgramMappingParsed.success) {
+      return { error: "Invalid degree program column mapping." };
+    }
+
+    const missingProgramFields = getMissingRequiredFields(
+      degreeProgramMappingParsed.data,
+      getUniversityDegreeProgramImportFields(),
+    );
+    if (missingProgramFields.length > 0) {
+      return {
+        error: `Map required degree program fields: ${missingProgramFields.map((f) => f.label).join(", ")}.`,
+      };
+    }
+
+    const degreeProgramIdentityError = getDegreeProgramIdentityError(
+      degreeProgramMappingParsed.data,
+    );
+    if (degreeProgramIdentityError) {
+      return { error: degreeProgramIdentityError };
+    }
+  }
+
   const result = await commitImport(
     entityParsed.data,
     rowsParsed.data,
@@ -288,12 +374,15 @@ export async function commitImportData(
       password: options?.password,
       semesterRows: options?.semesterRows,
       semesterMapping: options?.semesterMapping,
+      degreeProgramRows: options?.degreeProgramRows,
+      degreeProgramMapping: options?.degreeProgramMapping,
     },
   );
 
   revalidatePath("/admin/students");
   revalidatePath("/admin/universities");
   revalidatePath("/admin/requests");
+  revalidatePath("/student/profile/edit");
 
   return result;
 }

@@ -305,6 +305,39 @@ export const UNIVERSITY_SEMESTERS_TABLE_COLUMNS: TableExportColumn[] = [
   },
 ];
 
+export const DEGREE_PROGRAMS_TABLE_COLUMNS: TableExportColumn[] = [
+  {
+    key: "university_id",
+    label: "University ID",
+    table: "degree_programs",
+    column: "university_id",
+  },
+  {
+    key: "university_name",
+    label: "University",
+    table: "universities",
+    column: "name",
+  },
+  {
+    key: "id",
+    label: "Program ID",
+    table: "degree_programs",
+    column: "id",
+  },
+  {
+    key: "name",
+    label: "Name",
+    table: "degree_programs",
+    column: "name",
+  },
+  {
+    key: "status",
+    label: "Status",
+    table: "degree_programs",
+    column: "is_active",
+  },
+];
+
 export function defaultTableColumnKeys(columns: TableExportColumn[]): string[] {
   return columns.map((column) => column.key);
 }

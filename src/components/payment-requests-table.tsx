@@ -44,58 +44,89 @@ export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
   >(rows, SORT_ACCESSORS);
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <SortableTableHead
-            label="Semester"
-            sortKey="semester"
-            activeKey={sortKey}
-            direction={sortDirection}
-            onSort={onSort}
-          />
-          <SortableTableHead
-            label="Amount"
-            sortKey="amount"
-            activeKey={sortKey}
-            direction={sortDirection}
-            onSort={onSort}
-          />
-          <SortableTableHead
-            label="Submitted"
-            sortKey="submitted"
-            activeKey={sortKey}
-            direction={sortDirection}
-            onSort={onSort}
-          />
-          <SortableTableHead
-            label="Status"
-            sortKey="status"
-            activeKey={sortKey}
-            direction={sortDirection}
-            onSort={onSort}
-          />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="space-y-2 md:hidden">
         {sortedItems.map((request) => (
-          <TableRow key={request.id}>
-            <TableCell>
-              <Link
-                href={request.href}
-                className="font-medium hover:text-primary hover:underline"
-              >
-                {request.semesterLabel}
-              </Link>
-            </TableCell>
-            <TableCell>{formatCurrency(request.amountDue)}</TableCell>
-            <TableCell>{formatDate(new Date(request.submittedAt))}</TableCell>
-            <TableCell>
+          <Link
+            key={request.id}
+            href={request.href}
+            className="block rounded-xl border border-border/80 bg-card p-4 shadow-sm transition-colors hover:border-primary/25 hover:bg-muted/30"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-foreground">
+                  {request.semesterLabel}
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {formatCurrency(request.amountDue)}
+                </p>
+              </div>
               <StatusBadge status={request.status} />
-            </TableCell>
-          </TableRow>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Submitted {formatDate(new Date(request.submittedAt))}
+            </p>
+          </Link>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortableTableHead
+                label="Semester"
+                sortKey="semester"
+                activeKey={sortKey}
+                direction={sortDirection}
+                onSort={onSort}
+              />
+              <SortableTableHead
+                label="Amount"
+                sortKey="amount"
+                activeKey={sortKey}
+                direction={sortDirection}
+                onSort={onSort}
+              />
+              <SortableTableHead
+                label="Submitted"
+                sortKey="submitted"
+                activeKey={sortKey}
+                direction={sortDirection}
+                onSort={onSort}
+              />
+              <SortableTableHead
+                label="Status"
+                sortKey="status"
+                activeKey={sortKey}
+                direction={sortDirection}
+                onSort={onSort}
+              />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedItems.map((request) => (
+              <TableRow key={request.id}>
+                <TableCell>
+                  <Link
+                    href={request.href}
+                    className="font-medium hover:text-primary hover:underline"
+                  >
+                    {request.semesterLabel}
+                  </Link>
+                </TableCell>
+                <TableCell>{formatCurrency(request.amountDue)}</TableCell>
+                <TableCell>
+                  {formatDate(new Date(request.submittedAt))}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={request.status} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

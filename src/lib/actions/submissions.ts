@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
@@ -11,6 +12,14 @@ import {
   ACTIVITY_VALUES,
   CHALLENGE_VALUES,
 } from "@/lib/submissions/constants";
+import {
+  duplicateSemesterMessage,
+  findDuplicateSemesterSubmission,
+  findOpenRequest,
+  getMissingProfileFields,
+  openRequestMessage,
+  profileIncompleteMessage,
+} from "@/lib/submissions/eligibility";
 
 export type SubmissionState = {
   error?: string;
@@ -112,6 +121,16 @@ export async function createSubmission(
 ): Promise<SubmissionState> {
   const { student } = await requireStudent();
 
+  const missingProfileFields = getMissingProfileFields(student);
+  if (missingProfileFields.length > 0) {
+    return { error: profileIncompleteMessage(missingProfileFields) };
+  }
+
+  const openRequest = await findOpenRequest(student.id);
+  if (openRequest) {
+    return { error: openRequestMessage(openRequest) };
+  }
+
   const parsed = submissionSchema.safeParse({
     semesterLabel: trimmed(formData.get("semesterLabel")),
     universitySemesterId: trimmed(formData.get("universitySemesterId")),
@@ -186,6 +205,15 @@ export async function createSubmission(
   }
 
   const semesterLabel = data.semesterLabel;
+
+  const duplicate = await findDuplicateSemesterSubmission(student.id, {
+    universitySemesterId: data.universitySemesterId,
+    semesterLabel,
+  });
+  if (duplicate) {
+    return { error: duplicateSemesterMessage(duplicate.semesterLabel) };
+  }
+
   const challenges = multiSelect(formData, "challenges", CHALLENGE_VALUES);
   const activities = multiSelect(formData, "activities", ACTIVITY_VALUES);
 
@@ -321,6 +349,12 @@ export async function createSubmission(
 
     createdRequestId = result.id;
   } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return { error: duplicateSemesterMessage(semesterLabel) };
+    }
     console.error("createSubmission failed", err);
     return {
       error:

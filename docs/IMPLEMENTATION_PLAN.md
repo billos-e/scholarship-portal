@@ -408,6 +408,8 @@ L'étudiant voit le statut en lecture seule.
 
 **Règle UX :** formulaire unique par semestre (paiement + rapport ensemble), pas deux parcours séparés.
 
+**Éligibilité soumission :** voir [`submission-eligibility.md`](./submission-eligibility.md) — profil complet, une demande active max, un semestre par soumission (sauf rejet).
+
 ### 5.3 Parcours admin (user flow)
 
 1. Login

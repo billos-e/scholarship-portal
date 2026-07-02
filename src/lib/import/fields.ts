@@ -170,6 +170,40 @@ export function getUniversitySemesterImportFields(): ImportFieldDef[] {
   return UNIVERSITY_SEMESTER_FIELDS;
 }
 
+export const DEGREE_PROGRAM_FIELDS: ImportFieldDef[] = [
+  {
+    key: "university_id",
+    label: "University ID",
+    aliases: ["university id"],
+  },
+  {
+    key: "university_name",
+    label: "University",
+    aliases: ["university name", "institution"],
+  },
+  {
+    key: "id",
+    label: "Program ID",
+    aliases: ["degree program id", "degree_program_id", "program id"],
+  },
+  {
+    key: "name",
+    label: "Name",
+    required: true,
+    aliases: ["program name", "degree program", "degree_program", "program"],
+  },
+  {
+    key: "status",
+    label: "Status",
+    type: "boolean",
+    aliases: ["is active", "is_active", "active"],
+  },
+];
+
+export function getUniversityDegreeProgramImportFields(): ImportFieldDef[] {
+  return DEGREE_PROGRAM_FIELDS;
+}
+
 const PAYMENT_FIELDS: ImportFieldDef[] = [
   {
     key: "request_id",

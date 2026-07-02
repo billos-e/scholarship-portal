@@ -46,13 +46,13 @@ export function ProfileInfoCard({
         className,
       )}
     >
-      <header className="flex items-center justify-between gap-4 border-b border-border/50 px-6 py-5">
-        <h2 className="font-heading text-lg font-semibold text-foreground">
+      <header className="flex flex-col gap-3 border-b border-border/50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
+        <h2 className="font-heading text-base font-semibold text-foreground sm:text-lg">
           {title}
         </h2>
         {headerAction ?? editButton}
       </header>
-      <div className="px-6 py-6">{children}</div>
+      <div className="px-4 py-5 sm:px-6 sm:py-6">{children}</div>
     </section>
   );
 }

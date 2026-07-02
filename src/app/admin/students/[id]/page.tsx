@@ -63,6 +63,8 @@ export default async function StudentDetailPage({
         universityName={student.university?.name ?? null}
         degreeProgram={student.degreeProgram}
         yearOfStudy={student.yearOfStudy}
+        currentSemesterLabel={student.currentSemesterLabel}
+        gpa={student.gpa ? student.gpa.toString() : null}
         status={student.status}
         photoUrl={student.photoUrl}
         headerAction={

@@ -253,3 +253,138 @@ export async function deleteUniversitySemester(
   await prisma.universitySemester.delete({ where: { id } });
   revalidatePath(`/admin/universities/${universityId}`);
 }
+
+const degreeProgramSchema = z.object({
+  universityId: z.string().min(1),
+  name: z.string().trim().min(2, "Program name must be at least 2 characters."),
+  isActive: z.boolean().optional(),
+});
+
+export async function createUniversityDegreeProgram(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const parsed = degreeProgramSchema.safeParse({
+    universityId: formData.get("universityId"),
+    name: formData.get("name"),
+    isActive: formData.get("isActive") !== "off",
+  });
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid degree program.",
+    };
+  }
+
+  const duplicate = await prisma.degreeProgram.findFirst({
+    where: {
+      universityId: parsed.data.universityId,
+      name: { equals: parsed.data.name, mode: "insensitive" },
+    },
+  });
+  if (duplicate) {
+    return { error: "A program with this name already exists at this university." };
+  }
+
+  await prisma.degreeProgram.create({
+    data: {
+      universityId: parsed.data.universityId,
+      name: parsed.data.name,
+      isActive: parsed.data.isActive ?? true,
+    },
+  });
+
+  revalidatePath(`/admin/universities/${parsed.data.universityId}`);
+  revalidatePath("/admin/students");
+  revalidatePath("/student/profile/edit");
+  return { success: true };
+}
+
+export async function updateUniversityDegreeProgram(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  if (!id) return { error: "Missing program id." };
+
+  const parsed = degreeProgramSchema.safeParse({
+    universityId: formData.get("universityId"),
+    name: formData.get("name"),
+    isActive: formData.get("isActive") === "on",
+  });
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid degree program.",
+    };
+  }
+
+  const duplicate = await prisma.degreeProgram.findFirst({
+    where: {
+      universityId: parsed.data.universityId,
+      name: { equals: parsed.data.name, mode: "insensitive" },
+      NOT: { id },
+    },
+  });
+  if (duplicate) {
+    return { error: "A program with this name already exists at this university." };
+  }
+
+  const { universityId, ...data } = parsed.data;
+  await prisma.degreeProgram.update({
+    where: { id },
+    data,
+  });
+
+  revalidatePath(`/admin/universities/${universityId}`);
+  revalidatePath("/admin/students");
+  revalidatePath("/student/profile/edit");
+  return { success: true };
+}
+
+export async function toggleUniversityDegreeProgramActive(
+  id: string,
+  universityId: string,
+  isActive: boolean,
+) {
+  await requireAdmin();
+  await prisma.degreeProgram.update({
+    where: { id },
+    data: { isActive },
+  });
+  revalidatePath(`/admin/universities/${universityId}`);
+  revalidatePath("/student/profile/edit");
+}
+
+export async function deleteUniversityDegreeProgram(
+  id: string,
+  universityId: string,
+) {
+  await requireAdmin();
+
+  const program = await prisma.degreeProgram.findUnique({
+    where: { id },
+    select: { name: true },
+  });
+  if (!program) return;
+
+  const linked = await prisma.student.count({
+    where: {
+      universityId,
+      degreeProgram: { equals: program.name, mode: "insensitive" },
+    },
+  });
+  if (linked > 0) {
+    throw new Error(
+      "Cannot delete a program assigned to students. Deactivate it instead.",
+    );
+  }
+
+  await prisma.degreeProgram.delete({ where: { id } });
+  revalidatePath(`/admin/universities/${universityId}`);
+  revalidatePath("/student/profile/edit");
+}

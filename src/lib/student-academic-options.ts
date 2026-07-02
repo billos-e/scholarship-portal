@@ -14,7 +14,7 @@ export type StudentAcademicOptions = {
 };
 
 export async function getStudentAcademicOptions(): Promise<StudentAcademicOptions> {
-  const [semesters, programRows] = await Promise.all([
+  const [semesters, catalogPrograms, programRows] = await Promise.all([
     prisma.universitySemester.findMany({
       where: { isActive: true },
       orderBy: [{ startDate: "desc" }],
@@ -26,6 +26,11 @@ export async function getStudentAcademicOptions(): Promise<StudentAcademicOption
         startDate: true,
         endDate: true,
       },
+    }),
+    prisma.degreeProgram.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { universityId: true, name: true },
     }),
     prisma.student.findMany({
       where: {
@@ -51,10 +56,13 @@ export async function getStudentAcademicOptions(): Promise<StudentAcademicOption
   }
 
   const programSets: Record<string, Set<string>> = {};
-  for (const row of programRows) {
-    if (!row.universityId || !row.degreeProgram) continue;
+  for (const row of [...catalogPrograms, ...programRows]) {
+    if (!row.universityId || !("name" in row ? row.name : row.degreeProgram)) {
+      continue;
+    }
+    const programName = "name" in row ? row.name : row.degreeProgram!;
     const set = programSets[row.universityId] ?? new Set<string>();
-    set.add(row.degreeProgram);
+    set.add(programName);
     programSets[row.universityId] = set;
   }
 

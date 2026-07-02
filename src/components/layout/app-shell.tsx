@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { cn } from "@/lib/utils";
 
 const COOKIE_NAME = "sidebar-collapsed";
 
@@ -61,13 +62,12 @@ export function AppShell({
           displayName={displayName}
         />
         <main
-          className={
-            variant === "student"
-              ? "min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8 md:pb-8"
-              : "min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8 md:pb-8"
-          }
+          className={cn(
+            "min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8 md:pb-8",
+            variant === "student" && "pb-[calc(5rem+env(safe-area-inset-bottom))]",
+          )}
         >
-          <div className="w-full">{children}</div>
+          <div className="w-full min-w-0">{children}</div>
         </main>
       </div>
     </div>

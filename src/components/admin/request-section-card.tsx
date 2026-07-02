@@ -48,7 +48,7 @@ export function RequestSectionCard({
         className,
       )}
     >
-      <CardHeader className="border-b border-border/50 bg-muted/20">
+      <CardHeader className="border-b border-border/50 bg-muted/20 px-4 py-4 sm:px-6">
         <div className="flex items-start gap-3">
           <div
             className={cn(
@@ -79,7 +79,7 @@ export function RequestSectionCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-5">{children}</CardContent>
+      <CardContent className="px-4 pt-4 sm:px-6 sm:pt-5">{children}</CardContent>
       {footer ? (
         <div className="border-t border-border/50 bg-muted/15 px-4 py-3">
           {footer}

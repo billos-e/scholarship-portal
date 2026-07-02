@@ -34,9 +34,11 @@ import {
 } from "@/lib/client-filters";
 import {
   UNIVERSITIES_TABLE_COLUMNS,
+  DEGREE_PROGRAMS_TABLE_COLUMNS,
   UNIVERSITY_SEMESTERS_TABLE_COLUMNS,
 } from "@/lib/export/table-columns";
 import {
+  degreeProgramsToExportRows,
   universitiesToExportRows,
   universitySemestersToExportRows,
 } from "@/lib/export/table-rows";
@@ -60,6 +62,11 @@ export type UniversityRow = {
     label: string;
     startDate: string;
     endDate: string;
+    isActive: boolean;
+  }[];
+  degreePrograms: {
+    id: string;
+    name: string;
     isActive: boolean;
   }[];
 };
@@ -139,6 +146,22 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
     [paginatedUniversities],
   );
 
+  const degreeProgramExportRows = useMemo(
+    () =>
+      degreeProgramsToExportRows(
+        paginatedUniversities.flatMap((university) =>
+          university.degreePrograms.map((program) => ({
+            id: program.id,
+            universityId: university.id,
+            universityName: university.name,
+            name: program.name,
+            isActive: program.isActive,
+          })),
+        ),
+      ),
+    [paginatedUniversities],
+  );
+
   const exportExtraSheets = useMemo(
     () => [
       {
@@ -147,8 +170,14 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
         rows: semesterExportRows,
         csvFilenameSuffix: "semesters",
       },
+      {
+        name: "Degree programs",
+        columns: DEGREE_PROGRAMS_TABLE_COLUMNS,
+        rows: degreeProgramExportRows,
+        csvFilenameSuffix: "degree-programs",
+      },
     ],
-    [semesterExportRows],
+    [semesterExportRows, degreeProgramExportRows],
   );
 
   const exportFilename = useMemo(() => {
@@ -173,7 +202,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
     <div className="space-y-6">
       <PageHeader
         title="Universities"
-        description="Manage partner universities and their semester calendars."
+        description="Manage partner universities, semester calendars, and degree programs."
         actions={
           <>
             <TableExportButton

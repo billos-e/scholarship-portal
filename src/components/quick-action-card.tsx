@@ -29,7 +29,7 @@ export function QuickActionCard({
   return (
     <div
       className={cn(
-        "flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/25 hover:shadow-sm",
+        "flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/25 hover:shadow-sm sm:p-6",
         className,
       )}
     >

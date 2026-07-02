@@ -4,6 +4,7 @@ import { Building2, MapPin } from "lucide-react";
 import type { StudentStatus } from "@prisma/client";
 
 import { StudentStatusBadge } from "@/components/student-status-badge";
+import { buildStudentHeroSummary } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,8 @@ type StudentDetailHeroProps = {
   universityName: string | null;
   degreeProgram: string | null;
   yearOfStudy: string | null;
+  currentSemesterLabel?: string | null;
+  gpa?: string | number | null;
   status: StudentStatus;
   photoUrl: string | null;
   headerAction?: React.ReactNode;
@@ -29,6 +32,8 @@ export function StudentDetailHero({
   universityName,
   degreeProgram,
   yearOfStudy,
+  currentSemesterLabel,
+  gpa,
   status,
   photoUrl,
   headerAction,
@@ -37,12 +42,16 @@ export function StudentDetailHero({
   const initials = getInitials(fullName);
   const hasPhoto = Boolean(photoUrl?.trim());
 
-  const academicSubtitle = [degreeProgram, yearOfStudy]
-    .filter(Boolean)
-    .join(", ");
+  const summaryItems = buildStudentHeroSummary({
+    studentIdNumber,
+    degreeProgram,
+    yearOfStudy,
+    currentSemesterLabel,
+    gpa,
+  });
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
+    <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-4 py-5 shadow-sm sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
           <div
@@ -74,11 +83,25 @@ export function StudentDetailHero({
               <StudentStatusBadge status={status} />
             </div>
 
-            {academicSubtitle ? (
-              <p className="text-sm text-muted-foreground">{academicSubtitle}</p>
-            ) : studentIdNumber ? (
-              <p className="font-mono text-sm font-medium text-primary">
-                {studentIdNumber}
+            {summaryItems.length > 0 ? (
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                {summaryItems.map((item, index) => (
+                  <span key={item.key} className="inline-flex items-center gap-2">
+                    {index > 0 ? (
+                      <span aria-hidden className="text-border">
+                        ·
+                      </span>
+                    ) : null}
+                    <span
+                      className={cn(
+                        item.variant === "id" &&
+                          "font-mono font-medium text-primary",
+                      )}
+                    >
+                      {item.value}
+                    </span>
+                  </span>
+                ))}
               </p>
             ) : null}
 

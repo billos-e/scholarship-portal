@@ -34,6 +34,16 @@ async function upsertSemester(
   });
 }
 
+async function upsertDegreeProgram(universityId: string, name: string) {
+  const existing = await prisma.degreeProgram.findFirst({
+    where: { universityId, name: { equals: name, mode: "insensitive" } },
+  });
+  if (existing) return existing;
+  return prisma.degreeProgram.create({
+    data: { universityId, name, isActive: true },
+  });
+}
+
 async function seedRequest(
   studentId: string,
   semester: UniversitySemester,
@@ -231,6 +241,23 @@ async function main() {
   const fall2026 = semesters.find(
     (s) => s.label === "Fall 2026" && s.universityId === chula.id,
   )!;
+
+  const programNames = [
+    "Computer Science",
+    "Civil Engineering",
+    "Nursing",
+    "Business Administration",
+    "Public Health",
+    "Mechanical Engineering",
+    "Law",
+    "Architecture",
+    "Economics",
+    "Medicine",
+  ];
+  for (const name of programNames) {
+    await upsertDegreeProgram(chula.id, name);
+    await upsertDegreeProgram(mahidol.id, name);
+  }
 
   const universities = [chula, mahidol];
   const semesterLabel = fall2026.label;

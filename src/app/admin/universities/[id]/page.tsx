@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, Pencil, Users } from "lucide-react";
+import { CalendarDays, GraduationCap, Pencil, Users } from "lucide-react";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
 import {
@@ -16,6 +16,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { SemesterTable } from "./semester-table";
+import { ProgramBoard } from "./program-board";
 import { DeactivateUniversityButton } from "./university-actions";
 
 export default async function UniversityDetailPage({
@@ -35,6 +36,9 @@ export default async function UniversityDetailPage({
           _count: { select: { tuitionPaymentRequests: true } },
         },
       },
+      degreePrograms: {
+        orderBy: { name: "asc" },
+      },
       students: {
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
         take: 5,
@@ -45,8 +49,23 @@ export default async function UniversityDetailPage({
 
   if (!university) notFound();
 
+  const assignedPrograms = await prisma.student.findMany({
+    where: {
+      universityId: university.id,
+      degreeProgram: { not: null },
+    },
+    select: { degreeProgram: true },
+    distinct: ["degreeProgram"],
+  });
+  const assignedProgramNames = new Set(
+    assignedPrograms
+      .map((row) => row.degreeProgram?.toLowerCase())
+      .filter(Boolean),
+  );
+
   const studentCount = university._count.students;
   const semesterCount = university.semesters.length;
+  const programCount = university.degreePrograms.length;
   const studentsHref = `/admin/students?uni=${university.id}`;
   const editHref = `/admin/universities/${id}/edit`;
 
@@ -133,6 +152,27 @@ export default async function UniversityDetailPage({
           />
         </ProfileInfoGrid>
       </ProfileInfoCard>
+
+      <RequestSectionCard
+        title="Degree programs"
+        description={
+          programCount === 0
+            ? "No degree programs configured yet."
+            : `${programCount} program${programCount === 1 ? "" : "s"} · drag between Active and Inactive.`
+        }
+        icon={GraduationCap}
+        tone="accent"
+      >
+        <ProgramBoard
+          programs={university.degreePrograms.map((program) => ({
+            id: program.id,
+            name: program.name,
+            isActive: program.isActive,
+            canDelete: !assignedProgramNames.has(program.name.toLowerCase()),
+          }))}
+          universityId={university.id}
+        />
+      </RequestSectionCard>
 
       <RequestSectionCard
         title="Semester calendar"

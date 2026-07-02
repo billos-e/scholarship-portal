@@ -156,3 +156,23 @@ export function universitySemestersToExportRows(
     status: row.isActive ? "Active" : "Inactive",
   }));
 }
+
+export type UniversityDegreeProgramExportSource = {
+  id: string;
+  universityId: string;
+  universityName: string;
+  name: string;
+  isActive: boolean;
+};
+
+export function degreeProgramsToExportRows(
+  rows: UniversityDegreeProgramExportSource[],
+): ExportRow[] {
+  return rows.map((row) => ({
+    university_id: row.universityId,
+    university_name: row.universityName,
+    id: row.id,
+    name: row.name,
+    status: row.isActive ? "Active" : "Inactive",
+  }));
+}

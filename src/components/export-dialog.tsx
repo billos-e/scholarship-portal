@@ -76,8 +76,8 @@ export function ExportDialog({
   const extraSheetNote =
     extraSheets.length > 0
       ? format === "xlsx"
-        ? ` Semester details are included on a separate Excel tab.`
-        : ` Semester details are included in a ZIP with separate CSV files.`
+        ? ` Related data is included on separate Excel tabs.`
+        : ` Related data is included in a ZIP with separate CSV files.`
       : "";
 
   const resolvedDescription =

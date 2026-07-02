@@ -184,30 +184,32 @@ export function StudentAcademicFields({
       {showProgram ? (
         <div className="min-w-0 space-y-2">
           <Label htmlFor={`${prefix}degreeProgram`}>Degree program</Label>
-          <NativeSelect
+          <Input
             id={`${prefix}degreeProgram`}
             name="degreeProgram"
             value={degreeProgram}
             onChange={(e) => setDegreeProgram(e.target.value)}
             disabled={!universityId}
-          >
-            <option value="">
-              {!universityId
+            list={universityId ? `${prefix}degree-program-options` : undefined}
+            placeholder={
+              !universityId
                 ? "Select a university first"
                 : programs.length === 0
-                  ? "No programs on record yet"
-                  : "Select program…"}
-            </option>
-            {programs.map((program) => (
-              <option key={program} value={program}>
-                {program}
-              </option>
-            ))}
-          </NativeSelect>
+                  ? "Enter your degree program"
+                  : "Select or type a program"
+            }
+          />
+          {universityId ? (
+            <datalist id={`${prefix}degree-program-options`}>
+              {programs.map((program) => (
+                <option key={program} value={program} />
+              ))}
+            </datalist>
+          ) : null}
           {universityId && programs.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              Programs appear after students are imported or assigned at this
-              university.
+              No programs configured yet for this university. Type your program
+              name, or ask an admin to add it on the university profile.
             </p>
           ) : null}
         </div>

@@ -132,18 +132,19 @@ export default async function StudentSubmissionDetailPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
             {request.semesterLabel}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Submitted {formatDate(request.submittedAt)}
           </p>
         </div>
         <Button
           size="sm"
           variant="outline"
+          className="w-full shrink-0 sm:w-auto"
           render={<Link href="/student/history" />}
         >
           <ArrowLeft className="size-4" /> Back
@@ -151,8 +152,8 @@ export default async function StudentSubmissionDetailPage({
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-4">
-          <div>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <CardTitle>Tuition payment</CardTitle>
             <CardDescription>
               Current status of this payment request.

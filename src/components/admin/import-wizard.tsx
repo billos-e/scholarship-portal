@@ -17,7 +17,7 @@ import {
   parseImportFile,
   validateImportData,
 } from "@/lib/actions/import";
-import { getImportEntityLabel, getImportFields, getUniversitySemesterImportFields } from "@/lib/import/fields";
+import { getImportEntityLabel, getImportFields, getUniversityDegreeProgramImportFields, getUniversitySemesterImportFields } from "@/lib/import/fields";
 import type {
   ColumnMapping,
   ImportCommitResult,
@@ -62,7 +62,7 @@ const ENTITY_DESCRIPTIONS: Record<ImportEntity, string> = {
   students:
     "Create student accounts with profile and optional bank details. Existing emails are skipped.",
   universities:
-    "Create or update universities by name or ID. Excel/ZIP exports with a Semesters sheet or CSV are imported together.",
+    "Create or update universities by name or ID. Excel/ZIP exports with Semesters and Degree programs sheets are imported together.",
   payments:
     "Record payments against existing tuition requests. Use Request ID from exports, or student ID + semester.",
 };
@@ -92,6 +92,12 @@ export function ImportWizard() {
     Record<string, string>[]
   >([]);
   const [semesterMapping, setSemesterMapping] = useState<ColumnMapping>({});
+  const [degreeProgramHeaders, setDegreeProgramHeaders] = useState<string[]>([]);
+  const [degreeProgramRows, setDegreeProgramRows] = useState<Record<string, string>[]>([]);
+  const [degreeProgramSampleRows, setDegreeProgramSampleRows] = useState<
+    Record<string, string>[]
+  >([]);
+  const [degreeProgramMapping, setDegreeProgramMapping] = useState<ColumnMapping>({});
   const [preview, setPreview] = useState<
     ImportPreviewResult | UniversitiesImportPreview | null
   >(null);
@@ -109,9 +115,16 @@ export function ImportWizard() {
     [entity],
   );
   const semesterFields = useMemo(() => getUniversitySemesterImportFields(), []);
+  const degreeProgramFields = useMemo(
+    () => getUniversityDegreeProgramImportFields(),
+    [],
+  );
   const hasSemesterSheet = semesterRows.length > 0;
+  const hasDegreeProgramSheet = degreeProgramRows.length > 0;
   const semesterPreview =
     preview && "semesters" in preview ? preview.semesters ?? null : null;
+  const degreeProgramPreview =
+    preview && "degreePrograms" in preview ? preview.degreePrograms ?? null : null;
 
   const stepIndex = STEPS.indexOf(step);
 
@@ -126,6 +139,10 @@ export function ImportWizard() {
     setSemesterRows([]);
     setSemesterSampleRows([]);
     setSemesterMapping({});
+    setDegreeProgramHeaders([]);
+    setDegreeProgramRows([]);
+    setDegreeProgramSampleRows([]);
+    setDegreeProgramMapping({});
     setPreview(null);
     setCommitResult(null);
     setStudentPassword("");
@@ -167,11 +184,30 @@ export function ImportWizard() {
         setSemesterSampleRows([]);
         setSemesterMapping({});
       }
+      if (result.degreeProgramSheet) {
+        setDegreeProgramHeaders(result.degreeProgramSheet.headers);
+        setDegreeProgramRows(result.degreeProgramSheet.rows);
+        setDegreeProgramSampleRows(result.degreeProgramSheet.sampleRows);
+        setDegreeProgramMapping(result.degreeProgramSheet.suggestedMapping);
+      } else {
+        setDegreeProgramHeaders([]);
+        setDegreeProgramRows([]);
+        setDegreeProgramSampleRows([]);
+        setDegreeProgramMapping({});
+      }
       goTo("Map columns");
-      const semesterNote = result.semesterSheet
-        ? ` Found ${result.semesterSheet.rowCount} semester row(s) too.`
-        : "";
-      toast.success(`Parsed ${result.rowCount} university row(s).${semesterNote}`);
+      const extraNotes = [
+        result.semesterSheet
+          ? `${result.semesterSheet.rowCount} semester row(s)`
+          : null,
+        result.degreeProgramSheet
+          ? `${result.degreeProgramSheet.rowCount} degree program row(s)`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" and ");
+      const secondaryNote = extraNotes ? ` Found ${extraNotes} too.` : "";
+      toast.success(`Parsed ${result.rowCount} university row(s).${secondaryNote}`);
     });
   }
 
@@ -183,6 +219,10 @@ export function ImportWizard() {
       const result = await validateImportData(entity, mapping, rows, {
         semesterMapping: hasSemesterSheet ? semesterMapping : undefined,
         semesterRows: hasSemesterSheet ? semesterRows : undefined,
+        degreeProgramMapping: hasDegreeProgramSheet
+          ? degreeProgramMapping
+          : undefined,
+        degreeProgramRows: hasDegreeProgramSheet ? degreeProgramRows : undefined,
       });
       if ("error" in result) {
         setError(result.error);
@@ -202,6 +242,10 @@ export function ImportWizard() {
         password: studentPassword || undefined,
         semesterMapping: hasSemesterSheet ? semesterMapping : undefined,
         semesterRows: hasSemesterSheet ? semesterRows : undefined,
+        degreeProgramMapping: hasDegreeProgramSheet
+          ? degreeProgramMapping
+          : undefined,
+        degreeProgramRows: hasDegreeProgramSheet ? degreeProgramRows : undefined,
       });
       if ("error" in result) {
         setError(result.error);
@@ -227,6 +271,18 @@ export function ImportWizard() {
 
   function handleSemesterMappingChange(fieldKey: string, header: string | null) {
     setSemesterMapping((prev) => {
+      const next = { ...prev };
+      if (!header || header === "__none__") {
+        delete next[fieldKey];
+      } else {
+        next[fieldKey] = header;
+      }
+      return next;
+    });
+  }
+
+  function handleDegreeProgramMappingChange(fieldKey: string, header: string | null) {
+    setDegreeProgramMapping((prev) => {
       const next = { ...prev };
       if (!header || header === "__none__") {
         delete next[fieldKey];
@@ -340,7 +396,7 @@ export function ImportWizard() {
               Importing {getImportEntityLabel(entity).toLowerCase()} from CSV or
               Excel (.xlsx, .xls).
               {entity === "universities"
-                ? " Multi-sheet Excel files and export ZIPs include semesters automatically."
+                ? " Multi-sheet Excel files and export ZIPs include semesters and degree programs automatically."
                 : " First sheet is used."}
             </CardDescription>
           </CardHeader>
@@ -410,7 +466,7 @@ export function ImportWizard() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              {entity === "universities" && hasSemesterSheet ? (
+              {entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet) ? (
                 <h3 className="text-sm font-medium">Universities</h3>
               ) : null}
               <div className="grid gap-3 sm:grid-cols-2">
@@ -446,7 +502,7 @@ export function ImportWizard() {
               </div>
               <SpreadsheetSampleTable
                 title={
-                  entity === "universities" && hasSemesterSheet
+                  entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet)
                     ? "University data preview"
                     : "Data preview"
                 }
@@ -504,6 +560,55 @@ export function ImportWizard() {
               </div>
             ) : null}
 
+            {hasDegreeProgramSheet ? (
+              <div className="space-y-4 border-t pt-6">
+                <div>
+                  <h3 className="text-sm font-medium">Degree programs</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {degreeProgramRows.length} row
+                    {degreeProgramRows.length === 1 ? "" : "s"} detected. Match each
+                    field to the column headers shown in the preview below.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {degreeProgramFields.map((field) => (
+                    <div key={field.key} className="space-y-1.5">
+                      <Label>
+                        {field.label}
+                        {field.required ? (
+                          <span className="text-destructive"> *</span>
+                        ) : null}
+                      </Label>
+                      <Select
+                        value={degreeProgramMapping[field.key] ?? "__none__"}
+                        onValueChange={(value) =>
+                          handleDegreeProgramMappingChange(field.key, value)
+                        }
+                        disabled={pending}
+                      >
+                        <SelectTrigger disabled={pending}>
+                          <SelectValue placeholder="Select column" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Not mapped —</SelectItem>
+                          {degreeProgramHeaders.map((header) => (
+                            <SelectItem key={header} value={header}>
+                              {header}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+                <SpreadsheetSampleTable
+                  title="Degree program data preview"
+                  headers={degreeProgramHeaders}
+                  rows={degreeProgramSampleRows}
+                />
+              </div>
+            ) : null}
+
             {entity === "students" ? (
               <div className="max-w-md space-y-1.5">
                 <Label htmlFor="import-password">
@@ -531,15 +636,32 @@ export function ImportWizard() {
           <CardHeader>
             <CardTitle>Review import</CardTitle>
             <CardDescription>
-              {entity === "universities" && semesterPreview ? (
+              {entity === "universities" &&
+              (semesterPreview || degreeProgramPreview) ? (
                 <>
                   Universities: {preview.validCount} valid, {preview.warningCount}{" "}
                   warning{preview.warningCount === 1 ? "" : "s"}, {preview.errorCount}{" "}
-                  error{preview.errorCount === 1 ? "" : "s"} · Semesters:{" "}
-                  {semesterPreview.validCount} valid, {semesterPreview.warningCount}{" "}
-                  warning{semesterPreview.warningCount === 1 ? "" : "s"},{" "}
-                  {semesterPreview.errorCount} error
-                  {semesterPreview.errorCount === 1 ? "" : "s"}
+                  error{preview.errorCount === 1 ? "" : "s"}
+                  {semesterPreview ? (
+                    <>
+                      {" "}
+                      · Semesters: {semesterPreview.validCount} valid,{" "}
+                      {semesterPreview.warningCount} warning
+                      {semesterPreview.warningCount === 1 ? "" : "s"},{" "}
+                      {semesterPreview.errorCount} error
+                      {semesterPreview.errorCount === 1 ? "" : "s"}
+                    </>
+                  ) : null}
+                  {degreeProgramPreview ? (
+                    <>
+                      {" "}
+                      · Degree programs: {degreeProgramPreview.validCount} valid,{" "}
+                      {degreeProgramPreview.warningCount} warning
+                      {degreeProgramPreview.warningCount === 1 ? "" : "s"},{" "}
+                      {degreeProgramPreview.errorCount} error
+                      {degreeProgramPreview.errorCount === 1 ? "" : "s"}
+                    </>
+                  ) : null}
                 </>
               ) : (
                 <>
@@ -552,11 +674,22 @@ export function ImportWizard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <PreviewTable
-              title={entity === "universities" && semesterPreview ? "Universities" : "Rows"}
+              title={
+                entity === "universities" &&
+                (semesterPreview || degreeProgramPreview)
+                  ? "Universities"
+                  : "Rows"
+              }
               rows={preview.rows}
             />
             {semesterPreview ? (
               <PreviewTable title="Semesters" rows={semesterPreview.rows} />
+            ) : null}
+            {degreeProgramPreview ? (
+              <PreviewTable
+                title="Degree programs"
+                rows={degreeProgramPreview.rows}
+              />
             ) : null}
           </CardContent>
         </Card>
@@ -574,13 +707,19 @@ export function ImportWizard() {
             <dl className="grid gap-2 text-sm sm:grid-cols-3">
               <div>
                 <dt className="text-muted-foreground">
-                  {commitResult.semestersCreated != null ? "Universities created" : "Created"}
+                  {commitResult.semestersCreated != null ||
+                  commitResult.degreeProgramsCreated != null
+                    ? "Universities created"
+                    : "Created"}
                 </dt>
                 <dd className="text-lg font-semibold">{commitResult.created}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">
-                  {commitResult.semestersCreated != null ? "Universities updated" : "Updated"}
+                  {commitResult.semestersCreated != null ||
+                  commitResult.degreeProgramsCreated != null
+                    ? "Universities updated"
+                    : "Updated"}
                 </dt>
                 <dd className="text-lg font-semibold">{commitResult.updated}</dd>
               </div>
@@ -591,27 +730,53 @@ export function ImportWizard() {
             </dl>
 
             {commitResult.semestersCreated != null ||
-            commitResult.semestersUpdated != null ? (
-              <dl className="grid gap-2 text-sm sm:grid-cols-3">
-                <div>
-                  <dt className="text-muted-foreground">Semesters created</dt>
-                  <dd className="text-lg font-semibold">
-                    {commitResult.semestersCreated ?? 0}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Semesters updated</dt>
-                  <dd className="text-lg font-semibold">
-                    {commitResult.semestersUpdated ?? 0}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Semesters skipped</dt>
-                  <dd className="text-lg font-semibold">
-                    {commitResult.semestersSkipped ?? 0}
-                  </dd>
-                </div>
-              </dl>
+            commitResult.degreeProgramsCreated != null ? (
+              <>
+                {commitResult.semestersCreated != null ? (
+                  <dl className="grid gap-2 text-sm sm:grid-cols-3">
+                    <div>
+                      <dt className="text-muted-foreground">Semesters created</dt>
+                      <dd className="text-lg font-semibold">
+                        {commitResult.semestersCreated ?? 0}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Semesters updated</dt>
+                      <dd className="text-lg font-semibold">
+                        {commitResult.semestersUpdated ?? 0}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Semesters skipped</dt>
+                      <dd className="text-lg font-semibold">
+                        {commitResult.semestersSkipped ?? 0}
+                      </dd>
+                    </div>
+                  </dl>
+                ) : null}
+                {commitResult.degreeProgramsCreated != null ? (
+                  <dl className="grid gap-2 text-sm sm:grid-cols-3">
+                    <div>
+                      <dt className="text-muted-foreground">Programs created</dt>
+                      <dd className="text-lg font-semibold">
+                        {commitResult.degreeProgramsCreated ?? 0}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Programs updated</dt>
+                      <dd className="text-lg font-semibold">
+                        {commitResult.degreeProgramsUpdated ?? 0}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Programs skipped</dt>
+                      <dd className="text-lg font-semibold">
+                        {commitResult.degreeProgramsSkipped ?? 0}
+                      </dd>
+                    </div>
+                  </dl>
+                ) : null}
+              </>
             ) : null}
 
             {commitResult.generatedPassword ? (
@@ -707,7 +872,10 @@ export function ImportWizard() {
                 !preview ||
                 (preview.errorCount === preview.rows.length &&
                   (!semesterPreview ||
-                    semesterPreview.errorCount === semesterPreview.rows.length))
+                    semesterPreview.errorCount === semesterPreview.rows.length) &&
+                  (!degreeProgramPreview ||
+                    degreeProgramPreview.errorCount ===
+                      degreeProgramPreview.rows.length))
               }
               onClick={handleCommit}
             >
@@ -727,6 +895,9 @@ export function ImportWizard() {
                 setSemesterHeaders([]);
                 setSemesterRows([]);
                 setSemesterMapping({});
+                setDegreeProgramHeaders([]);
+                setDegreeProgramRows([]);
+                setDegreeProgramMapping({});
                 setPreview(null);
                 setCommitResult(null);
               }}

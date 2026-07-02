@@ -63,10 +63,25 @@ model University {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  students  Student[]
-  semesters UniversitySemester[]
+  students       Student[]
+  semesters      UniversitySemester[]
+  degreePrograms DegreeProgram[]
 
   @@map("universities")
+}
+
+model DegreeProgram {
+  id           String     @id @default(cuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  name         String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([universityId, name])
+  @@index([universityId])
+  @@map("degree_programs")
 }
 
 model UniversitySemester {
