@@ -386,7 +386,7 @@ export function SubmissionForm({
         </p>
       ) : null}
 
-      <div className="sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-10 -mx-4 border-t border-border/80 bg-background/95 px-4 py-4 backdrop-blur-sm md:bottom-0 md:-mx-8 md:px-8 md:pb-0">
+      <div className="-mx-4 border-t border-border/80 bg-background px-4 py-4 md:-mx-8 md:px-8">
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-center text-xs leading-relaxed text-muted-foreground sm:text-left">
             Only semester and tuition amount are required. Bank details, academic
