@@ -1,15 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, CheckCircle, ClipboardList, Users, Wallet } from "lucide-react";
 import type { RequestStatus, StudentStatus } from "@prisma/client";
 
-import {
-  DashboardFilters,
-  type SemesterOption,
-  type UniversityOption,
-} from "@/components/admin/dashboard-filters";
 import { NeedsAttentionTable } from "@/components/admin/needs-attention-table";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
@@ -22,11 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  matchesActiveStudent,
-  matchesDashboardSubmission,
-  type DashboardFilterState,
-} from "@/lib/client-filters";
 import { sortRequestsByUrgency, OPEN_REQUEST_STATUSES } from "@/lib/request-urgency";
 
 type DashboardStudent = {
@@ -50,81 +39,40 @@ type DashboardRequest = {
 
 type AdminDashboardViewProps = {
   years: string[];
-  universities: UniversityOption[];
-  semesters: SemesterOption[];
+  universities: { id: string; name: string }[];
+  semesters: { id: string; label: string }[];
   students: DashboardStudent[];
   requests: DashboardRequest[];
 };
 
-const EMPTY_FILTERS: DashboardFilterState = {
-  year: "",
-  university: "",
-  semester: "",
-};
-
 export function AdminDashboardView({
-  years,
-  universities,
-  semesters,
   students,
   requests,
 }: AdminDashboardViewProps) {
-  const [filters, setFilters] = useState<DashboardFilterState>(EMPTY_FILTERS);
+  const activeStudents = students.filter((s) => s.status === "ACTIVE").length;
 
-  const filteredRequests = useMemo(
-    () => requests.filter((request) => matchesDashboardSubmission(request, filters)),
-    [requests, filters],
-  );
+  const pendingReview = requests.filter((r) =>
+    OPEN_REQUEST_STATUSES.includes(r.status),
+  ).length;
 
-  const activeStudents = useMemo(
-    () => students.filter((student) => matchesActiveStudent(student, filters)).length,
-    [students, filters],
-  );
+  const approvedUnpaid = requests.filter((r) => r.status === "APPROVED").length;
 
-  const pendingReview = useMemo(
-    () =>
-      filteredRequests.filter((request) =>
-        OPEN_REQUEST_STATUSES.includes(request.status),
-      ).length,
-    [filteredRequests],
-  );
+  const paidCount = requests.filter((r) => r.status === "PAID").length;
 
-  const approvedUnpaid = useMemo(
-    () => filteredRequests.filter((request) => request.status === "APPROVED").length,
-    [filteredRequests],
-  );
-
-  const paidCount = useMemo(
-    () => filteredRequests.filter((request) => request.status === "PAID").length,
-    [filteredRequests],
-  );
-
-  const needsAttention = useMemo(() => {
-    return sortRequestsByUrgency(
-      filteredRequests
-        .filter((request) => OPEN_REQUEST_STATUSES.includes(request.status))
-        .map((request) => ({
-          ...request,
-          dueDate: request.dueDate ? new Date(request.dueDate) : null,
-          submittedAt: new Date(request.submittedAt),
-        })),
-    )
-      .slice(0, 10)
-      .map((request) => ({
-        id: request.id,
-        semesterLabel: request.semesterLabel,
-        semesterName: request.semesterName,
-        dueDate: request.dueDate,
-        submittedAt: request.submittedAt,
-        status: request.status,
-        studentName: request.studentName,
-        universityName: request.universityName,
-      }));
-  }, [filteredRequests]);
-
-  const selectedSemesterLabel =
-    semesters.find((semester) => semester.id === filters.semester)?.label ??
-    (filters.year || "All periods");
+  const needsAttention = sortRequestsByUrgency(
+    requests
+      .filter((r) => OPEN_REQUEST_STATUSES.includes(r.status))
+      .map((r) => ({
+        id: r.id,
+        semesterLabel: r.semesterLabel,
+        semesterName: r.semesterName,
+        dueDate: r.dueDate ? new Date(r.dueDate) : null,
+        submittedAt: new Date(r.submittedAt),
+        status: r.status,
+        studentName: r.studentName,
+        universityName: r.universityName,
+      })),
+  ).slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -132,15 +80,6 @@ export function AdminDashboardView({
         size="lg"
         title="Dashboard"
         description="Overview of students and payment requests."
-        actions={
-          <DashboardFilters
-            years={years}
-            universities={universities}
-            semesters={semesters}
-            values={filters}
-            onChange={setFilters}
-          />
-        }
       />
 
       <div className="space-y-6">
@@ -154,21 +93,18 @@ export function AdminDashboardView({
           <StatCard
             label="Pending Review"
             value={pendingReview}
-            subtext={selectedSemesterLabel}
             icon={ClipboardList}
             tone="warning"
           />
           <StatCard
             label="Approved (Unpaid)"
             value={approvedUnpaid}
-            subtext={selectedSemesterLabel}
             icon={CheckCircle}
             tone="accent"
           />
           <StatCard
             label="Paid"
             value={paidCount}
-            subtext={selectedSemesterLabel}
             icon={Wallet}
             tone="success"
           />
@@ -197,7 +133,7 @@ export function AdminDashboardView({
             {needsAttention.length === 0 ? (
               <EmptyState
                 title="Inbox is clear"
-                description="No requests need attention for the current filters."
+                description="No requests need attention."
               />
             ) : (
               <div className="overflow-x-auto">
