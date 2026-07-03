@@ -4,7 +4,6 @@ import { GraduationCap } from "lucide-react";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { LoginFeatureList } from "./login-feature-list";
 import { LoginForm } from "./login-form";
-import { TestCredentials } from "./test-credentials";
 
 export default function LoginPage() {
   return (
@@ -70,7 +69,6 @@ export default function LoginPage() {
           </div>
 
           <LoginForm />
-          <TestCredentials />
         </div>
       </div>
     </div>
