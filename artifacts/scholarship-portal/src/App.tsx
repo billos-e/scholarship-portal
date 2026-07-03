@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
+import { NavigationLoadingProvider } from "@/components/layout/navigation-loading";
 import { requireAdmin, requireStudentSession, sessionDisplayName } from "@/lib/auth/session";
 import NotFound from "@/pages/not-found";
 
@@ -150,9 +151,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Routes />
-        </WouterRouter>
+        <NavigationLoadingProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Routes />
+          </WouterRouter>
+        </NavigationLoadingProvider>
         <Toaster richColors position="top-center" />
       </TooltipProvider>
     </QueryClientProvider>
