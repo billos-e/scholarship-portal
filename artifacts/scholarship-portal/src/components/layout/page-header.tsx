@@ -25,16 +25,7 @@ export function PageHeader({
       )}
     >
       <div className="min-w-0 space-y-2">
-        {variant === "admin" ? (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">
-            Administration
-          </p>
-        ) : null}
-        <div
-          className={cn(
-            variant === "admin" && "border-l-[3px] border-primary/35 pl-4",
-          )}
-        >
+        <div>
           <h1
             className={cn(
               "font-heading font-bold tracking-tight",
