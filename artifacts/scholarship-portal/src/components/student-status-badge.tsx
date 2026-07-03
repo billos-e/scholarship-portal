@@ -18,8 +18,13 @@ const CONFIG: Record<StudentStatus, { label: string; className: string }> = {
   },
 };
 
+const FALLBACK = {
+  label: "Unknown",
+  className: "border-border bg-muted text-muted-foreground",
+};
+
 export function StudentStatusBadge({ status }: { status: StudentStatus }) {
-  const c = CONFIG[status];
+  const c = CONFIG[status] ?? FALLBACK;
   return (
     <Badge variant="outline" className={cn("font-medium", c.className)}>
       {c.label}

@@ -11,9 +11,11 @@ import { StudentStatusBadge } from "@/components/student-status-badge";
 import { Button } from "@/components/ui/button";
 import { requireStudent } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
+import { getCurrentStudentProfile } from "@/lib/stub/sample-data";
 
 export default function StudentProfilePage() {
-  const { user, student } = requireStudent();
+  const { user } = requireStudent();
+  const student = getCurrentStudentProfile();
   const bank = student.bankInformation;
   const fullName = `${student.firstName} ${student.lastName}`;
 

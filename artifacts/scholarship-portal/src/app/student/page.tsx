@@ -23,6 +23,7 @@ import {
 import { requireStudent } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
 import {
+  getCurrentStudentProfile,
   getLatestRequestForStudent,
   getRequestsForStudent,
 } from "@/lib/stub/sample-data";
@@ -34,7 +35,8 @@ function greetingForHour(hour: number): string {
 }
 
 export default function StudentDashboard() {
-  const { student } = requireStudent();
+  requireStudent();
+  const student = getCurrentStudentProfile();
   const hour = new Date().getHours();
   const eligibility = {
     canStart: true,
