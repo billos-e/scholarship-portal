@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, GraduationCap, Users } from "lucide-react";
+import { ChevronRight, CreditCard, GraduationCap, Users } from "lucide-react";
 import type { StudentStatus } from "@prisma/client";
 
 import { SearchField } from "@/components/admin/search-field";
@@ -156,6 +156,14 @@ export function StudentsList({
     [students],
   );
 
+  const missingBankCount = useMemo(
+    () =>
+      students.filter(
+        (student) => !student.bankAccountNumber || !student.bankName,
+      ).length,
+    [students],
+  );
+
   const filtered = useMemo(
     () => filterStudents(students, filters),
     [students, filters],
@@ -240,10 +248,10 @@ export function StudentsList({
           tone="success"
         />
         <SummaryStat
-          label={hasActiveFilters ? "Matching filters" : "Showing all"}
-          value={filtered.length}
-          icon={Users}
-          tone="muted"
+          label="Bank details missing"
+          value={missingBankCount}
+          icon={CreditCard}
+          tone="warning"
         />
       </div>
 
