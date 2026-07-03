@@ -1,29 +1,17 @@
 import { RequestsList } from "@/components/admin/requests-list";
 import { requireAdmin } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import {
+  getActiveUniversities,
+  getDistinctSemesterLabels,
+  getRequests,
+} from "@/lib/stub/sample-data";
 
-export default async function AdminRequestsPage() {
-  await requireAdmin();
+export default function AdminRequestsPage() {
+  requireAdmin();
 
-  const [requests, universities, semesters] = await Promise.all([
-    prisma.tuitionPaymentRequest.findMany({
-      orderBy: [{ submittedAt: "desc" }],
-      include: {
-        student: { include: { university: true } },
-        paymentHistory: { select: { internalNotes: true } },
-      },
-    }),
-    prisma.university.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.tuitionPaymentRequest.findMany({
-      distinct: ["semesterLabel"],
-      orderBy: { semesterLabel: "desc" },
-      select: { semesterLabel: true },
-    }),
-  ]);
+  const requests = getRequests();
+  const universities = getActiveUniversities();
+  const semesters = getDistinctSemesterLabels();
 
   return (
     <RequestsList

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Pencil, Receipt } from "lucide-react";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
@@ -15,31 +15,17 @@ import { PaymentRequestsTable } from "@/components/payment-requests-table";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
-import { prisma } from "@/lib/prisma";
+import { getStudent } from "@/lib/stub/sample-data";
+import NotFound from "@/pages/not-found";
 import { ArchiveStudentButton } from "./archive-student-button";
 
-export default async function StudentDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  await requireAdmin();
-  const { id } = await params;
+export default function StudentDetailPage() {
+  requireAdmin();
+  const { id } = useParams<{ id: string }>();
 
-  const student = await prisma.student.findUnique({
-    where: { id },
-    include: {
-      user: true,
-      university: true,
-      bankInformation: true,
-      tuitionPaymentRequests: {
-        orderBy: { submittedAt: "desc" },
-        take: 20,
-      },
-    },
-  });
+  const student = getStudent(id);
 
-  if (!student) notFound();
+  if (!student) return <NotFound />;
 
   const fullName = `${student.firstName} ${student.lastName}`;
   const paymentCount = student.tuitionPaymentRequests.length;

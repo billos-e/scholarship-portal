@@ -1,23 +1,22 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { requireStudent } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
-import { getSubmissionEligibility } from "@/lib/submissions/eligibility";
+import { getLatestRequestForStudent } from "@/lib/stub/sample-data";
 
-export default async function StudentHistoryIndexPage() {
-  const { student } = await requireStudent();
-  const eligibility = await getSubmissionEligibility(student);
+export default function StudentHistoryIndexPage() {
+  const { student } = requireStudent();
+  const eligibility = {
+    canStart: true,
+    missingProfileFields: [] as string[],
+    openRequest: null as { id: string; semesterLabel: string } | null,
+  };
 
-  const first = await prisma.tuitionPaymentRequest.findFirst({
-    where: { studentId: student.id },
-    orderBy: { submittedAt: "desc" },
-    select: { id: true },
-  });
+  const first = getLatestRequestForStudent(student.id);
 
   if (first) {
-    const { redirect } = await import("next/navigation");
     redirect(`/student/history/${first.id}`);
   }
 

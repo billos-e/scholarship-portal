@@ -1,36 +1,19 @@
 import { AdminDashboardView } from "@/components/admin/admin-dashboard-view";
 import { requireAdmin } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import {
+  getActiveSemesters,
+  getActiveUniversities,
+  getRequests,
+  getStudents,
+} from "@/lib/stub/sample-data";
 
-export default async function AdminDashboard() {
-  await requireAdmin();
+export default function AdminDashboard() {
+  requireAdmin();
 
-  const [universities, semesters, students, requests] = await Promise.all([
-    prisma.university.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.universitySemester.findMany({
-      where: { isActive: true },
-      orderBy: [{ academicYear: "desc" }, { startDate: "desc" }],
-      select: {
-        id: true,
-        label: true,
-        academicYear: true,
-        universityId: true,
-      },
-    }),
-    prisma.student.findMany({
-      select: { universityId: true, status: true },
-    }),
-    prisma.tuitionPaymentRequest.findMany({
-      include: {
-        student: { include: { university: true } },
-        universitySemester: true,
-      },
-    }),
-  ]);
+  const universities = getActiveUniversities();
+  const semesters = getActiveSemesters();
+  const students = getStudents();
+  const requests = getRequests();
 
   const years = [...new Set(semesters.map((semester) => semester.academicYear))].sort(
     (a, b) => b.localeCompare(a),

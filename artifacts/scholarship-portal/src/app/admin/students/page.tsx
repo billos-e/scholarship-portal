@@ -1,27 +1,43 @@
 import { StudentsList } from "@/components/admin/students-list";
 import { requireAdmin } from "@/lib/auth/session";
-import { getStudentAcademicOptions } from "@/lib/student-academic-options";
-import { prisma } from "@/lib/prisma";
+import { getActiveUniversities, getStudents, getUniversities } from "@/lib/stub/sample-data";
 
-export default async function AdminStudentsPage() {
-  await requireAdmin();
+export default function AdminStudentsPage() {
+  requireAdmin();
 
-  const [students, universities, academicOptions] = await Promise.all([
-    prisma.student.findMany({
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      include: {
-        university: true,
-        user: { select: { email: true } },
-        bankInformation: true,
-      },
-    }),
-    prisma.university.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    getStudentAcademicOptions(),
-  ]);
+  const students = getStudents();
+  const universities = getActiveUniversities();
+
+  const academicOptions = {
+    semestersByUniversity: {} as Record<string, {
+      id: string;
+      label: string;
+      academicYear: string;
+      startDate: string;
+      endDate: string;
+    }[]>,
+    programsByUniversity: {} as Record<string, string[]>,
+  };
+  for (const uni of getUniversities()) {
+    academicOptions.semestersByUniversity[uni.id] = uni.semesters
+      .filter((s: { isActive: boolean }) => s.isActive)
+      .map((s: {
+        id: string;
+        label: string;
+        academicYear: string;
+        startDate: Date;
+        endDate: Date;
+      }) => ({
+        id: s.id,
+        label: s.label,
+        academicYear: s.academicYear,
+        startDate: s.startDate.toISOString().slice(0, 10),
+        endDate: s.endDate.toISOString().slice(0, 10),
+      }));
+    academicOptions.programsByUniversity[uni.id] = uni.degreePrograms
+      .filter((p: { isActive: boolean }) => p.isActive)
+      .map((p: { name: string }) => p.name);
+  }
 
   return (
     <StudentsList

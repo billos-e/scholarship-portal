@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { requireStudent } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
 
-export default async function StudentProfilePage() {
-  const { user, student } = await requireStudent();
+export default function StudentProfilePage() {
+  const { user, student } = requireStudent();
   const bank = student.bankInformation;
   const fullName = `${student.firstName} ${student.lastName}`;
 

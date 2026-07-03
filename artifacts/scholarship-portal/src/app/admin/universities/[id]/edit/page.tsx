@@ -1,23 +1,18 @@
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { requireAdmin } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import { getUniversity } from "@/lib/stub/sample-data";
+import NotFound from "@/pages/not-found";
 import { UniversityEditPageForm } from "./university-edit-page-form";
 
-export default async function UniversityEditPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  await requireAdmin();
-  const { id } = await params;
+export default function UniversityEditPage() {
+  requireAdmin();
+  const { id } = useParams<{ id: string }>();
 
-  const university = await prisma.university.findUnique({
-    where: { id },
-  });
+  const university = getUniversity(id);
 
-  if (!university) notFound();
+  if (!university) return <NotFound />;
 
   return (
     <div className="space-y-6">

@@ -1,8 +1,10 @@
 import { SubmissionBlocked } from "@/components/student/submission-blocked";
 import { SubmissionHero } from "@/components/student/submission-hero";
 import { requireStudent } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
-import { getSubmissionEligibility } from "@/lib/submissions/eligibility";
+import {
+  getRequestsForStudent,
+  getUniversitySemesters,
+} from "@/lib/stub/sample-data";
 import { SubmissionForm } from "./submit-form";
 import {
   Card,
@@ -11,43 +13,33 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default async function StudentSubmitPage() {
-  const { student } = await requireStudent();
-  const eligibility = await getSubmissionEligibility(student);
+export default function StudentSubmitPage() {
+  const { student } = requireStudent();
+  const eligibility = {
+    canStart: true,
+    missingProfileFields: [],
+    openRequest: null as { id: string; semesterLabel: string; status: string } | null,
+  };
   const bank = student.bankInformation;
 
   const semesterHint =
     student.currentSemesterLabel ??
     (student.universityId
-      ? (
-          await prisma.universitySemester.findFirst({
-            where: { universityId: student.universityId, isActive: true },
-            orderBy: { startDate: "desc" },
-            select: { label: true },
-          })
-        )?.label ?? null
+      ? getUniversitySemesters(student.universityId, true)[0]?.label ?? null
       : null);
 
   const semesters = student.universityId
-    ? await prisma.universitySemester.findMany({
-        where: { universityId: student.universityId, isActive: true },
-        orderBy: { startDate: "desc" },
-        select: { id: true, label: true, startDate: true },
-      })
+    ? getUniversitySemesters(student.universityId, true)
     : [];
 
   const submittedSemesterIds = eligibility.canStart
     ? new Set(
-        (
-          await prisma.tuitionPaymentRequest.findMany({
-            where: {
-              studentId: student.id,
-              universitySemesterId: { not: null },
-              status: { notIn: ["REJECTED"] },
-            },
-            select: { universitySemesterId: true },
-          })
-        )
+        getRequestsForStudent(student.id)
+          .filter(
+            (row) =>
+              row.universitySemesterId !== null &&
+              row.status !== "REJECTED",
+          )
           .map((row) => row.universitySemesterId)
           .filter((id): id is string => id !== null),
       )

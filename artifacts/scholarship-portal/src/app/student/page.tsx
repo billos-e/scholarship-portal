@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/card";
 import { requireStudent } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
-import { prisma } from "@/lib/prisma";
-import { getSubmissionEligibility } from "@/lib/submissions/eligibility";
+import {
+  getLatestRequestForStudent,
+  getRequestsForStudent,
+} from "@/lib/stub/sample-data";
 
 function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
@@ -31,30 +33,17 @@ function greetingForHour(hour: number): string {
   return "Good evening";
 }
 
-export default async function StudentDashboard() {
-  const { student } = await requireStudent();
+export default function StudentDashboard() {
+  const { student } = requireStudent();
   const hour = new Date().getHours();
-  const eligibility = await getSubmissionEligibility(student);
+  const eligibility = {
+    canStart: true,
+    missingProfileFields: [] as string[],
+    openRequest: null as { id: string; semesterLabel: string } | null,
+  };
 
-  const [latestRequest, recentRequests] = await Promise.all([
-    prisma.tuitionPaymentRequest.findFirst({
-      where: { studentId: student.id },
-      orderBy: [{ submittedAt: "desc" }, { createdAt: "desc" }],
-      select: {
-        id: true,
-        semesterLabel: true,
-        amountDue: true,
-        submittedAt: true,
-        dueDate: true,
-        status: true,
-      },
-    }),
-    prisma.tuitionPaymentRequest.findMany({
-      where: { studentId: student.id },
-      orderBy: { submittedAt: "desc" },
-      take: 5,
-    }),
-  ]);
+  const latestRequest = getLatestRequestForStudent(student.id);
+  const recentRequests = getRequestsForStudent(student.id).slice(0, 5);
 
   const semesterHint =
     eligibility.openRequest?.semesterLabel ??

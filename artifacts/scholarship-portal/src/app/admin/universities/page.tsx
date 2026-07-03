@@ -1,36 +1,11 @@
 import { UniversitiesList } from "@/components/admin/universities-list";
 import { requireAdmin } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import { getUniversities } from "@/lib/stub/sample-data";
 
-export default async function AdminUniversitiesPage() {
-  await requireAdmin();
+export default function AdminUniversitiesPage() {
+  requireAdmin();
 
-  const universities = await prisma.university.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      semesters: {
-        orderBy: { startDate: "asc" },
-        select: {
-          id: true,
-          academicYear: true,
-          termCode: true,
-          label: true,
-          startDate: true,
-          endDate: true,
-          isActive: true,
-        },
-      },
-      degreePrograms: {
-        orderBy: { name: "asc" },
-        select: {
-          id: true,
-          name: true,
-          isActive: true,
-        },
-      },
-      _count: { select: { students: true } },
-    },
-  });
+  const universities = getUniversities();
 
   return (
     <UniversitiesList
@@ -45,7 +20,7 @@ export default async function AdminUniversitiesPage() {
         studentCount: university._count.students,
         hasSummerSemester: university.hasSummerSemester,
         isActive: university.isActive,
-        semesters: university.semesters.map((semester) => ({
+        semesters: university.semesters.map((semester: any) => ({
           id: semester.id,
           academicYear: semester.academicYear,
           termCode: semester.termCode,
@@ -54,7 +29,7 @@ export default async function AdminUniversitiesPage() {
           endDate: semester.endDate.toISOString(),
           isActive: semester.isActive,
         })),
-        degreePrograms: university.degreePrograms.map((program) => ({
+        degreePrograms: university.degreePrograms.map((program: any) => ({
           id: program.id,
           name: program.name,
           isActive: program.isActive,

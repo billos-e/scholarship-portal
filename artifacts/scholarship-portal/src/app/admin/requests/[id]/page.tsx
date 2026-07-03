@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   BookOpen,
   CreditCard,
@@ -25,33 +25,23 @@ import {
 } from "@/components/admin/wellbeing-context";
 import { requireAdmin } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { prisma } from "@/lib/prisma";
+import { getRequest } from "@/lib/stub/sample-data";
 import {
   ACTIVITY_OPTIONS,
   CHALLENGE_OPTIONS,
   labelFor,
   WELLBEING_QUESTIONS,
 } from "@/lib/submissions/constants";
+import NotFound from "@/pages/not-found";
 import { PaymentNotesForm } from "./status-actions";
 
-export default async function AdminRequestDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  await requireAdmin();
-  const { id } = await params;
+export default function AdminRequestDetailPage() {
+  requireAdmin();
+  const { id } = useParams<{ id: string }>();
 
-  const request = await prisma.tuitionPaymentRequest.findUnique({
-    where: { id },
-    include: {
-      student: { include: { university: true, user: true } },
-      semesterReport: true,
-      paymentHistory: true,
-    },
-  });
+  const request = getRequest(id);
 
-  if (!request) notFound();
+  if (!request) return <NotFound />;
 
   const { student, semesterReport: report, paymentHistory: payment } = request;
   const studentName = `${student.firstName} ${student.lastName}`;

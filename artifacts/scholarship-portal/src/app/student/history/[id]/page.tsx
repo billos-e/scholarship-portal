@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import { ArrowLeft, FileText, ImageIcon } from "lucide-react";
 
+import NotFound from "@/pages/not-found";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { requireStudent } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { prisma } from "@/lib/prisma";
+import { getRequest } from "@/lib/stub/sample-data";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { StatusStepper } from "@/components/status-stepper";
 import {
@@ -110,21 +111,14 @@ function WellbeingValue({ value }: { value: number | null }) {
   );
 }
 
-export default async function StudentSubmissionDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const { student } = await requireStudent();
+export default function StudentSubmissionDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { student } = requireStudent();
 
-  const request = await prisma.tuitionPaymentRequest.findUnique({
-    where: { id },
-    include: { semesterReport: true, paymentHistory: true },
-  });
+  const request = getRequest(id);
 
   if (!request || request.studentId !== student.id) {
-    notFound();
+    return <NotFound />;
   }
 
   const report = request.semesterReport;

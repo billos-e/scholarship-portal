@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import { CalendarDays, GraduationCap, Pencil, Users } from "lucide-react";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
@@ -14,49 +14,23 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
-import { prisma } from "@/lib/prisma";
+import { getStudents, getUniversity } from "@/lib/stub/sample-data";
+import NotFound from "@/pages/not-found";
 import { SemesterTable } from "./semester-table";
 import { ProgramBoard } from "./program-board";
 import { DeactivateUniversityButton } from "./university-actions";
 
-export default async function UniversityDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  await requireAdmin();
-  const { id } = await params;
+export default function UniversityDetailPage() {
+  requireAdmin();
+  const { id } = useParams<{ id: string }>();
 
-  const university = await prisma.university.findUnique({
-    where: { id },
-    include: {
-      semesters: {
-        orderBy: { startDate: "asc" },
-        include: {
-          _count: { select: { tuitionPaymentRequests: true } },
-        },
-      },
-      degreePrograms: {
-        orderBy: { name: "asc" },
-      },
-      students: {
-        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-        take: 5,
-      },
-      _count: { select: { students: true } },
-    },
-  });
+  const university = getUniversity(id);
 
-  if (!university) notFound();
+  if (!university) return <NotFound />;
 
-  const assignedPrograms = await prisma.student.findMany({
-    where: {
-      universityId: university.id,
-      degreeProgram: { not: null },
-    },
-    select: { degreeProgram: true },
-    distinct: ["degreeProgram"],
-  });
+  const assignedPrograms = getStudents()
+    .filter((student) => student.universityId === university.id && student.degreeProgram)
+    .map((student) => ({ degreeProgram: student.degreeProgram }));
   const assignedProgramNames = new Set(
     assignedPrograms
       .map((row) => row.degreeProgram?.toLowerCase())

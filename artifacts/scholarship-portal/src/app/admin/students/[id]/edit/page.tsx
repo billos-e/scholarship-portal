@@ -1,33 +1,50 @@
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { requireAdmin } from "@/lib/auth/session";
-import { getStudentAcademicOptions } from "@/lib/student-academic-options";
-import { prisma } from "@/lib/prisma";
+import { getActiveUniversities, getStudent, getUniversities } from "@/lib/stub/sample-data";
+import NotFound from "@/pages/not-found";
 import { StudentEditPageForm } from "./student-edit-page-form";
 
-export default async function StudentEditPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  await requireAdmin();
-  const { id } = await params;
+export default function StudentEditPage() {
+  requireAdmin();
+  const { id } = useParams<{ id: string }>();
 
-  const [student, universities, academicOptions] = await Promise.all([
-    prisma.student.findUnique({
-      where: { id },
-      include: { bankInformation: true, user: true },
-    }),
-    prisma.university.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    getStudentAcademicOptions(),
-  ]);
+  const student = getStudent(id);
+  const universities = getActiveUniversities();
 
-  if (!student) notFound();
+  const academicOptions = {
+    semestersByUniversity: {} as Record<string, {
+      id: string;
+      label: string;
+      academicYear: string;
+      startDate: string;
+      endDate: string;
+    }[]>,
+    programsByUniversity: {} as Record<string, string[]>,
+  };
+  for (const uni of getUniversities()) {
+    academicOptions.semestersByUniversity[uni.id] = uni.semesters
+      .filter((s: { isActive: boolean }) => s.isActive)
+      .map((s: {
+        id: string;
+        label: string;
+        academicYear: string;
+        startDate: Date;
+        endDate: Date;
+      }) => ({
+        id: s.id,
+        label: s.label,
+        academicYear: s.academicYear,
+        startDate: s.startDate.toISOString().slice(0, 10),
+        endDate: s.endDate.toISOString().slice(0, 10),
+      }));
+    academicOptions.programsByUniversity[uni.id] = uni.degreePrograms
+      .filter((p: { isActive: boolean }) => p.isActive)
+      .map((p: { name: string }) => p.name);
+  }
+
+  if (!student) return <NotFound />;
 
   const fullName = `${student.firstName} ${student.lastName}`;
 

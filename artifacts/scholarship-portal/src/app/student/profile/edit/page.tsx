@@ -1,20 +1,19 @@
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { requireStudent } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
-import { getStudentAcademicOptions } from "@/lib/student-academic-options";
+import { getActiveUniversities } from "@/lib/stub/sample-data";
 import { StudentProfileEditForm } from "./student-profile-edit-form";
 
-export default async function StudentProfileEditPage() {
-  const { user, student } = await requireStudent();
+export default function StudentProfileEditPage() {
+  const { user, student } = requireStudent();
 
-  const [universities, academicOptions] = await Promise.all([
-    prisma.university.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    getStudentAcademicOptions(),
-  ]);
+  const universities = getActiveUniversities();
+  const academicOptions = {
+    semestersByUniversity: {} as Record<
+      string,
+      { id: string; label: string; academicYear: string; startDate: string; endDate: string }[]
+    >,
+    programsByUniversity: {} as Record<string, string[]>,
+  };
 
   return (
     <div className="space-y-6">

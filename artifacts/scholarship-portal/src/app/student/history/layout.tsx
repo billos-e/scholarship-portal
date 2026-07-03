@@ -1,26 +1,16 @@
 import { HistoryRequestNav } from "@/components/student/history-request-nav";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireStudent } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import { getRequestsForStudent } from "@/lib/stub/sample-data";
 
-export default async function HistoryLayout({
+export default function HistoryLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { student } = await requireStudent();
+  const { student } = requireStudent();
 
-  const requests = await prisma.tuitionPaymentRequest.findMany({
-    where: { studentId: student.id },
-    orderBy: { submittedAt: "desc" },
-    select: {
-      id: true,
-      semesterLabel: true,
-      amountDue: true,
-      submittedAt: true,
-      status: true,
-    },
-  });
+  const requests = getRequestsForStudent(student.id);
 
   return (
     <div className="space-y-5 sm:space-y-6">

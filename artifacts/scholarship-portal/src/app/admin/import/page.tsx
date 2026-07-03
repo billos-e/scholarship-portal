@@ -2,8 +2,8 @@ import { ImportWizard } from "@/components/admin/import-wizard";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdmin } from "@/lib/auth/session";
 
-export default async function AdminImportPage() {
-  await requireAdmin();
+export default function AdminImportPage() {
+  requireAdmin();
 
   return (
     <div className="space-y-6">
