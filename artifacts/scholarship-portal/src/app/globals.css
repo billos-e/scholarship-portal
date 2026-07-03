@@ -86,8 +86,8 @@
   --warning-light: #fdf0e8;
   --info: #7c3aed;
   --info-light: #ede9fe;
-  --border: #e8ddd4;
-  --input: #ddd0c6;
+  --border: color-mix(in srgb, #e8ddd4 60%, transparent);
+  --input: color-mix(in srgb, #ddd0c6 60%, transparent);
   --ring: #c0269a;
   --chart-1: #c0269a;
   --chart-2: #e07a54;
@@ -106,7 +106,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #fce8f3;
   --sidebar-accent-foreground: #9d174d;
-  --sidebar-border: #e8ddd4;
+  --sidebar-border: color-mix(in srgb, #e8ddd4 60%, transparent);
   --sidebar-ring: #c0269a;
   /* Admin sidebar — deep fuchsia */
   --sidebar-admin: #6b1140;
