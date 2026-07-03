@@ -975,7 +975,7 @@ function PreviewTable({
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium">{title}</h3>
-      <div className="max-h-[320px] overflow-auto rounded-lg border">
+      <div className="max-h-[320px] overflow-hidden rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
