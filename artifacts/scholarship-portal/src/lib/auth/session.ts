@@ -1,49 +1,56 @@
-import {
-  CURRENT_ADMIN_USER,
-  CURRENT_STUDENT_USER,
-  getCurrentStudentProfile,
-} from "@/lib/stub/sample-data";
+import { loadSession, clearSession, type SessionUser } from "./api";
 
-type SessionUser = {
-  id: string;
-  email?: string | null;
-  role: "ADMIN" | "STUDENT";
-  studentProfileId?: string;
-  firstName?: string;
-  lastName?: string;
-  displayName?: string;
-};
-
-/** Returns the current session user (placeholder — always signed in as admin). */
-export function getCurrentUser(): SessionUser {
-  return CURRENT_ADMIN_USER;
-}
-
-/** Display name from session (no DB). Falls back to email local-part. */
+/** Display name from session user. */
 export function sessionDisplayName(user: SessionUser): string {
-  if (user.displayName) return user.displayName;
   if (user.firstName && user.lastName) {
     return `${user.firstName} ${user.lastName}`;
   }
   return user.email?.split("@")[0] ?? "User";
 }
 
-/** Placeholder: ensures a user is "logged in". */
+/** Returns the current session user from localStorage. */
+export function getCurrentUser(): SessionUser | null {
+  return loadSession();
+}
+
+/** Ensures a user is logged in (reads localStorage). Redirects to login if not. */
 export function requireUser(): SessionUser {
-  return CURRENT_ADMIN_USER;
+  const user = loadSession();
+  if (!user) {
+    throw new Error("UNAUTHORIZED");
+  }
+  return user;
 }
 
-/** Placeholder student session. */
-export function requireStudentSession(): SessionUser {
-  return CURRENT_STUDENT_USER;
-}
-
-/** Placeholder admin session. */
+/** Ensures an admin is logged in. */
 export function requireAdmin(): SessionUser {
-  return CURRENT_ADMIN_USER;
+  const user = requireUser();
+  if (user.role !== "ADMIN") {
+    throw new Error("FORBIDDEN");
+  }
+  return user;
 }
 
-/** Placeholder student session + profile. */
-export function requireStudent(): { user: SessionUser; student: ReturnType<typeof getCurrentStudentProfile> } {
-  return { user: CURRENT_STUDENT_USER, student: getCurrentStudentProfile() };
+/** Ensures a student is logged in. */
+export function requireStudentSession(): SessionUser {
+  const user = requireUser();
+  if (user.role !== "STUDENT") {
+    throw new Error("FORBIDDEN");
+  }
+  return user;
+}
+
+/** Requires student + basic profile fields. */
+export function requireStudent(): { user: SessionUser; student: { id: string } } {
+  const user = requireStudentSession();
+  if (!user.studentProfileId) {
+    throw new Error("NO_STUDENT_PROFILE");
+  }
+  return { user, student: { id: user.studentProfileId } };
+}
+
+/** Sign-out helper: clears storage and reloads to login. */
+export function logout() {
+  clearSession();
+  window.location.href = "/login";
 }

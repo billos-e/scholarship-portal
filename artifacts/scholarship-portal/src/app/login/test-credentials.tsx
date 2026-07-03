@@ -8,7 +8,7 @@ const TEST_ACCOUNTS = [
   },
   {
     role: "Student",
-    email: "anong.saetang@example.com",
+    email: "somchai.jaidee@example.com",
     password: "password123",
   },
 ] as const;

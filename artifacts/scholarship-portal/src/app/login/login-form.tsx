@@ -1,30 +1,42 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
+import { useCallback, useState } from "react";
+import { useLocation } from "wouter";
 
-import { authenticate, type LoginState } from "@/lib/actions/auth";
+import { apiLogin, saveSession } from "@/lib/auth/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="h-11 w-full" disabled={pending}>
-      {pending ? "Signing in..." : "Sign in"}
-    </Button>
-  );
-}
+export type LoginState = { error?: string };
 
 export function LoginForm() {
-  const [state, formAction] = useActionState<LoginState, FormData>(
-    authenticate,
-    {},
+  const [, navigate] = useLocation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setPending(true);
+      setError("");
+      try {
+        const user = await apiLogin(email, password);
+        saveSession(user);
+        navigate(user.role === "ADMIN" ? "/admin" : "/student");
+      } catch (err: any) {
+        setError(err?.message ?? "Sign-in failed.");
+      } finally {
+        setPending(false);
+      }
+    },
+    [email, password, navigate],
   );
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="email" className="text-sm font-medium">
           Email
@@ -37,6 +49,8 @@ export function LoginForm() {
           autoComplete="email"
           className="h-11 bg-card"
           required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
       </div>
 
@@ -51,14 +65,18 @@ export function LoginForm() {
           autoComplete="current-password"
           className="h-11 bg-card"
           required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
       </div>
 
-      {state.error ? (
-        <p className="text-sm font-medium text-destructive">{state.error}</p>
+      {error ? (
+        <p className="text-sm font-medium text-destructive">{error}</p>
       ) : null}
 
-      <SubmitButton />
+      <Button type="submit" className="h-11 w-full" disabled={pending}>
+        {pending ? "Signing in..." : "Sign in"}
+      </Button>
     </form>
   );
 }

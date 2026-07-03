@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
 import { NavigationLoadingProvider } from "@/components/layout/navigation-loading";
-import { requireAdmin, requireStudentSession, sessionDisplayName } from "@/lib/auth/session";
+import { getCurrentUser, sessionDisplayName } from "@/lib/auth/session";
 import NotFound from "@/pages/not-found";
 
 import LoginPage from "@/app/login/page";
@@ -30,8 +30,27 @@ import HistoryLayout from "@/app/student/history/layout";
 
 const queryClient = new QueryClient();
 
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+
+function useRequireRole(role: "ADMIN" | "STUDENT") {
+  const [, navigate] = useLocation();
+  const user = getCurrentUser();
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (user.role !== role) {
+      navigate(user.role === "ADMIN" ? "/admin" : "/student");
+    }
+  }, [user, navigate, role]);
+  return user;
+}
+
 function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = requireAdmin();
+  const user = useRequireRole("ADMIN");
+  if (!user || user.role !== "ADMIN") return null;
   return (
     <AppShell variant="admin" email={user.email ?? ""}>
       {children}
@@ -40,7 +59,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
 }
 
 function StudentLayout({ children }: { children: React.ReactNode }) {
-  const user = requireStudentSession();
+  const user = useRequireRole("STUDENT");
+  if (!user || user.role !== "STUDENT") return null;
   return (
     <AppShell variant="student" email={user.email ?? ""} displayName={sessionDisplayName(user)}>
       {children}
