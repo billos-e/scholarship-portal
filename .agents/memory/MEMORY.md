@@ -1,0 +1,2 @@
+- [DB seed command](db-seed.md) — how to re-run the seed and where tsx lives in this workspace
+- [Scholarship portal shim strategy](scholarship-portal-shims.md) — Next.js→Vite port uses alias shims; key gotchas
