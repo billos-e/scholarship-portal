@@ -61,11 +61,11 @@ const student = {
 
 function StudentStatusBadge({ status }: { status: string }) {
   const configs: Record<string, { label: string; className: string }> = {
-    ACTIVE: { label: "Active", className: "border border-success/30 bg-green-50 text-green-700" },
-    GRADUATED: { label: "Graduated", className: "border border-blue-300/40 bg-blue-50 text-blue-700" },
-    INACTIVE: { label: "Inactive", className: "border border-gray-200 bg-gray-100 text-gray-500" },
+    ACTIVE: { label: "Active", className: "border border-success/30 bg-success-light text-success" },
+    GRADUATED: { label: "Graduated", className: "border border-success/30 bg-success-light text-success" },
+    INACTIVE: { label: "Inactive", className: "border border-muted bg-muted text-muted-foreground" },
   };
-  const c = configs[status] ?? { label: "Unknown", className: "border border-gray-200 bg-gray-100 text-gray-500" };
+  const c = configs[status] ?? { label: "Unknown", className: "border border-muted bg-muted text-muted-foreground" };
   return (
     <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", c.className)}>
       {c.label}
@@ -122,11 +122,11 @@ function RequestSectionCard({
   children: React.ReactNode;
 }) {
   const toneClass: Record<string, string> = {
-    primary: "bg-pink-50 text-pink-700",
-    accent: "bg-orange-50 text-orange-700",
-    info: "bg-purple-50 text-purple-700",
-    success: "bg-green-50 text-green-700",
-    warning: "bg-orange-50 text-orange-700",
+    primary: "bg-primary/10 text-primary",
+    accent: "bg-accent/10 text-accent",
+    info: "bg-info-light text-info",
+    success: "bg-success-light text-success",
+    warning: "bg-accent/10 text-accent",
   };
   return (
     <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-shadow hover:shadow-md">
@@ -157,7 +157,7 @@ function PaymentRequestsTable({ rows }: { rows: typeof student.paymentRequests }
                 <p className="font-medium text-foreground">{request.semesterLabel}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{formatCurrency(request.amountDue)}</p>
               </div>
-              <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+              <span className="inline-flex items-center rounded-full border border-success/30 bg-success-light px-2 py-0.5 text-xs font-medium text-success">
                 {request.status.charAt(0) + request.status.slice(1).toLowerCase()}
               </span>
             </div>
@@ -182,7 +182,7 @@ function PaymentRequestsTable({ rows }: { rows: typeof student.paymentRequests }
                 <td className="p-2 align-middle">{formatCurrency(request.amountDue)}</td>
                 <td className="p-2 align-middle">{formatDate(new Date(request.submittedAt))}</td>
                 <td className="p-2 align-middle">
-                  <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                  <span className="inline-flex items-center rounded-full border border-success/30 bg-success-light px-2 py-0.5 text-xs font-medium text-success">
                     {request.status.charAt(0) + request.status.slice(1).toLowerCase()}
                   </span>
                 </td>

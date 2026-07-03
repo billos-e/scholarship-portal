@@ -37,13 +37,13 @@ export function SidebarDense() {
           {/* Left Sidebar */}
           <div className="w-full md:w-80 flex-shrink-0 space-y-6">
             <Card className="border-border/50 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
-              <div className="h-24 bg-gradient-to-r from-blue-600/20 to-purple-600/20 w-full" />
+              <div className="h-24 bg-gradient-to-r from-primary/20 to-accent/20 w-full" />
               <CardContent className="px-6 pb-6 pt-0 relative">
                 <div className="-mt-12 mb-4 flex justify-between items-end">
                   <Avatar className="h-24 w-24 border-4 border-background shadow-md">
                     <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">KC</AvatarFallback>
                   </Avatar>
-                  <Badge variant="secondary" className="mb-2 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 border-0">
+                  <Badge variant="secondary" className="mb-2 bg-success/15 text-success hover:bg-success/25 border-0">
                     Graduated
                   </Badge>
                 </div>
@@ -104,7 +104,7 @@ export function SidebarDense() {
                       </div>
                     } />
                     <DataRow label="Current GPA" value={
-                      <Badge variant="outline" className="font-mono text-sm border-blue-200 bg-blue-50 text-blue-700">3.65</Badge>
+                      <Badge variant="outline" className="font-mono text-sm border-info/30 bg-info-light text-info">3.65</Badge>
                     } />
                   </div>
                 </div>
@@ -151,7 +151,7 @@ export function SidebarDense() {
                           <TableCell className="font-mono">45,000.00</TableCell>
                           <TableCell className="text-muted-foreground">Jan 15, 2025</TableCell>
                           <TableCell className="text-right">
-                            <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 border-0">
+                            <Badge variant="secondary" className="bg-success/15 text-success hover:bg-success/25 border-0">
                               Approved
                             </Badge>
                           </TableCell>
