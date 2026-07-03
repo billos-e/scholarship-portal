@@ -113,7 +113,7 @@
   --sidebar-admin-foreground: #f5d0e4;
   --sidebar-admin-accent: #851651;
   --sidebar-admin-accent-foreground: #ffffff;
-  --sidebar-admin-border: #9d174d66;
+  --sidebar-admin-border: color-mix(in srgb, #9d174d 25%, transparent);
 }
 
 .dark {
