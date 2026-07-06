@@ -5,12 +5,11 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
-import {
-  updateUniversityById,
-  rawUniversities,
-  type Any,
-} from "@/lib/stub/sample-data";
-import { saveUniversityImage, validateUpload } from "@/lib/uploads";
+import { validateUpload } from "@/lib/uploads";
+
+const apiBase = import.meta.env.BASE_URL
+  ? import.meta.env.BASE_URL.replace(/\/$/, "")
+  : "";
 
 export type ActionState = {
   error?: string;
@@ -83,15 +82,19 @@ export async function updateUniversity(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const existing = rawUniversities.find(
-    (u: Any) => u.name === parsed.data.name && u.id !== id,
-  );
-  if (existing) {
-    return { error: "A university with this name already exists." };
+  try {
+    const res = await fetch(`${apiBase}/api/universities/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parsed.data),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as any).error ?? "Failed to update university." };
+    }
+  } catch {
+    return { error: "Failed to update university." };
   }
-
-  const ok = updateUniversityById(id, parsed.data);
-  if (!ok) return { error: "University not found." };
 
   revalidatePath("/admin/universities");
   revalidatePath(`/admin/universities/${id}`);
@@ -123,9 +126,17 @@ export async function uploadUniversityImage(
         .map((b) => String.fromCharCode(b))
         .join(""),
     );
-    const imageUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
-    const ok = updateUniversityById(id, { imageUrl });
-    if (!ok) return { error: "University not found." };
+    const imageDataUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+
+    const res = await fetch(`${apiBase}/api/universities/${id}/image`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageDataUrl }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as any).error ?? "Failed to upload image." };
+    }
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to upload image.",

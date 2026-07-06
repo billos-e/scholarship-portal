@@ -1,11 +1,31 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { UniversitiesList } from "@/components/admin/universities-list";
 import { requireAdmin } from "@/lib/auth/session";
-import { getUniversities } from "@/lib/stub/sample-data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { fetchUniversities, type UniversityListItem } from "@/lib/api/universities";
 
 export default function AdminUniversitiesPage() {
   requireAdmin();
+  const [universities, setUniversities] = useState<UniversityListItem[] | null>(null);
 
-  const universities = getUniversities();
+  useEffect(() => {
+    fetchUniversities()
+      .then(setUniversities)
+      .catch(() => setUniversities([]));
+  }, []);
+
+  if (!universities) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <Skeleton className="h-14 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <UniversitiesList
@@ -20,16 +40,16 @@ export default function AdminUniversitiesPage() {
         studentCount: university._count.students,
         hasSummerSemester: university.hasSummerSemester,
         isActive: university.isActive,
-        semesters: university.semesters.map((semester: any) => ({
+        semesters: university.semesters.map((semester) => ({
           id: semester.id,
           academicYear: semester.academicYear,
           termCode: semester.termCode,
           label: semester.label,
-          startDate: semester.startDate.toISOString(),
-          endDate: semester.endDate.toISOString(),
+          startDate: semester.startDate,
+          endDate: semester.endDate,
           isActive: semester.isActive,
         })),
-        degreePrograms: university.degreePrograms.map((program: any) => ({
+        degreePrograms: university.degreePrograms.map((program) => ({
           id: program.id,
           name: program.name,
           isActive: program.isActive,

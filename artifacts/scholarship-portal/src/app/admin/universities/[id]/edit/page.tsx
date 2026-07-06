@@ -1,16 +1,36 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
-import { getUniversity } from "@/lib/stub/sample-data";
+import { fetchUniversity, type UniversityDetail } from "@/lib/api/universities";
 import NotFound from "@/pages/not-found";
 import { UniversityEditPageForm } from "./university-edit-page-form";
 
 export default function UniversityEditPage() {
   requireAdmin();
   const { id } = useParams<{ id: string }>();
+  const [university, setUniversity] = useState<UniversityDetail | null | undefined>(undefined);
 
-  const university = getUniversity(id);
+  useEffect(() => {
+    setUniversity(undefined);
+    fetchUniversity(id)
+      .then(setUniversity)
+      .catch(() => setUniversity(null));
+  }, [id]);
+
+  if (university === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-7 w-72" />
+        <Skeleton className="h-44 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!university) return <NotFound />;
 

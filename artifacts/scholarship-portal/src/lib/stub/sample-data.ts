@@ -59,25 +59,6 @@ const rawUniversities = [
   },
 ] as Any[];
 
-// Rehydrate any university changes that were persisted to localStorage
-// so edits (name, image, etc.) survive page refreshes.
-const UNI_OVERRIDES_KEY = "sp_uni_overrides";
-if (typeof window !== "undefined") {
-  try {
-    const raw = localStorage.getItem(UNI_OVERRIDES_KEY);
-    if (raw) {
-      const overrides: Record<string, Partial<Any>> = JSON.parse(raw);
-      for (const uni of rawUniversities) {
-        if (overrides[uni.id]) {
-          Object.assign(uni, overrides[uni.id]);
-        }
-      }
-    }
-  } catch {
-    // ignore – corrupt storage, SSR, etc.
-  }
-}
-
 export const rawSemesters = [
   {
     id: "sem_chula_fall25",
@@ -646,18 +627,6 @@ export function updateUniversityById(id: string, updates: Partial<Any>): boolean
   const idx = rawUniversities.findIndex((u) => u.id === id);
   if (idx === -1) return false;
   Object.assign(rawUniversities[idx], { ...updates, updatedAt: new Date() });
-
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(UNI_OVERRIDES_KEY);
-      const overrides: Record<string, Partial<Any>> = raw ? JSON.parse(raw) : {};
-      overrides[id] = { ...(overrides[id] ?? {}), ...updates };
-      localStorage.setItem(UNI_OVERRIDES_KEY, JSON.stringify(overrides));
-    } catch {
-      // ignore – storage full, private browsing, etc.
-    }
-  }
-
   return true;
 }
 

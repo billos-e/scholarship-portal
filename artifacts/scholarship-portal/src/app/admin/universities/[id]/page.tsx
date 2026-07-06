@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CalendarDays, GraduationCap, Pencil, Users } from "lucide-react";
@@ -12,9 +15,10 @@ import { UniversityDetailHero } from "@/components/admin/university-detail-hero"
 import { UniversityStudentsTable } from "@/components/admin/university-students-table";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
-import { getStudents, getUniversity } from "@/lib/stub/sample-data";
+import { fetchUniversity, type UniversityDetail } from "@/lib/api/universities";
 import NotFound from "@/pages/not-found";
 import { SemesterTable } from "./semester-table";
 import { ProgramBoard } from "./program-board";
@@ -23,20 +27,29 @@ import { DeactivateUniversityButton } from "./university-actions";
 export default function UniversityDetailPage() {
   requireAdmin();
   const { id } = useParams<{ id: string }>();
+  const [university, setUniversity] = useState<UniversityDetail | null | undefined>(undefined);
 
-  const university = getUniversity(id);
+  useEffect(() => {
+    setUniversity(undefined);
+    fetchUniversity(id)
+      .then(setUniversity)
+      .catch(() => setUniversity(null));
+  }, [id]);
+
+  if (university === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-7 w-72" />
+        <Skeleton className="h-44 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!university) return <NotFound />;
 
-  const assignedPrograms = getStudents()
-    .filter((student) => student.universityId === university.id && student.degreeProgram)
-    .map((student) => ({ degreeProgram: student.degreeProgram }));
-  const assignedProgramNames = new Set(
-    assignedPrograms
-      .map((row) => row.degreeProgram?.toLowerCase())
-      .filter(Boolean),
-  );
-
+  const assignedProgramNames = new Set(university.assignedDegreePrograms);
   const studentCount = university._count.students;
   const semesterCount = university.semesters.length;
   const programCount = university.degreePrograms.length;
@@ -106,17 +119,13 @@ export default function UniversityDetailPage() {
           <ProfileInfoField
             label="Students enrolled"
             value={
-              studentCount === 0
-                ? "None"
-                : `${studentCount} on record`
+              studentCount === 0 ? "None" : `${studentCount} on record`
             }
           />
           <ProfileInfoField
             label="Semesters configured"
             value={
-              semesterCount === 0
-                ? "None"
-                : `${semesterCount} on record`
+              semesterCount === 0 ? "None" : `${semesterCount} on record`
             }
           />
           <ProfileInfoField
