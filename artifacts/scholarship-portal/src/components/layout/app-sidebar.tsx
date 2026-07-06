@@ -215,21 +215,9 @@ export function AppSidebar({
           ))}
         </nav>
 
-        <div
-          className={cn(
-            "p-4",
-            isAdmin ? "border-t border-sidebar-admin-border" : "border-t border-sidebar-border",
-          )}
-        >
+        <div className="p-4">
           {!collapsed ? (
-            <div
-              className={cn(
-                "mb-3 flex items-center gap-3 rounded-lg border p-3",
-                isAdmin
-                  ? "border-sidebar-admin-border bg-black/10"
-                  : "border-sidebar-border bg-muted/40",
-              )}
-            >
+            <div className="flex items-center gap-3">
               <span
                 className={cn(
                   "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
@@ -240,21 +228,20 @@ export function AppSidebar({
               >
                 {initials}
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold">{userLabel}</p>
                 <p className="truncate text-[11px] opacity-70">
                   {isAdmin ? "Administrator" : "Student"}
                 </p>
               </div>
+              <SignOutButton showLabel={false} />
             </div>
-          ) : null}
-          <SignOutButton
-            className={cn(
-              "w-full justify-start gap-2",
-              collapsed && "justify-center px-2",
-            )}
-            showLabel={!collapsed}
-          />
+          ) : (
+            <SignOutButton
+              className="w-full justify-center px-2"
+              showLabel={false}
+            />
+          )}
         </div>
       </aside>
     </TooltipProvider>
