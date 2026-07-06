@@ -17,6 +17,13 @@ export function parseUploadPath(relativePath: string): UploadPathInfo | null {
 
 export function uploadPublicUrl(relativePath: string): string {
   if (!relativePath) return "";
+  if (
+    relativePath.startsWith("http://") ||
+    relativePath.startsWith("https://") ||
+    relativePath.startsWith("data:")
+  ) {
+    return relativePath;
+  }
   const dataUrl = memoryReadAsDataUrl(relativePath);
   if (dataUrl) return dataUrl;
   return `/api/uploads/${relativePath

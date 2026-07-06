@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { BadgeCheck, Sun } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,6 +55,7 @@ export function UniversityEditPageForm({
   university: UniversityEditPageData;
   profileHref: string;
 }) {
+  const router = useRouter();
   const initials = getInitials(university.name);
   const hasImage = Boolean(university.imageUrl?.trim());
 
@@ -63,7 +65,10 @@ export function UniversityEditPageForm({
   );
 
   useEffect(() => {
-    if (state.success) toast.success("University updated.");
+    if (state.success) {
+      toast.success("University updated.");
+      router.push(profileHref);
+    }
   }, [state.success]);
 
   return (

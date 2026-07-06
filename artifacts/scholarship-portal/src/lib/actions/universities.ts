@@ -116,7 +116,14 @@ export async function uploadUniversityImage(
   if (!check.ok) return { error: check.error };
 
   try {
-    const imageUrl = await saveUniversityImage(file, id);
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    const b64 = btoa(
+      Array.from(bytes)
+        .map((b) => String.fromCharCode(b))
+        .join(""),
+    );
+    const imageUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
     const ok = updateUniversityById(id, { imageUrl });
     if (!ok) return { error: "University not found." };
   } catch (err) {
