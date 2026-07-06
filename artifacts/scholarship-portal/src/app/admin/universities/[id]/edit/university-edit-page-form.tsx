@@ -1,10 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowLeft, BadgeCheck, Sun } from "lucide-react";
+import { BadgeCheck, Sun } from "lucide-react";
 import { toast } from "sonner";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
@@ -101,16 +100,6 @@ export function UniversityEditPageForm({
             />
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-            <Button
-              size="sm"
-              variant="outline"
-              render={<Link href={profileHref} />}
-            >
-              <ArrowLeft className="size-3.5" />
-              Back to profile
-            </Button>
-          </div>
         </div>
       </section>
 
