@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { RequestStatus } from "@prisma/client";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import { getRequest, updateRequestById, setPaymentNote } from "@/lib/stub/sample-data";
 
 export type RequestActionState = {
   error?: string;
@@ -67,9 +67,7 @@ export async function transitionRequestStatus(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const request = await prisma.tuitionPaymentRequest.findUnique({
-    where: { id: parsed.data.requestId },
-  });
+  const request = getRequest(parsed.data.requestId);
   if (!request) return { error: "Request not found." };
 
   const { nextStatus } = parsed.data;
@@ -83,7 +81,7 @@ export async function transitionRequestStatus(
   }
 
   const now = new Date();
-  const updates: Parameters<typeof prisma.tuitionPaymentRequest.update>[0]["data"] = {
+  const updates: Record<string, unknown> = {
     status: nextStatus,
   };
 
@@ -113,45 +111,13 @@ export async function transitionRequestStatus(
       }
       paymentDate = parsedDate;
     }
-
-    try {
-      await prisma.$transaction([
-        prisma.tuitionPaymentRequest.update({
-          where: { id: request.id },
-          data: updates,
-        }),
-        prisma.paymentHistory.upsert({
-          where: { tuitionPaymentRequestId: request.id },
-          update: {
-            paymentDate,
-            amountPaid: request.amountDue,
-            paymentStatus: "PAID",
-          },
-          create: {
-            studentId: request.studentId,
-            tuitionPaymentRequestId: request.id,
-            semesterLabel: request.semesterLabel,
-            amountPaid: request.amountDue,
-            paymentStatus: "PAID",
-            paymentDate,
-          },
-        }),
-      ]);
-    } catch (err) {
-      console.error("transitionRequestStatus (PAID) failed", err);
-      return { error: "Could not mark this request as paid." };
-    }
-  } else {
-    try {
-      await prisma.tuitionPaymentRequest.update({
-        where: { id: request.id },
-        data: updates,
-      });
-    } catch (err) {
-      console.error("transitionRequestStatus failed", err);
-      return { error: "Could not update this request status." };
-    }
+    updates.hasPayment = true;
+    // Store payment date for the payment record
+    setPaymentNote(request.id, `Disbursed via bank transfer on ${paymentDate.toISOString().split("T")[0]}.`);
   }
+
+  const ok = updateRequestById(request.id, updates);
+  if (!ok) return { error: "Could not update this request status." };
 
   pathsToRevalidate(request.id);
   return { success: true };
@@ -177,16 +143,13 @@ export async function updateRequestAdminNotes(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const exists = await prisma.tuitionPaymentRequest.findUnique({
-    where: { id: parsed.data.requestId },
-    select: { id: true },
-  });
-  if (!exists) return { error: "Request not found." };
+  const request = getRequest(parsed.data.requestId);
+  if (!request) return { error: "Request not found." };
 
-  await prisma.tuitionPaymentRequest.update({
-    where: { id: parsed.data.requestId },
-    data: { adminNotes: parsed.data.adminNotes ?? null },
+  const ok = updateRequestById(parsed.data.requestId, {
+    adminNotes: parsed.data.adminNotes ?? null,
   });
+  if (!ok) return { error: "Request not found." };
 
   pathsToRevalidate(parsed.data.requestId);
   return { success: true };
@@ -212,16 +175,13 @@ export async function updatePaymentInternalNotes(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const payment = await prisma.paymentHistory.findUnique({
-    where: { tuitionPaymentRequestId: parsed.data.requestId },
-    select: { id: true },
-  });
-  if (!payment) return { error: "No payment record exists for this request yet." };
+  const request = getRequest(parsed.data.requestId);
+  if (!request) return { error: "Request not found." };
+  if (!request.hasPayment) {
+    return { error: "No payment record exists for this request yet." };
+  }
 
-  await prisma.paymentHistory.update({
-    where: { id: payment.id },
-    data: { internalNotes: parsed.data.internalNotes ?? null },
-  });
+  setPaymentNote(parsed.data.requestId, parsed.data.internalNotes ?? null);
 
   pathsToRevalidate(parsed.data.requestId);
   return { success: true };

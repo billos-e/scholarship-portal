@@ -572,9 +572,38 @@ function paymentOf(request: Any): Any {
     amountPaid: request.amountDue,
     paymentStatus: "PAID",
     paymentDate: request.paidAt ?? request.submittedAt,
-    internalNotes: "Disbursed via bank transfer.",
+    internalNotes: getPaymentNote(request.id) ?? "Disbursed via bank transfer.",
     createdAt: request.paidAt ?? request.submittedAt,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Payment notes mutable store (for client-only demo writes)
+// ---------------------------------------------------------------------------
+
+const paymentNotesStore: Record<string, string> = {};
+
+export function getPaymentNote(requestId: string): string | undefined {
+  return paymentNotesStore[requestId];
+}
+
+export function setPaymentNote(requestId: string, notes: string | null): void {
+  if (notes === null || notes === undefined) {
+    delete paymentNotesStore[requestId];
+    return;
+  }
+  paymentNotesStore[requestId] = notes;
+}
+
+// ---------------------------------------------------------------------------
+// Mutation helpers
+// ---------------------------------------------------------------------------
+
+export function updateRequestById(id: string, updates: Partial<Any>): boolean {
+  const idx = rawRequests.findIndex((r) => r.id === id);
+  if (idx === -1) return false;
+  Object.assign(rawRequests[idx], { ...updates, updatedAt: new Date() });
+  return true;
 }
 
 function studentLite(studentId: string, opts: { university?: boolean; user?: boolean } = {}): Any {
