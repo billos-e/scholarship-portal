@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Sun } from "lucide-react";
@@ -57,7 +57,10 @@ export function UniversityEditPageForm({
 }) {
   const router = useRouter();
   const initials = getInitials(university.name);
-  const hasImage = Boolean(university.imageUrl?.trim());
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(
+    university.imageUrl,
+  );
+  const hasImage = Boolean(currentImageUrl?.trim());
 
   const [state, formAction] = useActionState<ActionState, FormData>(
     updateUniversity,
@@ -72,7 +75,7 @@ export function UniversityEditPageForm({
   }, [state.success]);
 
   return (
-    <div className="flex h-full flex-col space-y-6">
+    <div className="space-y-6">
       <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
@@ -85,7 +88,7 @@ export function UniversityEditPageForm({
             >
               {hasImage ? (
                 <Image
-                  src={uploadPublicUrl(university.imageUrl!)}
+                  src={uploadPublicUrl(currentImageUrl!)}
                   alt={`${university.name} logo`}
                   fill
                   sizes="(max-width: 640px) 96px, 112px"
@@ -99,16 +102,16 @@ export function UniversityEditPageForm({
 
             <UniversityImageForm
               universityId={university.id}
-              imageUrl={university.imageUrl}
+              imageUrl={currentImageUrl}
               name={university.name}
               showPreview={false}
+              onImageUploaded={setCurrentImageUrl}
             />
           </div>
-
         </div>
       </section>
 
-      <form action={formAction} className="flex flex-1 flex-col space-y-6">
+      <form action={formAction} className="space-y-6">
         <input type="hidden" name="id" value={university.id} />
 
         <ProfileInfoCard title="University details">
@@ -265,7 +268,7 @@ export function UniversityEditPageForm({
           <p className="text-sm font-medium text-destructive">{state.error}</p>
         ) : null}
 
-        <div className="mt-auto flex justify-end pt-4">
+        <div className="flex justify-end pt-2 pb-6">
           <SubmitButton />
         </div>
       </form>

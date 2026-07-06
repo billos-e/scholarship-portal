@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useTransition } from "react";
+import { useActionState, useEffect, useRef, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 
@@ -29,21 +29,40 @@ export function UniversityImageForm({
   imageUrl,
   name,
   showPreview = true,
+  onImageUploaded,
 }: {
   universityId: string;
   imageUrl: string | null;
   name: string;
   showPreview?: boolean;
+  onImageUploaded?: (url: string) => void;
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(
     uploadUniversityImage,
     {},
   );
 
+  const pendingFileUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (state.success) toast.success("University image updated.");
+    if (state.success) {
+      toast.success("University image updated.");
+      if (pendingFileUrlRef.current && onImageUploaded) {
+        onImageUploaded(pendingFileUrlRef.current);
+      }
+      pendingFileUrlRef.current = null;
+    }
     if (state.error) toast.error(state.error);
   }, [state.success, state.error]);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const prev = pendingFileUrlRef.current;
+      if (prev) URL.revokeObjectURL(prev);
+      pendingFileUrlRef.current = URL.createObjectURL(file);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -71,6 +90,7 @@ export function UniversityImageForm({
             name="image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileChange}
           />
         </div>
         <UploadButton />
