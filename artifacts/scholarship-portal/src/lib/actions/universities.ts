@@ -5,7 +5,11 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
-import { updateUniversityById } from "@/lib/stub/sample-data";
+import {
+  updateUniversityById,
+  rawUniversities,
+  type Any,
+} from "@/lib/stub/sample-data";
 import { saveUniversityImage, validateUpload } from "@/lib/uploads";
 
 export type ActionState = {
@@ -79,14 +83,16 @@ export async function updateUniversity(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const duplicate = await prisma.university.findFirst({
-    where: { name: parsed.data.name, NOT: { id } },
-  });
-  if (duplicate) {
+  const existing = rawUniversities.find(
+    (u: Any) => u.name === parsed.data.name && u.id !== id,
+  );
+  if (existing) {
     return { error: "A university with this name already exists." };
   }
 
-  await prisma.university.update({ where: { id }, data: parsed.data });
+  const ok = updateUniversityById(id, parsed.data);
+  if (!ok) return { error: "University not found." };
+
   revalidatePath("/admin/universities");
   revalidatePath(`/admin/universities/${id}`);
   revalidatePath(`/admin/universities/${id}/edit`);

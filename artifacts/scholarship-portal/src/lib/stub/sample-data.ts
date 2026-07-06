@@ -637,7 +637,7 @@ export function updateStudentById(id: string, updates: Partial<Any>): boolean {
   return true;
 }
 
-export { rawBank, rawStudents, rawUsers };
+export { rawBank, rawStudents, rawUsers, rawUniversities };
 
 export function updateBankByStudentId(studentId: string, updates: Partial<Any>): boolean {
   const existing = rawBank[studentId];

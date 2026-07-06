@@ -15,7 +15,7 @@ export default function UniversityEditPage() {
   if (!university) return <NotFound />;
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full flex-col space-y-6">
       <Breadcrumb
         items={[
           { label: "Universities", href: "/admin/universities" },

@@ -68,7 +68,7 @@ export function UniversityEditPageForm({
   }, [state.success]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full flex-col space-y-6">
       <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
@@ -114,7 +114,7 @@ export function UniversityEditPageForm({
         </div>
       </section>
 
-      <form action={formAction} className="space-y-6">
+      <form action={formAction} className="flex flex-1 flex-col space-y-6">
         <input type="hidden" name="id" value={university.id} />
 
         <ProfileInfoCard title="University details">
@@ -271,7 +271,7 @@ export function UniversityEditPageForm({
           <p className="text-sm font-medium text-destructive">{state.error}</p>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className="mt-auto flex justify-end pt-4">
           <SubmitButton />
         </div>
       </form>
