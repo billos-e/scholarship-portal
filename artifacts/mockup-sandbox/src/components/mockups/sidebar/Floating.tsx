@@ -70,7 +70,7 @@ export function Floating() {
               <p className="truncate text-[10px] text-muted-foreground">Administrator</p>
             </div>
           </div>
-          <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium text-sidebar-foreground/60 transition-colors hover:bg-muted/40 hover:text-foreground">
+          <button title="Log out" className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium text-sidebar-foreground/60 transition-colors hover:bg-muted/40 hover:text-foreground">
             <LogOut className="size-4" />
             <span>Sign out</span>
           </button>

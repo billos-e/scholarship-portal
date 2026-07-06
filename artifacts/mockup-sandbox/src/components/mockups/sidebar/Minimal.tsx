@@ -67,7 +67,7 @@ export function Minimal() {
               <p className="truncate text-[10px] text-muted-foreground">Administrator</p>
             </div>
           </div>
-          <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent/40 hover:text-foreground">
+          <button title="Log out" className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent/40 hover:text-foreground">
             <LogOut className="size-[18px] shrink-0" />
             <span>Sign out</span>
           </button>

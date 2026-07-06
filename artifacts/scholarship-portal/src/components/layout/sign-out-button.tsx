@@ -3,6 +3,11 @@
 import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { logout } from "@/lib/auth/session";
 
@@ -15,7 +20,7 @@ export function SignOutButton({
   className,
   showLabel = true,
 }: SignOutButtonProps) {
-  return (
+  const button = (
     <Button
       type="button"
       variant="ghost"
@@ -27,4 +32,15 @@ export function SignOutButton({
       {showLabel ? <span>Sign out</span> : null}
     </Button>
   );
+
+  if (!showLabel) {
+    return (
+      <Tooltip>
+        <TooltipTrigger render={button} />
+        <TooltipContent>Log out</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return button;
 }

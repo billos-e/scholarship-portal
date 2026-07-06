@@ -85,7 +85,7 @@ export function Current() {
               <p className="truncate text-[11px] text-muted-foreground">Administrator</p>
             </div>
           </div>
-          <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+          <button title="Log out" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
             <LogOut className="size-4" />
             <span>Sign out</span>
           </button>
