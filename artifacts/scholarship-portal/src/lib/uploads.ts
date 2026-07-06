@@ -2,13 +2,13 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 
 import { mimeForFilename } from "@/lib/upload-meta";
-import { storageRead, storageSave } from "@/lib/upload-storage";
+import { storageRead, storageSave, memoryReadAsDataUrl } from "@/lib/upload-storage";
 
 /**
  * File upload helpers.
  *
- * Files are stored outside `public/` so they are not served as static assets.
- * Access goes through `/api/uploads/[...path]` which enforces authorization.
+ * In the browser build files are stored in memory (MemoryUploadStorage).
+ * Access goes through data URLs or the upload API route.
  */
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB per file
@@ -122,7 +122,8 @@ export async function saveStudentUpload(
   }
 
   const relativePath = buildStudentUploadPath(opts, file.name);
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = new Uint8Array(arrayBuffer);
   const contentType = file.type || mimeForFilename(file.name);
 
   await storageSave(relativePath, buffer, contentType);
@@ -139,7 +140,8 @@ export async function saveUniversityImage(
   }
 
   const relativePath = buildUniversityImagePath(universityId, file.name);
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = new Uint8Array(arrayBuffer);
   const contentType = file.type || mimeForFilename(file.name);
 
   await storageSave(relativePath, buffer, contentType);

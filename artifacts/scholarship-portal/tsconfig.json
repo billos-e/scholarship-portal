@@ -13,7 +13,14 @@
     "moduleResolution": "bundler",
     "types": ["node", "vite/client"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "next/cache": ["./src/shims/next-cache.ts"],
+      "next/navigation": ["./src/shims/next-navigation.ts"],
+      "next/headers": ["./src/shims/next-headers.ts"],
+      "next/link": ["./src/shims/next-link.tsx"],
+      "next/image": ["./src/shims/next-image.tsx"],
+      "next/font/google": ["./src/shims/next-font.ts"],
+      "next/font/local": ["./src/shims/next-font.ts"]
     }
   },
   "references": [

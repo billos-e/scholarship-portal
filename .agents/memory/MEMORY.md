@@ -1,2 +1,6 @@
 - [DB seed command](db-seed.md) — how to re-run the seed and where tsx lives in this workspace
 - [Scholarship portal shim strategy](scholarship-portal-shims.md) — Next.js→Vite port uses alias shims; key gotchas
+- [Vite+React port from Next.js](vite-nextjs-port.md) — Next.js shims via tsconfig `paths` mapping work but must include both `next/cache` and `next/navigation`; `bundler` moduleResolution won't auto-resolve them even when present in `vite.config.ts` aliases.
+- [Browser-only storage for uploads](browser-upload-storage.md) — In-memory `Uint8Array` storage + `data:` URL retrieval is the practical approach for Vite/browser builds that can't access filesystem or real backend; `uploadPublicUrl()` should check memory first, fall back to `/api/uploads` for external URLs.
+- [Credential isolation in in-memory mutations](credential-isolation.md) — `passwordHash` must never flow into student/profile mutation payloads even in sample-data stubs; always use separate user-record mutations.
+- [Prisma-free upload-critical paths](prisma-free-uploads.md) — All upload actions (student photo, university image, submission files, profile edit, bank update) must avoid Prisma entirely for browser builds; remaining Prisma calls in non-upload paths are acceptable scope boundary.

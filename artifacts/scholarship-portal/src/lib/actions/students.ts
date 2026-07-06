@@ -8,6 +8,14 @@ import { hashPassword } from "@/lib/auth/password";
 import { generateSecurePassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import {
+  updateStudentById,
+  updateBankByStudentId,
+  updateUserById,
+  rawStudents,
+  userByEmail,
+  type Any,
+} from "@/lib/stub/sample-data";
+import {
   readStudentProfileFromFormData,
   validateStudentProfileCreate,
   validateStudentProfileEdit,
@@ -123,28 +131,22 @@ export async function updateStudent(
     return { error: contextError };
   }
 
-  const student = await prisma.student.findUnique({ where: { id } });
+  const student = rawStudents.find((s: Any) => s.id === id);
   if (!student) return { error: "Student not found." };
 
   if (parsed.data.studentId) {
-    const dupId = await prisma.student.findFirst({
-      where: { studentId: parsed.data.studentId, NOT: { id } },
-    });
-    if (dupId) return { error: "This Student ID is already in use." };
+    const dup = rawStudents.find(
+      (s: Any) => s.studentId === parsed.data.studentId && s.id !== id,
+    );
+    if (dup) return { error: "This Student ID is already in use." };
   }
 
   const studentData = profileToStudentData(parsed.data);
 
-  await prisma.$transaction([
-    prisma.student.update({
-      where: { id },
-      data: studentData,
-    }),
-    prisma.user.update({
-      where: { id: student.userId },
-      data: { isActive: parsed.data.status === "ACTIVE" },
-    }),
-  ]);
+  updateStudentById(id, studentData);
+  if (student.userId) {
+    updateUserById(student.userId, { isActive: parsed.data.status === "ACTIVE" });
+  }
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
@@ -183,11 +185,7 @@ export async function updateStudentBank(
     return { error: "Invalid bank information." };
   }
 
-  await prisma.bankInformation.upsert({
-    where: { studentId },
-    update: parsed.data,
-    create: { studentId, ...parsed.data },
-  });
+  updateBankByStudentId(studentId, parsed.data);
 
   revalidatePath(`/admin/students/${studentId}`);
   return { success: true };
@@ -211,7 +209,7 @@ export async function resetStudentPassword(
   }
 
   const passwordHash = await hashPassword(password);
-  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  updateUserById(userId, { passwordHash });
 
   return { success: true };
 }
@@ -240,14 +238,14 @@ export async function saveStudentEdit(
     return { error: contextError };
   }
 
-  const student = await prisma.student.findUnique({ where: { id } });
+  const student = rawStudents.find((s: Any) => s.id === id);
   if (!student) return { error: "Student not found." };
 
   if (parsed.data.studentId) {
-    const dupId = await prisma.student.findFirst({
-      where: { studentId: parsed.data.studentId, NOT: { id } },
-    });
-    if (dupId) return { error: "This Student ID is already in use." };
+    const dup = rawStudents.find(
+      (s: Any) => s.studentId === parsed.data.studentId && s.id !== id,
+    );
+    if (dup) return { error: "This Student ID is already in use." };
   }
 
   const bankParsed = bankSchema.safeParse({
@@ -296,27 +294,20 @@ export async function saveStudentEdit(
   const studentData = profileToStudentData(parsed.data);
   const passwordHash = password ? await hashPassword(password) : undefined;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.student.update({
-      where: { id },
-      data: {
-        ...studentData,
-        ...(photoUrl ? { photoUrl } : {}),
-      },
-    });
-    await tx.user.update({
-      where: { id: userId },
-      data: {
-        isActive: parsed.data.status === "ACTIVE",
-        ...(passwordHash ? { passwordHash } : {}),
-      },
-    });
-    await tx.bankInformation.upsert({
-      where: { studentId: id },
-      update: bankParsed.data,
-      create: { studentId: id, ...bankParsed.data },
-    });
+  // Update in-memory sample data
+  updateStudentById(id, {
+    ...studentData,
+    ...(photoUrl ? { photoUrl } : {}),
   });
+  updateBankByStudentId(id, bankParsed.data);
+  // Update user account in isolation (do NOT put passwordHash into student record)
+  if (passwordHash || parsed.data.status) {
+    const userId = formData.get("userId") as string;
+    const userUpdates: Record<string, unknown> = {};
+    if (passwordHash) userUpdates.passwordHash = passwordHash;
+    if (parsed.data.status) userUpdates.isActive = parsed.data.status === "ACTIVE";
+    updateUserById(userId, userUpdates);
+  }
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
@@ -336,16 +327,13 @@ export async function archiveStudent(
     return { error: "Invalid archive request." };
   }
 
-  const student = await prisma.student.findUnique({ where: { id } });
+  const student = rawStudents.find((s: Any) => s.id === id);
   if (!student) return { error: "Student not found." };
 
-  await prisma.$transaction([
-    prisma.student.update({ where: { id }, data: { status } }),
-    prisma.user.update({
-      where: { id: student.userId },
-      data: { isActive: false },
-    }),
-  ]);
+  updateStudentById(id, { status });
+  if (student.userId) {
+    updateUserById(student.userId, { isActive: false });
+  }
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
@@ -374,7 +362,8 @@ export async function uploadStudentPhoto(
       studentId: id,
       kind: "profile-photo",
     });
-    await prisma.student.update({ where: { id }, data: { photoUrl } });
+    const ok = updateStudentById(id, { photoUrl });
+    if (!ok) return { error: "Student not found." };
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to upload photo.",

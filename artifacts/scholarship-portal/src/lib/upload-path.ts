@@ -1,3 +1,5 @@
+import { memoryReadAsDataUrl } from "@/lib/upload-storage";
+
 export type UploadPathInfo =
   | { type: "student"; ownerStudentId: string }
   | { type: "university"; universityId: string };
@@ -14,6 +16,9 @@ export function parseUploadPath(relativePath: string): UploadPathInfo | null {
 }
 
 export function uploadPublicUrl(relativePath: string): string {
+  if (!relativePath) return "";
+  const dataUrl = memoryReadAsDataUrl(relativePath);
+  if (dataUrl) return dataUrl;
   return `/api/uploads/${relativePath
     .split("/")
     .map((segment) => encodeURIComponent(segment))

@@ -2,11 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import {
+  createRequest,
+  createReport,
+  findOpenRequest,
+  findDuplicateSemesterSubmission,
+  updateBankByStudentId,
+  updateStudentById,
+  rawBank,
+  rawSemesters,
+} from "@/lib/stub/sample-data";
 import { saveUpload, validateUpload, type UploadKind } from "@/lib/uploads";
 import {
   ACTIVITY_VALUES,
@@ -14,8 +22,6 @@ import {
 } from "@/lib/submissions/constants";
 import {
   duplicateSemesterMessage,
-  findDuplicateSemesterSubmission,
-  findOpenRequest,
   getMissingProfileFields,
   openRequestMessage,
   profileIncompleteMessage,
@@ -186,14 +192,15 @@ export async function createSubmission(
 
   const data = parsed.data;
 
+  const _stu = student as Record<string, unknown>;
+
   if (data.universitySemesterId) {
-    const semester = await prisma.universitySemester.findFirst({
-      where: {
-        id: data.universitySemesterId,
-        isActive: true,
-        universityId: student.universityId ?? undefined,
-      },
-    });
+    const semester = rawSemesters.find(
+      (s) =>
+        s.id === data.universitySemesterId &&
+        s.isActive &&
+        (!_stu.universityId || s.universityId === _stu.universityId),
+    );
     if (!semester) {
       return { error: "Please select a valid semester for your university." };
     }
@@ -264,97 +271,64 @@ export async function createSubmission(
   }
 
   // If no QR was uploaded this time, fall back to the QR currently on file.
-  const existingBank = await prisma.bankInformation.findUnique({
-    where: { studentId: student.id },
-  });
+  const existingBank = rawBank[student.id];
   const effectiveQr = qrPaymentImageUrl ?? existingBank?.qrPaymentImageUrl ?? null;
 
   let createdRequestId: string | null = null;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      const request = await tx.tuitionPaymentRequest.create({
-        data: {
-          studentId: student.id,
-          semesterLabel,
-          universitySemesterId: data.universitySemesterId ?? null,
-          amountDue: data.amountDue,
-          dueDate: data.dueDate ?? null,
-          invoiceFileUrl: invoiceFileUrl ?? null,
-          status: "SUBMITTED",
-          bankAccountName: data.bankAccountName ?? null,
-          bankAccountNumber: data.bankAccountNumber ?? null,
-          bankName: data.bankName ?? null,
-          promptpayNumber: data.promptpayNumber ?? null,
-          qrPaymentImageUrl: effectiveQr,
-          submittedAt: new Date(),
-        },
-      });
-
-      await tx.semesterReport.create({
-        data: {
-          studentId: student.id,
-          tuitionPaymentRequestId: request.id,
-          semesterLabel,
-          universitySemesterId: data.universitySemesterId ?? null,
-          gpa: data.gpa ?? null,
-          creditsCompleted: data.creditsCompleted ?? null,
-          passedAllCourses: data.passedAllCourses ?? null,
-          transcriptFileUrl: transcriptFileUrl ?? null,
-          wellbeingPhysical: data.wellbeingPhysical ?? null,
-          wellbeingMental: data.wellbeingMental ?? null,
-          wellbeingFinancial: data.wellbeingFinancial ?? null,
-          wellbeingStress: data.wellbeingStress ?? null,
-          wellbeingConfidence: data.wellbeingConfidence ?? null,
-          challenges,
-          activities,
-          reflectionAchievement: data.reflectionAchievement ?? null,
-          reflectionChallenge: data.reflectionChallenge ?? null,
-          reflectionAdditional: data.reflectionAdditional ?? null,
-        },
-      });
-
-      // Keep the latest-known bank info for the student in sync with the
-      // submission's snapshot (plan §6.4 + Phase 2: "update BankInformation").
-      await tx.bankInformation.upsert({
-        where: { studentId: student.id },
-        update: {
-          bankAccountName: data.bankAccountName ?? null,
-          bankAccountNumber: data.bankAccountNumber ?? null,
-          bankName: data.bankName ?? null,
-          promptpayNumber: data.promptpayNumber ?? null,
-          qrPaymentImageUrl:
-            qrPaymentImageUrl ?? existingBank?.qrPaymentImageUrl ?? null,
-        },
-        create: {
-          studentId: student.id,
-          bankAccountName: data.bankAccountName ?? null,
-          bankAccountNumber: data.bankAccountNumber ?? null,
-          bankName: data.bankName ?? null,
-          promptpayNumber: data.promptpayNumber ?? null,
-          qrPaymentImageUrl: qrPaymentImageUrl ?? null,
-        },
-      });
-
-      // Mirror the student's "current semester" if it was empty.
-      if (!student.currentSemesterLabel) {
-        await tx.student.update({
-          where: { id: student.id },
-          data: { currentSemesterLabel: semesterLabel },
-        });
-      }
-
-      return request;
+    const request = createRequest({
+      studentId: student.id,
+      semesterLabel,
+      universitySemesterId: data.universitySemesterId ?? null,
+      amountDue: data.amountDue,
+      dueDate: data.dueDate ?? null,
+      invoiceFileUrl: invoiceFileUrl ?? null,
+      status: "SUBMITTED",
+      bankAccountName: data.bankAccountName ?? null,
+      bankAccountNumber: data.bankAccountNumber ?? null,
+      bankName: data.bankName ?? null,
+      promptpayNumber: data.promptpayNumber ?? null,
+      qrPaymentImageUrl: effectiveQr,
+      submittedAt: new Date(),
+      hasReport: true,
     });
 
-    createdRequestId = result.id;
-  } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === "P2002"
-    ) {
-      return { error: duplicateSemesterMessage(semesterLabel) };
+    createReport({
+      studentId: student.id,
+      tuitionPaymentRequestId: request.id,
+      semesterLabel,
+      universitySemesterId: data.universitySemesterId ?? null,
+      gpa: data.gpa ?? null,
+      creditsCompleted: data.creditsCompleted ?? null,
+      passedAllCourses: data.passedAllCourses ?? null,
+      transcriptFileUrl: transcriptFileUrl ?? null,
+      wellbeingPhysical: data.wellbeingPhysical ?? null,
+      wellbeingMental: data.wellbeingMental ?? null,
+      wellbeingFinancial: data.wellbeingFinancial ?? null,
+      wellbeingStress: data.wellbeingStress ?? null,
+      wellbeingConfidence: data.wellbeingConfidence ?? null,
+      challenges,
+      activities,
+      reflectionAchievement: data.reflectionAchievement ?? null,
+      reflectionChallenge: data.reflectionChallenge ?? null,
+      reflectionAdditional: data.reflectionAdditional ?? null,
+    });
+
+    updateBankByStudentId(student.id, {
+      bankAccountName: data.bankAccountName ?? null,
+      bankAccountNumber: data.bankAccountNumber ?? null,
+      bankName: data.bankName ?? null,
+      promptpayNumber: data.promptpayNumber ?? null,
+      qrPaymentImageUrl: qrPaymentImageUrl ?? existingBank?.qrPaymentImageUrl ?? null,
+    });
+
+    if (!_stu.currentSemesterLabel) {
+      updateStudentById(student.id, { currentSemesterLabel: semesterLabel });
     }
+
+    createdRequestId = request.id;
+  } catch (err) {
     console.error("createSubmission failed", err);
     return {
       error:
@@ -367,4 +341,5 @@ export async function createSubmission(
   revalidatePath("/student/profile");
 
   redirect(`/student/history/${createdRequestId}`);
+  return { success: true };
 }

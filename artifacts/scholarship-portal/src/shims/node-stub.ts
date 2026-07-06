@@ -47,6 +47,16 @@ export const extname = (p: string) => {
   return i > 0 ? b.slice(i) : "";
 };
 
+export const sep = "/";
+export const posix = {
+  join,
+  resolve,
+  dirname,
+  basename,
+  extname,
+  sep: "/",
+};
+
 export const tmpdir = () => "/tmp";
 export const homedir = () => "/home";
 
@@ -70,6 +80,8 @@ export default {
   dirname,
   basename,
   extname,
+  sep,
+  posix,
   tmpdir,
   homedir,
 };

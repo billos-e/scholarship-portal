@@ -59,7 +59,7 @@ const rawUniversities = [
   },
 ] as Any[];
 
-const rawSemesters = [
+export const rawSemesters = [
   {
     id: "sem_chula_fall25",
     universityId: "uni_chula",
@@ -548,12 +548,29 @@ function userOf(userId: string): Any {
   return rawUsers.find((u) => u.id === userId) ?? null;
 }
 
+export function userByEmail(email: string): Any | null {
+  return rawUsers.find((u) => u.email.toLowerCase() === email.toLowerCase()) ?? null;
+}
+
+export function updateUserById(userId: string, updates: Partial<Any>): boolean {
+  const idx = rawUsers.findIndex((u) => u.id === userId);
+  if (idx === -1) return false;
+  Object.assign(rawUsers[idx], { ...updates, updatedAt: new Date() });
+  return true;
+}
+
 function bankOf(studentId: string): Any {
   return rawBank[studentId] ?? null;
 }
 
+const rawReports: Any[] = [];
+
 function reportOf(request: Any): Any {
   if (!request.hasReport) return null;
+  const existing = rawReports.find(
+    (r) => r.tuitionPaymentRequestId === request.id,
+  );
+  if (existing) return existing;
   return makeReport({
     tuitionPaymentRequestId: request.id,
     studentId: request.studentId,
@@ -604,6 +621,140 @@ export function updateRequestById(id: string, updates: Partial<Any>): boolean {
   if (idx === -1) return false;
   Object.assign(rawRequests[idx], { ...updates, updatedAt: new Date() });
   return true;
+}
+
+export function updateUniversityById(id: string, updates: Partial<Any>): boolean {
+  const idx = rawUniversities.findIndex((u) => u.id === id);
+  if (idx === -1) return false;
+  Object.assign(rawUniversities[idx], { ...updates, updatedAt: new Date() });
+  return true;
+}
+
+export function updateStudentById(id: string, updates: Partial<Any>): boolean {
+  const idx = rawStudents.findIndex((s) => s.id === id);
+  if (idx === -1) return false;
+  Object.assign(rawStudents[idx], { ...updates, updatedAt: new Date() });
+  return true;
+}
+
+export { rawBank, rawStudents, rawUsers };
+
+export function updateBankByStudentId(studentId: string, updates: Partial<Any>): boolean {
+  const existing = rawBank[studentId];
+  if (existing) {
+    Object.assign(existing, { ...updates, updatedAt: new Date() });
+    return true;
+  }
+  rawBank[studentId] = {
+    id: `bank_${studentId}`,
+    studentId,
+    ...updates,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  return true;
+}
+
+let requestIdCounter = 100;
+
+export function createRequest(data: Any): Any {
+  const id = `req_${++requestIdCounter}`;
+  const now = new Date();
+  const request = {
+    id,
+    studentId: data.studentId,
+    semesterLabel: data.semesterLabel,
+    amountDue: data.amountDue ?? null,
+    dueDate: data.dueDate ?? null,
+    invoiceFileUrl: data.invoiceFileUrl ?? null,
+    status: data.status ?? "SUBMITTED",
+    adminNotes: data.adminNotes ?? null,
+    bankAccountName: data.bankAccountName ?? null,
+    bankAccountNumber: data.bankAccountNumber ?? null,
+    bankName: data.bankName ?? null,
+    promptpayNumber: data.promptpayNumber ?? null,
+    qrPaymentImageUrl: data.qrPaymentImageUrl ?? null,
+    universitySemesterId: data.universitySemesterId ?? null,
+    submittedAt: data.submittedAt ?? now,
+    reviewedAt: null,
+    approvedAt: null,
+    paidAt: null,
+    rejectedAt: null,
+    createdAt: now,
+    hasReport: data.hasReport ?? false,
+    hasPayment: false,
+  };
+  rawRequests.push(request);
+  return request;
+}
+
+let reportIdCounter = 100;
+
+export function createReport(data: Any): Any {
+  const id = `rep_${++reportIdCounter}`;
+  const now = new Date();
+  const report = {
+    id,
+    studentId: data.studentId,
+    tuitionPaymentRequestId: data.tuitionPaymentRequestId,
+    semesterLabel: data.semesterLabel,
+    gpa: data.gpa ?? null,
+    creditsCompleted: data.creditsCompleted ?? null,
+    passedAllCourses: data.passedAllCourses ?? null,
+    transcriptFileUrl: data.transcriptFileUrl ?? null,
+    wellbeingPhysical: data.wellbeingPhysical ?? null,
+    wellbeingMental: data.wellbeingMental ?? null,
+    wellbeingFinancial: data.wellbeingFinancial ?? null,
+    wellbeingStress: data.wellbeingStress ?? null,
+    wellbeingConfidence: data.wellbeingConfidence ?? null,
+    challenges: data.challenges ?? [],
+    activities: data.activities ?? [],
+    reflectionAchievement: data.reflectionAchievement ?? null,
+    reflectionChallenge: data.reflectionChallenge ?? null,
+    reflectionAdditional: data.reflectionAdditional ?? null,
+    universitySemesterId: data.universitySemesterId ?? null,
+    submittedAt: data.submittedAt ?? now,
+    createdAt: now,
+    updatedAt: now,
+  };
+  rawReports.push(report);
+  return report;
+}
+
+export function findOpenRequest(studentId: string): Any | null {
+  const blocking = ["SUBMITTED", "UNDER_REVIEW", "APPROVED"];
+  return (
+    rawRequests
+      .filter((r) => r.studentId === studentId && blocking.includes(r.status))
+      .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())[0] ?? null
+  );
+}
+
+export function findDuplicateSemesterSubmission(
+  studentId: string,
+  opts: { universitySemesterId?: string; semesterLabel?: string },
+): Any | null {
+  if (opts.universitySemesterId) {
+    return (
+      rawRequests.find(
+        (r) =>
+          r.studentId === studentId &&
+          r.universitySemesterId === opts.universitySemesterId &&
+          r.status !== "REJECTED",
+      ) ?? null
+    );
+  }
+  if (opts.semesterLabel) {
+    return (
+      rawRequests.find(
+        (r) =>
+          r.studentId === studentId &&
+          r.semesterLabel === opts.semesterLabel &&
+          r.status !== "REJECTED",
+      ) ?? null
+    );
+  }
+  return null;
 }
 
 function studentLite(studentId: string, opts: { university?: boolean; user?: boolean } = {}): Any {

@@ -5,7 +5,14 @@ import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
 import { syncStudentSession } from "@/lib/auth/sync-session";
-import { prisma } from "@/lib/prisma";
+import {
+  updateStudentById,
+  updateBankByStudentId,
+  updateUserById,
+  rawStudents,
+  userByEmail,
+  type Any,
+} from "@/lib/stub/sample-data";
 import { saveStudentUpload, validateUpload } from "@/lib/uploads";
 import {
   readStudentSelfProfileFromFormData,
@@ -51,15 +58,15 @@ export async function updateOwnProfile(
   }
 
   if (parsed.data.studentId) {
-    const dupId = await prisma.student.findFirst({
-      where: { studentId: parsed.data.studentId, NOT: { id: student.id } },
-    });
-    if (dupId) return { error: "This Student ID is already in use." };
+    const dup = rawStudents.find(
+      (s: Any) => s.studentId === parsed.data.studentId && s.id !== student.id,
+    );
+    if (dup) return { error: "This Student ID is already in use." };
   }
 
   const email = parsed.data.email.toLowerCase();
   if (email !== user.email) {
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = userByEmail(email);
     if (existing) {
       return { error: "An account with this email already exists." };
     }
@@ -67,26 +74,20 @@ export async function updateOwnProfile(
 
   const { email: _email, ...profileFields } = parsed.data;
 
-  await prisma.$transaction([
-    prisma.student.update({
-      where: { id: student.id },
-      data: {
-        firstName: profileFields.firstName,
-        lastName: profileFields.lastName,
-        studentId: profileFields.studentId ?? null,
-        phone: profileFields.phone ?? null,
-        universityId: profileFields.universityId ?? null,
-        degreeProgram: profileFields.degreeProgram ?? null,
-        yearOfStudy: profileFields.yearOfStudy ?? null,
-        currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
-        gpa: profileFields.gpa ?? null,
-      },
-    }),
-    prisma.user.update({
-      where: { id: user.id },
-      data: { email },
-    }),
-  ]);
+  updateStudentById(student.id, {
+    firstName: profileFields.firstName,
+    lastName: profileFields.lastName,
+    studentId: profileFields.studentId ?? null,
+    phone: profileFields.phone ?? null,
+    universityId: profileFields.universityId ?? null,
+    degreeProgram: profileFields.degreeProgram ?? null,
+    yearOfStudy: profileFields.yearOfStudy ?? null,
+    currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
+    gpa: profileFields.gpa ?? null,
+  });
+  if (email !== user.email) {
+    updateUserById(user.id, { email });
+  }
 
   revalidatePath("/student/profile");
   revalidatePath("/student/profile/edit");
@@ -119,15 +120,15 @@ export async function saveOwnProfileEdit(
   }
 
   if (parsed.data.studentId) {
-    const dupId = await prisma.student.findFirst({
-      where: { studentId: parsed.data.studentId, NOT: { id: student.id } },
-    });
-    if (dupId) return { error: "This Student ID is already in use." };
+    const dup = rawStudents.find(
+      (s: Any) => s.studentId === parsed.data.studentId && s.id !== student.id,
+    );
+    if (dup) return { error: "This Student ID is already in use." };
   }
 
   const email = parsed.data.email.toLowerCase();
   if (email !== user.email) {
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = userByEmail(email);
     if (existing) {
       return { error: "An account with this email already exists." };
     }
@@ -163,32 +164,22 @@ export async function saveOwnProfileEdit(
 
   const { email: _email, ...profileFields } = parsed.data;
 
-  await prisma.$transaction([
-    prisma.student.update({
-      where: { id: student.id },
-      data: {
-        firstName: profileFields.firstName,
-        lastName: profileFields.lastName,
-        studentId: profileFields.studentId ?? null,
-        phone: profileFields.phone ?? null,
-        universityId: profileFields.universityId ?? null,
-        degreeProgram: profileFields.degreeProgram ?? null,
-        yearOfStudy: profileFields.yearOfStudy ?? null,
-        currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
-        gpa: profileFields.gpa ?? null,
-        ...(photoUrl ? { photoUrl } : {}),
-      },
-    }),
-    prisma.user.update({
-      where: { id: user.id },
-      data: { email },
-    }),
-    prisma.bankInformation.upsert({
-      where: { studentId: student.id },
-      update: bankParsed.data,
-      create: { studentId: student.id, ...bankParsed.data },
-    }),
-  ]);
+  updateStudentById(student.id, {
+    firstName: profileFields.firstName,
+    lastName: profileFields.lastName,
+    studentId: profileFields.studentId ?? null,
+    phone: profileFields.phone ?? null,
+    universityId: profileFields.universityId ?? null,
+    degreeProgram: profileFields.degreeProgram ?? null,
+    yearOfStudy: profileFields.yearOfStudy ?? null,
+    currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
+    gpa: profileFields.gpa ?? null,
+    ...(photoUrl ? { photoUrl } : {}),
+  });
+  updateBankByStudentId(student.id, bankParsed.data);
+  if (email !== user.email) {
+    updateUserById(user.id, { email });
+  }
 
   revalidatePath("/student/profile");
   revalidatePath("/student/profile/edit");
@@ -216,11 +207,7 @@ export async function updateOwnBank(
     return { error: "Invalid bank information." };
   }
 
-  await prisma.bankInformation.upsert({
-    where: { studentId: student.id },
-    update: parsed.data,
-    create: { studentId: student.id, ...parsed.data },
-  });
+  updateBankByStudentId(student.id, parsed.data);
 
   revalidatePath("/student/profile");
   revalidatePath("/student/profile/edit");
@@ -245,10 +232,8 @@ export async function uploadOwnPhoto(
       studentId: student.id,
       kind: "profile-photo",
     });
-    await prisma.student.update({
-      where: { id: student.id },
-      data: { photoUrl },
-    });
+    const ok = updateStudentById(student.id, { photoUrl });
+    if (!ok) return { error: "Student not found." };
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to upload photo.",

@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import { updateUniversityById } from "@/lib/stub/sample-data";
 import { saveUniversityImage, validateUpload } from "@/lib/uploads";
 
 export type ActionState = {
@@ -110,7 +111,8 @@ export async function uploadUniversityImage(
 
   try {
     const imageUrl = await saveUniversityImage(file, id);
-    await prisma.university.update({ where: { id }, data: { imageUrl } });
+    const ok = updateUniversityById(id, { imageUrl });
+    if (!ok) return { error: "University not found." };
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to upload image.",

@@ -10,7 +10,7 @@ export type UploadReadResult = {
 export interface UploadStorage {
   saveAtPath(
     relativePath: string,
-    data: Buffer,
+    data: Buffer | Uint8Array,
     contentType: string,
   ): Promise<string>;
   read(relativePath: string): Promise<UploadReadResult | null>;
