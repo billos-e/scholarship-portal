@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   Building2,
   Calendar,
   GraduationCap,
@@ -69,16 +68,6 @@ export function RequestDetailHero({
         />
 
         <div className="relative space-y-6 p-6 sm:p-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-2 h-8 text-muted-foreground hover:text-foreground"
-            render={<Link href="/admin/requests" />}
-          >
-            <ArrowLeft className="size-4" />
-            Back to requests
-          </Button>
-
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 gap-4 sm:gap-5">
               <Link
