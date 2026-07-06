@@ -20,7 +20,8 @@ export function uploadPublicUrl(relativePath: string): string {
   if (
     relativePath.startsWith("http://") ||
     relativePath.startsWith("https://") ||
-    relativePath.startsWith("data:")
+    relativePath.startsWith("data:") ||
+    relativePath.startsWith("blob:")
   ) {
     return relativePath;
   }
