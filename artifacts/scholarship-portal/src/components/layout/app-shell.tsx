@@ -63,8 +63,8 @@ export function AppShell({
         />
         <main
           className={cn(
-            "min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8 md:pb-8",
-            variant === "student" && "pb-[calc(5rem+env(safe-area-inset-bottom))]",
+            "min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 max-md:pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-8",
+            variant === "student" && "max-md:pb-[calc(5rem+env(safe-area-inset-bottom))]",
           )}
         >
           <div className="w-full min-w-0">{children}</div>
