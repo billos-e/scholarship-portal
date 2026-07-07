@@ -69,6 +69,9 @@ export default function UniversityDetailPage() {
 
   useEffect(() => {
     setUniversity(undefined);
+  }, [id]);
+
+  useEffect(() => {
     fetchUniversity(id)
       .then(setUniversity)
       .catch(() => setUniversity(null));
