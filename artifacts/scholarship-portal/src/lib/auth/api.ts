@@ -41,3 +41,19 @@ export function loadSession(): SessionUser | null {
 export function clearSession() {
   localStorage.removeItem(STORAGE_KEY);
 }
+
+/**
+ * Exchange the active Clerk session cookie for an admin portal session.
+ * Must be called after the admin has signed into Clerk on the login page.
+ */
+export async function apiClerkAdminSession(): Promise<SessionUser> {
+  const res = await fetch(`${base}/api/auth/clerk-admin-session`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: "Sign-in failed." }));
+    throw new Error(body.error ?? "Sign-in failed.");
+  }
+  return (await res.json()) as SessionUser;
+}

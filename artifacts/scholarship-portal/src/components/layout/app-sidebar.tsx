@@ -10,6 +10,7 @@ import {
   History,
   Home,
   LayoutDashboard,
+  Settings,
   User,
   FilePlus2,
   ClipboardList,
@@ -47,6 +48,7 @@ const ADMIN_NAV: SidebarNavItem[] = [
   { href: "/admin/requests", label: "Payment Requests", icon: ClipboardList },
   { href: "/admin/universities", label: "Universities", icon: Building2 },
   { href: "/admin/import", label: "Import", icon: FileUp },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function getNavItems(variant: "student" | "admin"): SidebarNavItem[] {

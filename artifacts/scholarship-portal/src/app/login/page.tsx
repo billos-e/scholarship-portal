@@ -1,11 +1,20 @@
+"use client";
+
 import Image from "next/image";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 import { BrandMark } from "@/components/layout/brand-mark";
 import { LoginFeatureList } from "./login-feature-list";
 import { LoginForm } from "./login-form";
+import { AdminClerkLogin } from "./admin-clerk-login";
+
+type LoginMode = "student" | "admin";
 
 export default function LoginPage() {
+  const [mode, setMode] = useState<LoginMode>("student");
+
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
@@ -64,11 +73,47 @@ export default function LoginPage() {
               Welcome back
             </h2>
             <p className="text-sm text-muted-foreground">
-              Enter your email and password to continue.
+              {mode === "student"
+                ? "Enter your email and password to continue."
+                : "Sign in with your admin credentials."}
             </p>
           </div>
 
-          <LoginForm />
+          {/* Login mode toggle */}
+          <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-border bg-muted/40 p-1">
+            <button
+              type="button"
+              onClick={() => setMode("student")}
+              className={cn(
+                "flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all",
+                mode === "student"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Users className="size-4" />
+              Student Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("admin")}
+              className={cn(
+                "flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all",
+                mode === "admin"
+                  ? "bg-[#6b1140] text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ShieldCheck className="size-4" />
+              Admin Login
+            </button>
+          </div>
+
+          {mode === "student" ? (
+            <LoginForm />
+          ) : (
+            <AdminClerkLogin />
+          )}
         </div>
       </div>
     </div>
