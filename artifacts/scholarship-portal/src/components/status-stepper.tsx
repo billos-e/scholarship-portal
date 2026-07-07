@@ -49,9 +49,7 @@ export function StatusStepper({
                 <div
                   className={cn(
                     "h-0.5 flex-1",
-                    index === 0 && "bg-border",
-                    index > 0 && !rejected && (done || active) && "bg-primary",
-                    index > 0 && (!(!rejected && (done || active))) && "bg-border",
+                    !rejected && (done || active) ? "bg-primary" : "bg-border",
                     rejected && "bg-border opacity-40",
                   )}
                   aria-hidden
@@ -70,9 +68,7 @@ export function StatusStepper({
                 <div
                   className={cn(
                     "h-0.5 flex-1",
-                    index === STEPS.length - 1 && "bg-border",
-                    index < STEPS.length - 1 && !rejected && done && "bg-primary",
-                    index < STEPS.length - 1 && !(!rejected && done) && "bg-border",
+                    !rejected && done ? "bg-primary" : "bg-border",
                     rejected && "bg-border opacity-40",
                   )}
                   aria-hidden

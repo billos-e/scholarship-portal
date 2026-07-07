@@ -178,17 +178,13 @@ function Routes() {
             <StudentSubmit />
           </StudentLayout>
         </Route>
-        <Route path="/student/history">
+        <Route path="/student/history" nest>
           <StudentLayout>
             <HistoryLayout>
-              <StudentHistory />
-            </HistoryLayout>
-          </StudentLayout>
-        </Route>
-        <Route path="/student/history/:id">
-          <StudentLayout>
-            <HistoryLayout>
-              <StudentHistoryDetail />
+              <Switch>
+                <Route path="/:id"><StudentHistoryDetail /></Route>
+                <Route><StudentHistory /></Route>
+              </Switch>
             </HistoryLayout>
           </StudentLayout>
         </Route>
