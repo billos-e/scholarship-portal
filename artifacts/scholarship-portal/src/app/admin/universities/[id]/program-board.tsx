@@ -111,6 +111,7 @@ function ProgramChip({
         "hover:border-primary/35 hover:bg-primary/[0.03] hover:shadow-md",
         !program.isActive && "opacity-50 blur-[0.5px] hover:opacity-100 hover:blur-none",
         pending && "pointer-events-none opacity-40",
+        "min-w-[8rem]",
       )}
     >
       {/* Text — blurs on hover so icons sit on top */}
@@ -120,7 +121,7 @@ function ProgramChip({
 
       {/* Icon overlay — centered on the chip */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/chip:opacity-100">
-        <div className="flex items-center gap-1 px-2 py-1 bg-background">
+        <div className="flex items-center gap-1 px-2 py-1">
           <Tooltip>
             <TooltipTrigger render={editBtn} />
             <TooltipContent>Edit</TooltipContent>
