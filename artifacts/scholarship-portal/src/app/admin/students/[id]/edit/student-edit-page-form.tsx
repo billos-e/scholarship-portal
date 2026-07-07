@@ -14,7 +14,6 @@ import { NativeSelect } from "@/components/ui/native-select";
 import {
   type ActionState,
   saveStudentEdit,
-  uploadStudentPhoto,
 } from "@/lib/actions/students";
 import { getInitials } from "@/lib/initials";
 import { generateSecurePassword } from "@/lib/password";
@@ -49,95 +48,6 @@ export type StudentEditPageData = {
   promptpayNumber: string | null;
 };
 
-function StudentPhotoSection({
-  studentId,
-  photoUrl,
-  fullName,
-  initials,
-  onUploaded,
-}: {
-  studentId: string;
-  photoUrl: string | null;
-  fullName: string;
-  initials: string;
-  onUploaded: (url: string) => void;
-}) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploadState, uploadAction, uploading] = useActionState<ActionState, FormData>(
-    uploadStudentPhoto,
-    {},
-  );
-
-  const displayUrl = previewUrl ?? (photoUrl?.trim() ? uploadPublicUrl(photoUrl) : null);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  useEffect(() => {
-    if (uploadState.success && previewUrl) {
-      toast.success("Photo updated.");
-      onUploaded(previewUrl);
-    }
-    if (uploadState.error) toast.error(uploadState.error);
-  }, [uploadState]);
-
-  return (
-    <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
-      <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
-        <div
-          className={cn(
-            "relative size-24 shrink-0 overflow-hidden rounded-full sm:size-28",
-            !displayUrl &&
-              "flex items-center justify-center bg-primary text-3xl font-bold text-primary-foreground",
-          )}
-        >
-          {displayUrl ? (
-            <Image
-              src={displayUrl}
-              alt={`${fullName} profile photo`}
-              fill
-              sizes="(max-width: 640px) 96px, 112px"
-              className="object-cover"
-              unoptimized
-            />
-          ) : (
-            initials
-          )}
-        </div>
-
-        <form action={uploadAction} className="min-w-0 flex-1 space-y-2">
-          <input type="hidden" name="id" value={studentId} />
-          <Label htmlFor="photo" className="text-base font-semibold">
-            Profile photo
-          </Label>
-          <Input
-            id="photo"
-            name="photo"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                if (previewUrl) URL.revokeObjectURL(previewUrl);
-                setPreviewUrl(URL.createObjectURL(file));
-              }
-            }}
-          />
-          <p className="text-xs text-muted-foreground">
-            JPEG, PNG, or WebP. Leave unchanged to keep the current photo.
-          </p>
-          <Button type="submit" size="sm" variant="outline" disabled={uploading}>
-            {uploading ? "Uploading..." : "Upload photo"}
-          </Button>
-        </form>
-      </div>
-    </section>
-  );
-}
-
 export function StudentEditPageForm({
   student,
   universities,
@@ -153,7 +63,8 @@ export function StudentEditPageForm({
 
   const initials = getInitials(fullName);
   const [password, setPassword] = useState("");
-  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(student.photoUrl);
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
+  const displayPhotoUrl = previewPhotoUrl ?? (student.photoUrl ? uploadPublicUrl(student.photoUrl) : null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
@@ -184,6 +95,12 @@ export function StudentEditPageForm({
     }
   }, [state]);
 
+  useEffect(() => {
+    return () => {
+      if (previewPhotoUrl) URL.revokeObjectURL(previewPhotoUrl);
+    };
+  }, [previewPhotoUrl]);
+
   async function handleGeneratePassword() {
     const next = generateSecurePassword();
     setPassword(next);
@@ -196,27 +113,65 @@ export function StudentEditPageForm({
   }
 
   return (
-    <div className="space-y-6">
-      <StudentPhotoSection
-        studentId={student.id}
-        photoUrl={currentPhotoUrl}
-        fullName={fullName}
-        initials={initials}
-        onUploaded={setCurrentPhotoUrl}
-      />
+    <form
+      ref={formRef}
+      onSubmit={(e) => {
+        e.preventDefault();
+        formAction(new FormData(e.currentTarget));
+      }}
+      className="space-y-6"
+    >
+      <input type="hidden" name="id" value={student.id} />
+      <input type="hidden" name="userId" value={student.userId} />
 
-      <form
-        ref={formRef}
-        onSubmit={(e) => {
-          e.preventDefault();
-          formAction(new FormData(e.currentTarget));
-        }}
-        className="space-y-6"
-      >
-        <input type="hidden" name="id" value={student.id} />
-        <input type="hidden" name="userId" value={student.userId} />
+      <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
+        <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
+          <div
+            className={cn(
+              "relative size-24 shrink-0 overflow-hidden rounded-full sm:size-28",
+              !displayPhotoUrl &&
+                "flex items-center justify-center bg-primary text-3xl font-bold text-primary-foreground",
+            )}
+          >
+            {displayPhotoUrl ? (
+              <Image
+                src={displayPhotoUrl}
+                alt={`${fullName} profile photo`}
+                fill
+                sizes="(max-width: 640px) 96px, 112px"
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              initials
+            )}
+          </div>
 
-        <ProfileInfoCard title="Personal information">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Label htmlFor="photo" className="text-base font-semibold">
+              Profile photo
+            </Label>
+            <Input
+              id="photo"
+              name="photo"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  if (previewPhotoUrl) URL.revokeObjectURL(previewPhotoUrl);
+                  setPreviewPhotoUrl(URL.createObjectURL(file));
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG, or WebP. Leave unchanged to keep the current photo.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <ProfileInfoCard title="Personal information">
           <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="firstName">First name</Label>
@@ -387,6 +342,5 @@ export function StudentEditPageForm({
           </Button>
         </div>
       </form>
-    </div>
   );
 }

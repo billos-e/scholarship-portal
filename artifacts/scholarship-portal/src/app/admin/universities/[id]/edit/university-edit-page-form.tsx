@@ -20,7 +20,6 @@ import {
 import { getInitials } from "@/lib/initials";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
-import { UniversityImageForm } from "../university-actions";
 
 export type UniversityEditPageData = {
   id: string;
@@ -57,10 +56,17 @@ export function UniversityEditPageForm({
 }) {
   const router = useRouter();
   const initials = getInitials(university.name);
-  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(
-    university.imageUrl,
-  );
-  const hasImage = Boolean(currentImageUrl?.trim());
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const displayImageUrl =
+    previewImageUrl ??
+    (university.imageUrl?.trim() ? uploadPublicUrl(university.imageUrl) : null);
+  const hasImage = Boolean(displayImageUrl);
+
+  useEffect(() => {
+    return () => {
+      if (previewImageUrl) URL.revokeObjectURL(previewImageUrl);
+    };
+  }, [previewImageUrl]);
 
   const [state, formAction] = useActionState<ActionState, FormData>(
     updateUniversity,
@@ -76,8 +82,10 @@ export function UniversityEditPageForm({
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+      <form action={formAction} className="space-y-6">
+        <input type="hidden" name="id" value={university.id} />
+
+        <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
           <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
             <div
               className={cn(
@@ -88,7 +96,7 @@ export function UniversityEditPageForm({
             >
               {hasImage ? (
                 <Image
-                  src={uploadPublicUrl(currentImageUrl!)}
+                  src={displayImageUrl!}
                   alt={`${university.name} logo`}
                   fill
                   sizes="(max-width: 640px) 96px, 112px"
@@ -100,19 +108,27 @@ export function UniversityEditPageForm({
               )}
             </div>
 
-            <UniversityImageForm
-              universityId={university.id}
-              imageUrl={currentImageUrl}
-              name={university.name}
-              showPreview={false}
-              onImageUploaded={setCurrentImageUrl}
-            />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Label htmlFor="image">University image</Label>
+              <Input
+                id="image"
+                name="image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (previewImageUrl) URL.revokeObjectURL(previewImageUrl);
+                    setPreviewImageUrl(URL.createObjectURL(file));
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                JPEG, PNG, or WebP. Leave unchanged to keep the current image.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <form action={formAction} className="space-y-6">
-        <input type="hidden" name="id" value={university.id} />
+        </section>
 
         <ProfileInfoCard title="University details">
           <div className="space-y-8">

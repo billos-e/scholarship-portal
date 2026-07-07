@@ -98,7 +98,26 @@ export async function updateUniversity(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const result = await apiFetch(`/universities/${id}`, "PUT", parsed.data);
+  const file = formData.get("image");
+  let imageUrl: string | undefined;
+  if (file instanceof File && file.size > 0) {
+    const check = validateUpload(file, "university-image");
+    if (!check.ok) return { error: check.error };
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
+      imageUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+    } catch {
+      return { error: "Failed to process image." };
+    }
+  }
+
+  const result = await apiFetch(`/universities/${id}`, "PUT", {
+    ...parsed.data,
+    ...(imageUrl ? { imageUrl } : {}),
+  });
   if (!result.ok) return { error: result.error };
 
   revalidatePath("/admin/universities");
