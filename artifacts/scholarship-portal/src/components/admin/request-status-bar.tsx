@@ -317,13 +317,13 @@ function WorkflowActions({
 
   if (status === "REJECTED") {
     return (
-      <SplitActionButton
-        label="Reopen"
-        onPrimary={onReopen}
-        menuItems={[
-          { label: "Mark under review", onClick: onMarkUnderReview },
-        ]}
-      />
+      <Button
+        type="button"
+        size="sm"
+        onClick={onReopen}
+      >
+        Reopen
+      </Button>
     );
   }
 
