@@ -20,7 +20,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
 import { fetchUniversity, type UniversityDetail } from "@/lib/api/universities";
 import NotFound from "@/pages/not-found";
-import { SemesterTable } from "./semester-table";
+import { SemesterTable, type SemesterTableHandle } from "./semester-table";
 import { ProgramBoard, type ProgramBoardHandle } from "./program-board";
 import { UniversityStatusButton } from "./university-actions";
 
@@ -41,6 +41,23 @@ function ProgramBoardButton({
   );
 }
 
+function SemesterTableButton({
+  tableRef,
+}: {
+  tableRef: React.RefObject<SemesterTableHandle | null>;
+}) {
+  return (
+    <Button
+      type="button"
+      size="sm"
+      onClick={() => tableRef.current?.openCreate()}
+    >
+      <Plus className="size-3.5" />
+      Add semester
+    </Button>
+  );
+}
+
 export default function UniversityDetailPage() {
   requireAdmin();
   const { id } = useParams<{ id: string }>();
@@ -48,6 +65,7 @@ export default function UniversityDetailPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
   const programBoardRef = useRef<ProgramBoardHandle | null>(null);
+  const semesterTableRef = useRef<SemesterTableHandle | null>(null);
 
   useEffect(() => {
     setUniversity(undefined);
@@ -192,8 +210,12 @@ export default function UniversityDetailPage() {
         }
         icon={CalendarDays}
         tone="primary"
+        headerAction={
+          <SemesterTableButton tableRef={semesterTableRef} />
+        }
       >
         <SemesterTable
+          ref={semesterTableRef}
           semesters={university.semesters.map((semester) => ({
             id: semester.id,
             label: semester.label,
