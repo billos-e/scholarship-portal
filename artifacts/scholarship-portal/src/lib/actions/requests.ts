@@ -2,34 +2,37 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import type { RequestStatus } from "@prisma/client";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { getRequest, updateRequestById, setPaymentNote } from "@/lib/stub/sample-data";
+
+const apiBase = import.meta.env.BASE_URL
+  ? import.meta.env.BASE_URL.replace(/\/$/, "")
+  : "";
 
 export type RequestActionState = {
   error?: string;
   success?: boolean;
 };
 
-/**
- * Allowed status transitions for admins:
- *   SUBMITTED     -> UNDER_REVIEW | REJECTED
- *   UNDER_REVIEW  -> APPROVED | SUBMITTED | REJECTED
- *   APPROVED      -> PAID | UNDER_REVIEW | REJECTED
- *   REJECTED      -> SUBMITTED | UNDER_REVIEW
- *   PAID          -> (terminal)
- */
-const NEXT_STATUS: Record<RequestStatus, RequestStatus[]> = {
-  SUBMITTED: ["UNDER_REVIEW", "REJECTED"],
-  UNDER_REVIEW: ["APPROVED", "SUBMITTED", "REJECTED"],
-  APPROVED: ["PAID", "UNDER_REVIEW", "REJECTED"],
-  REJECTED: ["SUBMITTED", "UNDER_REVIEW"],
-  PAID: [],
-};
-
-function isAllowedTransition(from: RequestStatus, to: RequestStatus): boolean {
-  return NEXT_STATUS[from]?.includes(to) ?? false;
+async function apiFetch(
+  path: string,
+  method: string,
+  body: unknown,
+): Promise<{ ok: boolean; data?: any; error?: string }> {
+  try {
+    const res = await fetch(`${apiBase}/api${path}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: (data as any).error ?? "Request failed." };
+    }
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Network error. Please try again." };
+  }
 }
 
 function pathsToRevalidate(requestId: string) {
@@ -42,13 +45,7 @@ function pathsToRevalidate(requestId: string) {
 
 const transitionSchema = z.object({
   requestId: z.string().min(1, "Missing request id."),
-  nextStatus: z.enum([
-    "SUBMITTED",
-    "UNDER_REVIEW",
-    "APPROVED",
-    "PAID",
-    "REJECTED",
-  ]),
+  nextStatus: z.enum(["SUBMITTED", "UNDER_REVIEW", "APPROVED", "PAID", "REJECTED"]),
   paymentDate: z.string().trim().optional(),
 });
 
@@ -67,59 +64,13 @@ export async function transitionRequestStatus(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const request = getRequest(parsed.data.requestId);
-  if (!request) return { error: "Request not found." };
+  const result = await apiFetch(`/requests/${parsed.data.requestId}/status`, "PUT", {
+    nextStatus: parsed.data.nextStatus,
+    paymentDate: parsed.data.paymentDate,
+  });
+  if (!result.ok) return { error: result.error };
 
-  const { nextStatus } = parsed.data;
-  if (request.status === nextStatus) {
-    return { error: "Request is already in that status." };
-  }
-  if (!isAllowedTransition(request.status, nextStatus)) {
-    return {
-      error: `Cannot move a request from ${request.status} to ${nextStatus}.`,
-    };
-  }
-
-  const now = new Date();
-  const updates: Record<string, unknown> = {
-    status: nextStatus,
-  };
-
-  if (nextStatus === "UNDER_REVIEW" && !request.reviewedAt) {
-    updates.reviewedAt = now;
-  }
-  if (nextStatus === "APPROVED") {
-    if (!request.reviewedAt) updates.reviewedAt = now;
-    if (!request.approvedAt) updates.approvedAt = now;
-  }
-  if (nextStatus === "REJECTED" && !request.rejectedAt) {
-    updates.rejectedAt = now;
-  }
-  if (nextStatus === "PAID" && !request.paidAt) {
-    updates.paidAt = now;
-  }
-  if (nextStatus === "SUBMITTED") {
-    updates.rejectedAt = null;
-  }
-
-  if (nextStatus === "PAID") {
-    let paymentDate = now;
-    if (parsed.data.paymentDate) {
-      const parsedDate = new Date(`${parsed.data.paymentDate}T00:00:00.000Z`);
-      if (Number.isNaN(parsedDate.getTime())) {
-        return { error: "Invalid payment date." };
-      }
-      paymentDate = parsedDate;
-    }
-    updates.hasPayment = true;
-    // Store payment date for the payment record
-    setPaymentNote(request.id, `Disbursed via bank transfer on ${paymentDate.toISOString().split("T")[0]}.`);
-  }
-
-  const ok = updateRequestById(request.id, updates);
-  if (!ok) return { error: "Could not update this request status." };
-
-  pathsToRevalidate(request.id);
+  pathsToRevalidate(parsed.data.requestId);
   return { success: true };
 }
 
@@ -136,20 +87,16 @@ export async function updateRequestAdminNotes(
 
   const parsed = notesSchema.safeParse({
     requestId: formData.get("requestId"),
-    adminNotes:
-      ((formData.get("adminNotes") as string) ?? "").trim() || undefined,
+    adminNotes: ((formData.get("adminNotes") as string) ?? "").trim() || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const request = getRequest(parsed.data.requestId);
-  if (!request) return { error: "Request not found." };
-
-  const ok = updateRequestById(parsed.data.requestId, {
+  const result = await apiFetch(`/requests/${parsed.data.requestId}/notes`, "PATCH", {
     adminNotes: parsed.data.adminNotes ?? null,
   });
-  if (!ok) return { error: "Request not found." };
+  if (!result.ok) return { error: result.error };
 
   pathsToRevalidate(parsed.data.requestId);
   return { success: true };
@@ -168,20 +115,16 @@ export async function updatePaymentInternalNotes(
 
   const parsed = paymentNotesSchema.safeParse({
     requestId: formData.get("requestId"),
-    internalNotes:
-      ((formData.get("internalNotes") as string) ?? "").trim() || undefined,
+    internalNotes: ((formData.get("internalNotes") as string) ?? "").trim() || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const request = getRequest(parsed.data.requestId);
-  if (!request) return { error: "Request not found." };
-  if (!request.hasPayment) {
-    return { error: "No payment record exists for this request yet." };
-  }
-
-  setPaymentNote(parsed.data.requestId, parsed.data.internalNotes ?? null);
+  const result = await apiFetch(`/requests/${parsed.data.requestId}/payment-notes`, "PATCH", {
+    internalNotes: parsed.data.internalNotes ?? null,
+  });
+  if (!result.ok) return { error: result.error };
 
   pathsToRevalidate(parsed.data.requestId);
   return { success: true };

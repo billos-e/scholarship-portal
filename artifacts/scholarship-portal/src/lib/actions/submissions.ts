@@ -5,42 +5,49 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
+import { validateUpload, type UploadKind } from "@/lib/uploads";
+import { ACTIVITY_VALUES, CHALLENGE_VALUES } from "@/lib/submissions/constants";
 import {
-  createRequest,
-  createReport,
-  findOpenRequest,
-  findDuplicateSemesterSubmission,
-  updateBankByStudentId,
-  updateStudentById,
-  rawBank,
-  rawSemesters,
-} from "@/lib/stub/sample-data";
-import { saveUpload, validateUpload, type UploadKind } from "@/lib/uploads";
-import {
-  ACTIVITY_VALUES,
-  CHALLENGE_VALUES,
-} from "@/lib/submissions/constants";
-import {
-  duplicateSemesterMessage,
   getMissingProfileFields,
-  openRequestMessage,
   profileIncompleteMessage,
 } from "@/lib/submissions/eligibility";
+
+const apiBase = import.meta.env.BASE_URL
+  ? import.meta.env.BASE_URL.replace(/\/$/, "")
+  : "";
 
 export type SubmissionState = {
   error?: string;
   success?: boolean;
 };
 
+async function apiFetch(
+  path: string,
+  method: string,
+  body: unknown,
+): Promise<{ ok: boolean; data?: any; error?: string; status?: number }> {
+  try {
+    const res = await fetch(`${apiBase}/api${path}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: (data as any).error ?? "Request failed.", status: res.status };
+    }
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Network error. Please try again." };
+  }
+}
+
 function trimmed(value: FormDataEntryValue | null): string | undefined {
   const s = (value as string | null)?.trim();
   return s && s.length > 0 ? s : undefined;
 }
 
-function optionalInt(
-  value: FormDataEntryValue | null,
-  { min, max }: { min?: number; max?: number } = {},
-): number | undefined {
+function optionalInt(value: FormDataEntryValue | null, { min, max }: { min?: number; max?: number } = {}): number | undefined {
   const s = trimmed(value);
   if (!s) return undefined;
   const n = Number(s);
@@ -60,16 +67,11 @@ function optionalNumber(value: FormDataEntryValue | null): number | undefined {
 function optionalDate(value: FormDataEntryValue | null): Date | undefined {
   const s = trimmed(value);
   if (!s) return undefined;
-  // Treat the date string as UTC midnight so it doesn't drift across timezones.
   const date = new Date(`${s}T00:00:00.000Z`);
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-function multiSelect(
-  formData: FormData,
-  name: string,
-  allowed: readonly string[],
-): string[] {
+function multiSelect(formData: FormData, name: string, allowed: readonly string[]): string[] {
   const raw = formData.getAll(name).map((v) => String(v));
   const allowedSet = new Set(allowed);
   return Array.from(new Set(raw.filter((v) => allowedSet.has(v))));
@@ -84,26 +86,18 @@ const submissionSchema = z
       .positive("Tuition amount must be greater than zero.")
       .max(10_000_000, "Tuition amount looks too large."),
     dueDate: z.date().optional(),
-
-    // Bank info (snapshot + last-known update)
     bankAccountName: z.string().trim().optional(),
     bankAccountNumber: z.string().trim().optional(),
     bankName: z.string().trim().optional(),
     promptpayNumber: z.string().trim().optional(),
-
-    // Academic
     gpa: z.number().min(0).max(4).optional(),
     creditsCompleted: z.number().int().min(0).max(60).optional(),
     passedAllCourses: z.boolean().optional(),
-
-    // Wellbeing (1..5)
     wellbeingPhysical: z.number().int().min(1).max(5).optional(),
     wellbeingMental: z.number().int().min(1).max(5).optional(),
     wellbeingFinancial: z.number().int().min(1).max(5).optional(),
     wellbeingStress: z.number().int().min(1).max(5).optional(),
     wellbeingConfidence: z.number().int().min(1).max(5).optional(),
-
-    // Reflections
     reflectionAchievement: z.string().trim().max(4000).optional(),
     reflectionChallenge: z.string().trim().max(4000).optional(),
     reflectionAdditional: z.string().trim().max(4000).optional(),
@@ -121,6 +115,13 @@ function fileIfProvided(value: FormDataEntryValue | null): File | undefined {
   return value;
 }
 
+async function fileToDataUrl(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
+  return `data:${file.type || "application/octet-stream"};base64,${b64}`;
+}
+
 export async function createSubmission(
   _prev: SubmissionState,
   formData: FormData,
@@ -132,55 +133,28 @@ export async function createSubmission(
     return { error: profileIncompleteMessage(missingProfileFields) };
   }
 
-  const openRequest = await findOpenRequest(student.id);
-  if (openRequest) {
-    return { error: openRequestMessage(openRequest) };
-  }
-
   const parsed = submissionSchema.safeParse({
     semesterLabel: trimmed(formData.get("semesterLabel")),
     universitySemesterId: trimmed(formData.get("universitySemesterId")),
     amountDue: optionalNumber(formData.get("amountDue")),
     dueDate: optionalDate(formData.get("dueDate")),
-
     bankAccountName: trimmed(formData.get("bankAccountName")),
     bankAccountNumber: trimmed(formData.get("bankAccountNumber")),
     bankName: trimmed(formData.get("bankName")),
     promptpayNumber: trimmed(formData.get("promptpayNumber")),
-
     gpa: optionalNumber(formData.get("gpa")),
-    creditsCompleted: optionalInt(formData.get("creditsCompleted"), {
-      min: 0,
-      max: 60,
-    }),
+    creditsCompleted: optionalInt(formData.get("creditsCompleted"), { min: 0, max: 60 }),
     passedAllCourses:
       formData.get("passedAllCourses") === "true"
         ? true
         : formData.get("passedAllCourses") === "false"
           ? false
           : undefined,
-
-    wellbeingPhysical: optionalInt(formData.get("wellbeingPhysical"), {
-      min: 1,
-      max: 5,
-    }),
-    wellbeingMental: optionalInt(formData.get("wellbeingMental"), {
-      min: 1,
-      max: 5,
-    }),
-    wellbeingFinancial: optionalInt(formData.get("wellbeingFinancial"), {
-      min: 1,
-      max: 5,
-    }),
-    wellbeingStress: optionalInt(formData.get("wellbeingStress"), {
-      min: 1,
-      max: 5,
-    }),
-    wellbeingConfidence: optionalInt(formData.get("wellbeingConfidence"), {
-      min: 1,
-      max: 5,
-    }),
-
+    wellbeingPhysical: optionalInt(formData.get("wellbeingPhysical"), { min: 1, max: 5 }),
+    wellbeingMental: optionalInt(formData.get("wellbeingMental"), { min: 1, max: 5 }),
+    wellbeingFinancial: optionalInt(formData.get("wellbeingFinancial"), { min: 1, max: 5 }),
+    wellbeingStress: optionalInt(formData.get("wellbeingStress"), { min: 1, max: 5 }),
+    wellbeingConfidence: optionalInt(formData.get("wellbeingConfidence"), { min: 1, max: 5 }),
     reflectionAchievement: trimmed(formData.get("reflectionAchievement")),
     reflectionChallenge: trimmed(formData.get("reflectionChallenge")),
     reflectionAdditional: trimmed(formData.get("reflectionAdditional")),
@@ -191,40 +165,9 @@ export async function createSubmission(
   }
 
   const data = parsed.data;
-
-  const _stu = student as Record<string, unknown>;
-
-  if (data.universitySemesterId) {
-    const semester = rawSemesters.find(
-      (s) =>
-        s.id === data.universitySemesterId &&
-        s.isActive &&
-        (!_stu.universityId || s.universityId === _stu.universityId),
-    );
-    if (!semester) {
-      return { error: "Please select a valid semester for your university." };
-    }
-    data.semesterLabel = semester.label;
-  }
-
-  if (!data.semesterLabel) {
-    return { error: "Semester is required." };
-  }
-
-  const semesterLabel = data.semesterLabel;
-
-  const duplicate = await findDuplicateSemesterSubmission(student.id, {
-    universitySemesterId: data.universitySemesterId,
-    semesterLabel,
-  });
-  if (duplicate) {
-    return { error: duplicateSemesterMessage(duplicate.semesterLabel) };
-  }
-
   const challenges = multiSelect(formData, "challenges", CHALLENGE_VALUES);
   const activities = multiSelect(formData, "activities", ACTIVITY_VALUES);
 
-  // Files (all optional but validated when present).
   const invoiceFile = fileIfProvided(formData.get("invoiceFile"));
   const transcriptFile = fileIfProvided(formData.get("transcriptFile"));
   const screenshotFile =
@@ -246,100 +189,52 @@ export async function createSubmission(
   let qrPaymentImageUrl: string | undefined;
 
   try {
-    if (invoiceFile) {
-      invoiceFileUrl = await saveUpload(invoiceFile, {
-        studentId: student.id,
-        kind: "invoices",
-      });
-    }
-    if (transcriptFile) {
-      transcriptFileUrl = await saveUpload(transcriptFile, {
-        studentId: student.id,
-        kind: "transcripts",
-      });
-    }
-    if (screenshotFile) {
-      qrPaymentImageUrl = await saveUpload(screenshotFile, {
-        studentId: student.id,
-        kind: "qr",
-      });
-    }
+    if (invoiceFile) invoiceFileUrl = await fileToDataUrl(invoiceFile);
+    if (transcriptFile) transcriptFileUrl = await fileToDataUrl(transcriptFile);
+    if (screenshotFile) qrPaymentImageUrl = await fileToDataUrl(screenshotFile);
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to store uploaded files.";
-    return { error: message };
+    return { error: err instanceof Error ? err.message : "Failed to process uploaded files." };
   }
 
-  // If no QR was uploaded this time, fall back to the QR currently on file.
-  const existingBank = rawBank[student.id];
-  const effectiveQr = qrPaymentImageUrl ?? existingBank?.qrPaymentImageUrl ?? null;
+  const result = await apiFetch("/submissions", "POST", {
+    studentId: student.id,
+    semesterLabel: data.semesterLabel,
+    universitySemesterId: data.universitySemesterId,
+    amountDue: data.amountDue,
+    dueDate: data.dueDate?.toISOString(),
+    invoiceFileUrl: invoiceFileUrl ?? null,
+    bankAccountName: data.bankAccountName ?? null,
+    bankAccountNumber: data.bankAccountNumber ?? null,
+    bankName: data.bankName ?? null,
+    promptpayNumber: data.promptpayNumber ?? null,
+    qrPaymentImageUrl: qrPaymentImageUrl ?? null,
+    gpa: data.gpa ?? null,
+    creditsCompleted: data.creditsCompleted ?? null,
+    passedAllCourses: data.passedAllCourses ?? null,
+    transcriptFileUrl: transcriptFileUrl ?? null,
+    wellbeingPhysical: data.wellbeingPhysical ?? null,
+    wellbeingMental: data.wellbeingMental ?? null,
+    wellbeingFinancial: data.wellbeingFinancial ?? null,
+    wellbeingStress: data.wellbeingStress ?? null,
+    wellbeingConfidence: data.wellbeingConfidence ?? null,
+    challenges,
+    activities,
+    reflectionAchievement: data.reflectionAchievement ?? null,
+    reflectionChallenge: data.reflectionChallenge ?? null,
+    reflectionAdditional: data.reflectionAdditional ?? null,
+  });
 
-  let createdRequestId: string | null = null;
-
-  try {
-    const request = createRequest({
-      studentId: student.id,
-      semesterLabel,
-      universitySemesterId: data.universitySemesterId ?? null,
-      amountDue: data.amountDue,
-      dueDate: data.dueDate ?? null,
-      invoiceFileUrl: invoiceFileUrl ?? null,
-      status: "SUBMITTED",
-      bankAccountName: data.bankAccountName ?? null,
-      bankAccountNumber: data.bankAccountNumber ?? null,
-      bankName: data.bankName ?? null,
-      promptpayNumber: data.promptpayNumber ?? null,
-      qrPaymentImageUrl: effectiveQr,
-      submittedAt: new Date(),
-      hasReport: true,
-    });
-
-    createReport({
-      studentId: student.id,
-      tuitionPaymentRequestId: request.id,
-      semesterLabel,
-      universitySemesterId: data.universitySemesterId ?? null,
-      gpa: data.gpa ?? null,
-      creditsCompleted: data.creditsCompleted ?? null,
-      passedAllCourses: data.passedAllCourses ?? null,
-      transcriptFileUrl: transcriptFileUrl ?? null,
-      wellbeingPhysical: data.wellbeingPhysical ?? null,
-      wellbeingMental: data.wellbeingMental ?? null,
-      wellbeingFinancial: data.wellbeingFinancial ?? null,
-      wellbeingStress: data.wellbeingStress ?? null,
-      wellbeingConfidence: data.wellbeingConfidence ?? null,
-      challenges,
-      activities,
-      reflectionAchievement: data.reflectionAchievement ?? null,
-      reflectionChallenge: data.reflectionChallenge ?? null,
-      reflectionAdditional: data.reflectionAdditional ?? null,
-    });
-
-    updateBankByStudentId(student.id, {
-      bankAccountName: data.bankAccountName ?? null,
-      bankAccountNumber: data.bankAccountNumber ?? null,
-      bankName: data.bankName ?? null,
-      promptpayNumber: data.promptpayNumber ?? null,
-      qrPaymentImageUrl: qrPaymentImageUrl ?? existingBank?.qrPaymentImageUrl ?? null,
-    });
-
-    if (!_stu.currentSemesterLabel) {
-      updateStudentById(student.id, { currentSemesterLabel: semesterLabel });
-    }
-
-    createdRequestId = request.id;
-  } catch (err) {
-    console.error("createSubmission failed", err);
-    return {
-      error:
-        "Could not save your submission. Please try again or contact the team.",
-    };
+  if (!result.ok) {
+    return { error: result.error ?? "Could not save your submission. Please try again or contact the team." };
   }
 
   revalidatePath("/student");
   revalidatePath("/student/history");
   revalidatePath("/student/profile");
 
-  redirect(`/student/history/${createdRequestId}`);
+  const createdRequestId = result.data?.requestId;
+  if (createdRequestId) {
+    redirect(`/student/history/${createdRequestId}`);
+  }
   return { success: true };
 }

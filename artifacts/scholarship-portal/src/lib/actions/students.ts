@@ -4,13 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { hashPassword } from "@/lib/auth/password";
 import { generateSecurePassword } from "@/lib/password";
-import { prisma } from "@/lib/prisma";
-import {
-  rawStudents,
-  type Any,
-} from "@/lib/stub/sample-data";
 import {
   readStudentProfileFromFormData,
   validateStudentProfileCreate,
@@ -31,7 +25,28 @@ export type ActionState = {
   submitAttempt?: number;
 };
 
-function profileToStudentData(
+async function apiFetch(
+  path: string,
+  method: string,
+  body: unknown,
+): Promise<{ ok: boolean; data?: any; error?: string; status?: number }> {
+  try {
+    const res = await fetch(`${apiBase}/api${path}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: (data as any).error ?? "Request failed.", status: res.status };
+    }
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Network error. Please try again." };
+  }
+}
+
+function profileToPayload(
   data: StudentProfileFormData | StudentProfileCreateData,
 ) {
   const { universityId, ...rest } = data;
@@ -49,6 +64,18 @@ function profileToStudentData(
   };
 }
 
+const bankSchema = z.object({
+  bankAccountName: z.string().trim().optional(),
+  bankAccountNumber: z.string().trim().optional(),
+  bankName: z.string().trim().optional(),
+  promptpayNumber: z.string().trim().optional(),
+});
+
+function optionalString(value: FormDataEntryValue | null): string | undefined {
+  const s = (value as string | null)?.trim();
+  return s && s.length > 0 ? s : undefined;
+}
+
 export async function createStudent(
   _prev: ActionState,
   formData: FormData,
@@ -56,56 +83,27 @@ export async function createStudent(
   await requireAdmin();
 
   const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const emailCheck = z
-    .string()
-    .email("A valid email is required.")
-    .safeParse(email);
+  const emailCheck = z.string().email("A valid email is required.").safeParse(email);
   if (!emailCheck.success) {
     return { error: emailCheck.error.issues[0]?.message ?? "Invalid email." };
   }
 
-  const parsed = validateStudentProfileCreate(
-    readStudentProfileFromFormData(formData),
-  );
-  if (!parsed.success) {
-    return { error: parsed.error };
-  }
+  const parsed = validateStudentProfileCreate(readStudentProfileFromFormData(formData));
+  if (!parsed.success) return { error: parsed.error };
 
   const contextError = await validateUniversityContext(parsed.data);
-  if (contextError) {
-    return { error: contextError };
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return { error: "An account with this email already exists." };
-  }
-
-  if (parsed.data.studentId) {
-    const dupId = await prisma.student.findUnique({
-      where: { studentId: parsed.data.studentId },
-    });
-    if (dupId) return { error: "This Student ID is already in use." };
-  }
+  if (contextError) return { error: contextError };
 
   const password = generateSecurePassword();
-  const passwordHash = await hashPassword(password);
-  const studentData = profileToStudentData(parsed.data);
+  const payload = profileToPayload(parsed.data);
 
-  await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      role: "STUDENT",
-      isActive: studentData.status === "ACTIVE",
-      student: {
-        create: {
-          ...studentData,
-          bankInformation: { create: {} },
-        },
-      },
-    },
+  const result = await apiFetch("/students", "POST", {
+    email,
+    password,
+    ...payload,
   });
+
+  if (!result.ok) return { error: result.error };
 
   revalidatePath("/admin/students");
   return { success: true, generatedPassword: password };
@@ -121,49 +119,18 @@ export async function updateStudent(
   if (!id) return { error: "Missing student id." };
 
   const parsed = validateStudentProfileEdit(readStudentProfileFromFormData(formData));
-  if (!parsed.success) {
-    return { error: parsed.error };
-  }
+  if (!parsed.success) return { error: parsed.error };
 
-  const contextError = await validateUniversityContext(parsed.data, {
-    studentId: id,
-  });
-  if (contextError) {
-    return { error: contextError };
-  }
+  const contextError = await validateUniversityContext(parsed.data, { studentId: id });
+  if (contextError) return { error: contextError };
 
-  const studentData = profileToStudentData(parsed.data);
-
-  try {
-    const res = await fetch(`${apiBase}/api/students/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(studentData),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return { error: (body as Any).error ?? "Failed to update student." };
-    }
-  } catch {
-    return { error: "Failed to update student." };
-  }
+  const result = await apiFetch(`/students/${id}`, "PUT", profileToPayload(parsed.data));
+  if (!result.ok) return { error: result.error };
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
   revalidatePath(`/admin/students/${id}/edit`);
   return { success: true };
-}
-
-const bankSchema = z.object({
-  bankAccountName: z.string().trim().optional(),
-  bankAccountNumber: z.string().trim().optional(),
-  bankName: z.string().trim().optional(),
-  promptpayNumber: z.string().trim().optional(),
-});
-
-function optionalString(value: FormDataEntryValue | null): string | undefined {
-  const s = (value as string | null)?.trim();
-  return s && s.length > 0 ? s : undefined;
 }
 
 export async function updateStudentBank(
@@ -181,23 +148,10 @@ export async function updateStudentBank(
     bankName: optionalString(formData.get("bankName")),
     promptpayNumber: optionalString(formData.get("promptpayNumber")),
   });
-  if (!parsed.success) {
-    return { error: "Invalid bank information." };
-  }
+  if (!parsed.success) return { error: "Invalid bank information." };
 
-  try {
-    const res = await fetch(`${apiBase}/api/students/${studentId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed.data),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return { error: (body as Any).error ?? "Failed to update bank information." };
-    }
-  } catch {
-    return { error: "Failed to update bank information." };
-  }
+  const result = await apiFetch(`/students/${studentId}`, "PUT", parsed.data);
+  if (!result.ok) return { error: result.error };
 
   revalidatePath(`/admin/students/${studentId}`);
   return { success: true };
@@ -209,30 +163,16 @@ export async function resetStudentPassword(
 ): Promise<ActionState> {
   await requireAdmin();
 
-  const studentDbId = formData.get("studentId") as string;
+  const studentId = formData.get("studentId") as string;
   const password = formData.get("password") as string;
 
-  const check = z
-    .string()
-    .min(8, "New password must be at least 8 characters.")
-    .safeParse(password);
-  if (!studentDbId || !check.success) {
+  const check = z.string().min(8, "New password must be at least 8 characters.").safeParse(password);
+  if (!studentId || !check.success) {
     return { error: check.success ? "Missing student id." : check.error.issues[0].message };
   }
 
-  try {
-    const res = await fetch(`${apiBase}/api/students/${studentDbId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return { error: (body as Any).error ?? "Failed to reset password." };
-    }
-  } catch {
-    return { error: "Failed to reset password." };
-  }
+  const result = await apiFetch(`/students/${studentId}`, "PUT", { password });
+  if (!result.ok) return { error: result.error };
 
   return { success: true };
 }
@@ -249,19 +189,11 @@ export async function saveStudentEdit(
   const userId = formData.get("userId") as string;
   if (!id || !userId) return { error: "Missing student id.", submitAttempt: attempt };
 
-  const parsed = validateStudentProfileEdit(
-    readStudentProfileFromFormData(formData),
-  );
-  if (!parsed.success) {
-    return { error: parsed.error, submitAttempt: attempt };
-  }
+  const parsed = validateStudentProfileEdit(readStudentProfileFromFormData(formData));
+  if (!parsed.success) return { error: parsed.error, submitAttempt: attempt };
 
-  const contextError = await validateUniversityContext(parsed.data, {
-    studentId: id,
-  });
-  if (contextError) {
-    return { error: contextError, submitAttempt: attempt };
-  }
+  const contextError = await validateUniversityContext(parsed.data, { studentId: id });
+  if (contextError) return { error: contextError, submitAttempt: attempt };
 
   const bankParsed = bankSchema.safeParse({
     bankAccountName: optionalString(formData.get("bankAccountName")),
@@ -269,22 +201,13 @@ export async function saveStudentEdit(
     bankName: optionalString(formData.get("bankName")),
     promptpayNumber: optionalString(formData.get("promptpayNumber")),
   });
-  if (!bankParsed.success) {
-    return { error: "Invalid bank information.", submitAttempt: attempt };
-  }
+  if (!bankParsed.success) return { error: "Invalid bank information.", submitAttempt: attempt };
 
   const password = optionalString(formData.get("password"));
   if (password) {
-    const passwordCheck = z
-      .string()
-      .min(8, "New password must be at least 8 characters.")
-      .safeParse(password);
+    const passwordCheck = z.string().min(8, "New password must be at least 8 characters.").safeParse(password);
     if (!passwordCheck.success) {
-      return {
-        error:
-          passwordCheck.error.issues[0]?.message ?? "Invalid password.",
-        submitAttempt: attempt,
-      };
+      return { error: passwordCheck.error.issues[0]?.message ?? "Invalid password.", submitAttempt: attempt };
     }
   }
 
@@ -298,37 +221,22 @@ export async function saveStudentEdit(
     try {
       const arrayBuffer = await file.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
-      const b64 = btoa(
-        Array.from(bytes)
-          .map((b) => String.fromCharCode(b))
-          .join(""),
-      );
+      const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
       photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
     } catch {
       return { error: "Failed to process photo.", submitAttempt: attempt };
     }
   }
 
-  const studentData = profileToStudentData(parsed.data);
+  const payload = {
+    ...profileToPayload(parsed.data),
+    ...bankParsed.data,
+    ...(photoUrl ? { photoUrl } : {}),
+    ...(password ? { password } : {}),
+  };
 
-  try {
-    const res = await fetch(`${apiBase}/api/students/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...studentData,
-        ...bankParsed.data,
-        ...(photoUrl ? { photoUrl } : {}),
-        ...(password ? { password } : {}),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return { error: (body as Any).error ?? "Failed to save student.", submitAttempt: attempt };
-    }
-  } catch {
-    return { error: "Failed to save student.", submitAttempt: attempt };
-  }
+  const result = await apiFetch(`/students/${id}`, "PUT", payload);
+  if (!result.ok) return { error: result.error, submitAttempt: attempt };
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
@@ -348,19 +256,8 @@ export async function archiveStudent(
     return { error: "Invalid archive request." };
   }
 
-  try {
-    const res = await fetch(`${apiBase}/api/students/${id}/archive`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return { error: (body as Any).error ?? "Failed to archive student." };
-    }
-  } catch {
-    return { error: "Failed to archive student." };
-  }
+  const result = await apiFetch(`/students/${id}/archive`, "PUT", { status });
+  if (!result.ok) return { error: result.error };
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
@@ -387,26 +284,13 @@ export async function uploadStudentPhoto(
   try {
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
-    const b64 = btoa(
-      Array.from(bytes)
-        .map((b) => String.fromCharCode(b))
-        .join(""),
-    );
+    const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
     const photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
 
-    const res = await fetch(`${apiBase}/api/students/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ photoUrl }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return { error: (body as Any).error ?? "Failed to upload photo." };
-    }
+    const result = await apiFetch(`/students/${id}`, "PUT", { photoUrl });
+    if (!result.ok) return { error: result.error };
   } catch (err) {
-    return {
-      error: err instanceof Error ? err.message : "Failed to upload photo.",
-    };
+    return { error: err instanceof Error ? err.message : "Failed to upload photo." };
   }
 
   revalidatePath(`/admin/students/${id}`);

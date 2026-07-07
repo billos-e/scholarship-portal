@@ -1,10 +1,110 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ilike, ne } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db, students, users, bankInformation } from "@workspace/db";
 
 const router: IRouter = Router();
+
+router.post("/students", async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      studentId,
+      phone,
+      universityId,
+      degreeProgram,
+      yearOfStudy,
+      currentSemesterLabel,
+      gpa,
+      status,
+    } = req.body ?? {};
+
+    if (!email || typeof email !== "string") {
+      res.status(400).json({ error: "Email is required." });
+      return;
+    }
+    if (!firstName || typeof firstName !== "string" || firstName.trim().length === 0) {
+      res.status(400).json({ error: "First name is required." });
+      return;
+    }
+    if (!password || typeof password !== "string" || password.length < 8) {
+      res.status(400).json({ error: "Password must be at least 8 characters." });
+      return;
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    const [existingUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, emailLower))
+      .limit(1);
+
+    if (existingUser) {
+      res.status(409).json({ error: "An account with this email already exists." });
+      return;
+    }
+
+    if (studentId) {
+      const [dupStudentId] = await db
+        .select({ id: students.id })
+        .from(students)
+        .where(eq(students.studentId, studentId))
+        .limit(1);
+      if (dupStudentId) {
+        res.status(409).json({ error: "This Student ID is already in use." });
+        return;
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const userId = randomUUID();
+    const studentDbId = randomUUID();
+    const bankId = randomUUID();
+    const studentStatus = (["ACTIVE", "GRADUATED", "INACTIVE"].includes(status) ? status : "ACTIVE") as "ACTIVE" | "GRADUATED" | "INACTIVE";
+
+    await db.insert(users).values({
+      id: userId,
+      email: emailLower,
+      passwordHash,
+      role: "STUDENT",
+      isActive: studentStatus === "ACTIVE",
+    });
+
+    await db.insert(students).values({
+      id: studentDbId,
+      userId,
+      firstName: firstName.trim(),
+      lastName: (lastName as string)?.trim() || "",
+      studentId: (studentId as string)?.trim() || null,
+      phone: (phone as string)?.trim() || null,
+      universityId: (universityId as string) || null,
+      degreeProgram: (degreeProgram as string)?.trim() || null,
+      yearOfStudy: (yearOfStudy as string)?.trim() || null,
+      currentSemesterLabel: (currentSemesterLabel as string)?.trim() || null,
+      gpa: (gpa as string)?.trim() || null,
+      status: studentStatus,
+    });
+
+    await db.insert(bankInformation).values({
+      id: bankId,
+      studentId: studentDbId,
+    });
+
+    res.status(201).json({ id: studentDbId, userId });
+  } catch (err: any) {
+    if (err?.code === "23505") {
+      res.status(409).json({ error: "An account with this email already exists." });
+      return;
+    }
+    console.error("POST /students error", err);
+    res.status(500).json({ error: "Failed to create student." });
+  }
+});
 
 router.put("/students/:id", async (req, res) => {
   try {
@@ -109,7 +209,20 @@ router.put("/students/:id", async (req, res) => {
       userPatch.isActive = body.status === "ACTIVE";
       hasUserPatch = true;
     }
-
+    if ("email" in body && typeof body.email === "string" && body.email.trim()) {
+      const newEmail = body.email.toLowerCase().trim();
+      const [dupEmail] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.email, newEmail), ne(users.id, existing.userId)))
+        .limit(1);
+      if (dupEmail) {
+        res.status(409).json({ error: "An account with this email already exists." });
+        return;
+      }
+      userPatch.email = newEmail;
+      hasUserPatch = true;
+    }
     if ("password" in body && typeof body.password === "string" && body.password.length >= 8) {
       userPatch.passwordHash = await bcrypt.hash(body.password, 12);
       hasUserPatch = true;
