@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { rawUniversities, rawSemesters } from "@/lib/stub/sample-data";
 
 import type { StudentProfileFormData } from "./student-profile";
 
@@ -7,7 +7,7 @@ export async function validateUniversityContext(
     StudentProfileFormData,
     "universityId" | "currentSemesterLabel" | "degreeProgram" | "gpa"
   >,
-  options?: { studentId?: string },
+  _options?: { studentId?: string },
 ): Promise<string | null> {
   if (!data.universityId) {
     if (data.currentSemesterLabel || data.degreeProgram) {
@@ -16,23 +16,20 @@ export async function validateUniversityContext(
     return null;
   }
 
-  const university = await prisma.university.findFirst({
-    where: { id: data.universityId, isActive: true },
-    select: { id: true },
-  });
+  const university = rawUniversities.find(
+    (u) => u.id === data.universityId && u.isActive,
+  );
   if (!university) {
     return "Selected university is not available.";
   }
 
   if (data.currentSemesterLabel) {
-    const semester = await prisma.universitySemester.findFirst({
-      where: {
-        universityId: data.universityId,
-        label: { equals: data.currentSemesterLabel, mode: "insensitive" },
-        isActive: true,
-      },
-      select: { id: true },
-    });
+    const semester = rawSemesters.find(
+      (s) =>
+        s.universityId === data.universityId &&
+        s.label.toLowerCase() === data.currentSemesterLabel.toLowerCase() &&
+        s.isActive,
+    );
     if (!semester) {
       return "Current semester must match an active semester for this university.";
     }

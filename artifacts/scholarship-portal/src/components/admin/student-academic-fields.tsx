@@ -162,9 +162,9 @@ export function StudentAcademicFields({
               <span className="text-destructive"> *</span>
             ) : null}
           </Label>
+          <input type="hidden" name="universityId" value={universityId} />
           <NativeSelect
             id={`${prefix}universityId`}
-            name="universityId"
             value={universityId}
             onChange={(e) => handleUniversityChange(e.target.value)}
             required={universityRequired}
@@ -184,9 +184,9 @@ export function StudentAcademicFields({
       {showProgram ? (
         <div className="min-w-0 space-y-2">
           <Label htmlFor={`${prefix}degreeProgram`}>Degree program</Label>
+          <input type="hidden" name="degreeProgram" value={degreeProgram} />
           <Input
             id={`${prefix}degreeProgram`}
-            name="degreeProgram"
             value={degreeProgram}
             onChange={(e) => setDegreeProgram(e.target.value)}
             disabled={!universityId}
@@ -217,9 +217,9 @@ export function StudentAcademicFields({
 
       <div className="min-w-0 space-y-2">
         <Label htmlFor={`${prefix}yearOfStudy`}>Year of study</Label>
+        <input type="hidden" name="yearOfStudy" value={yearOfStudy} />
         <Input
           id={`${prefix}yearOfStudy`}
-          name="yearOfStudy"
           value={yearOfStudy}
           onChange={(e) => setYearOfStudy(e.target.value)}
           placeholder="e.g. 2"
@@ -231,9 +231,9 @@ export function StudentAcademicFields({
           <Label htmlFor={`${prefix}currentSemesterLabel`}>
             Current semester
           </Label>
+          <input type="hidden" name="currentSemesterLabel" value={semesterLabel} />
           <NativeSelect
             id={`${prefix}currentSemesterLabel`}
-            name="currentSemesterLabel"
             value={semesterLabel}
             onChange={(e) => setSemesterLabel(e.target.value)}
             disabled={!universityId}
