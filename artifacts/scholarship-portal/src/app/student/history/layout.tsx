@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { HistoryRequestNav } from "@/components/student/history-request-nav";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requireStudent } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import { fetchStudent } from "@/lib/api/students";
 
 export default function HistoryLayout({
@@ -13,15 +13,19 @@ export default function HistoryLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { student: sessionStudent } = requireStudent();
+  const user = getCurrentUser();
+  const studentProfileId = user?.studentProfileId ?? null;
 
   const { data: student } = useQuery({
-    queryKey: ["student", sessionStudent.id],
-    queryFn: () => fetchStudent(sessionStudent.id),
+    queryKey: ["student", studentProfileId],
+    queryFn: () => fetchStudent(studentProfileId!),
+    enabled: !!studentProfileId,
     staleTime: 30_000,
   });
 
-  const requests = student?.tuitionPaymentRequests ?? null;
+  const requests = studentProfileId
+    ? (student?.tuitionPaymentRequests ?? null)
+    : [];
 
   return (
     <div className="space-y-5 sm:space-y-6">

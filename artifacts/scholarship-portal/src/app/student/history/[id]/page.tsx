@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requireStudent } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { fetchRequest } from "@/lib/api/requests";
 import { uploadPublicUrl } from "@/lib/upload-path";
@@ -117,7 +117,8 @@ function WellbeingValue({ value }: { value: number | null }) {
 
 export default function StudentSubmissionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { student } = requireStudent();
+  const user = getCurrentUser();
+  const studentProfileId = user?.studentProfileId ?? null;
 
   const { data: request, isPending } = useQuery({
     queryKey: ["request", id],
@@ -134,7 +135,7 @@ export default function StudentSubmissionDetailPage() {
     );
   }
 
-  if (!request || request.studentId !== student.id) {
+  if (!request || !studentProfileId || request.studentId !== studentProfileId) {
     return <NotFound />;
   }
 

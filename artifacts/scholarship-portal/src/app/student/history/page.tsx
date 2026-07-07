@@ -7,12 +7,13 @@ import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requireStudent } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import { fetchStudent } from "@/lib/api/students";
 
 export default function StudentHistoryIndexPage() {
-  const { student: sessionStudent } = requireStudent();
-  const [loading, setLoading] = useState(true);
+  const user = getCurrentUser();
+  const studentProfileId = user?.studentProfileId ?? null;
+  const [loading, setLoading] = useState(!!studentProfileId);
 
   const eligibility = {
     canStart: true,
@@ -21,8 +22,9 @@ export default function StudentHistoryIndexPage() {
   };
 
   useEffect(() => {
+    if (!studentProfileId) return;
     let active = true;
-    fetchStudent(sessionStudent.id)
+    fetchStudent(studentProfileId)
       .then((student) => {
         if (!active) return;
         const first = student?.tuitionPaymentRequests[0] ?? null;
@@ -38,7 +40,7 @@ export default function StudentHistoryIndexPage() {
     return () => {
       active = false;
     };
-  }, [sessionStudent.id]);
+  }, [studentProfileId]);
 
   if (loading) {
     return <Skeleton className="h-64 w-full rounded-2xl" />;
