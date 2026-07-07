@@ -118,7 +118,7 @@ function ProgramChip({
 
       {/* Icon overlay — centered on the chip */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/chip:opacity-100">
-        <div className="flex items-center gap-1 rounded-full bg-background/95 px-2 py-1 shadow-sm border border-border/50 backdrop-blur-sm">
+        <div className="flex items-center gap-1 px-2 py-1">
           <Tooltip>
             <TooltipTrigger render={editBtn} />
             <TooltipContent>Edit</TooltipContent>
