@@ -193,49 +193,48 @@ export default function StudentDetailPage() {
                 }
                 dateLabel={formatDate(request.submittedAt)}
               >
-                <Card className="shadow-sm border-border/80">
-                  <CardContent className="p-5 flex gap-4">
-                    <div className="h-10 w-10 rounded-full bg-info-light flex items-center justify-center shrink-0">
-                      <Receipt className="h-5 w-5 text-info" />
-                    </div>
-                    <div className="w-full">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-semibold text-foreground">
-                          Payment Request{" "}
-                          <StatusBadge status={request.status} />
-                        </h3>
+                <Link
+                  href={`/admin/requests/${request.id}`}
+                  className="block"
+                >
+                  <Card className="shadow-sm border-border/80 cursor-pointer hover:border-primary/40 transition-colors">
+                    <CardContent className="p-5 flex gap-4">
+                      <div className="h-10 w-10 rounded-full bg-info-light flex items-center justify-center shrink-0">
+                        <Receipt className="h-5 w-5 text-info" />
                       </div>
-                      <p className="text-muted-foreground text-sm mb-3">
-                        {request.semesterLabel} semester tuition fee
-                        requested.
-                      </p>
-                      <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-between border border-border/50">
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                            Amount
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {formatCurrency(request.amountDue)}
-                          </p>
+                      <div className="w-full">
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="font-semibold text-foreground">
+                            Payment Request{" "}
+                            <StatusBadge status={request.status} />
+                          </h3>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                            Semester
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {request.semesterLabel}
-                          </p>
+                        <p className="text-muted-foreground text-sm mb-3">
+                          {request.semesterLabel} semester tuition fee
+                          requested.
+                        </p>
+                        <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-between border border-border/50">
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                              Amount
+                            </p>
+                            <p className="font-medium text-foreground">
+                              {formatCurrency(request.amountDue)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                              Semester
+                            </p>
+                            <p className="font-medium text-foreground">
+                              {request.semesterLabel}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      <Link
-                        href={`/admin/requests/${request.id}`}
-                        className="mt-3 inline-block text-sm text-primary hover:underline"
-                      >
-                        View request →
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
               </TimelineEvent>
             ))}
 
