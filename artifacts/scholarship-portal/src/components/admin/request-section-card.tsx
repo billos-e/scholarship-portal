@@ -24,6 +24,7 @@ type RequestSectionCardProps = {
   title: string;
   titleHref?: string;
   description?: string;
+  badge?: number;
   icon: LucideIcon;
   tone?: Tone;
   children: React.ReactNode;
@@ -36,6 +37,7 @@ export function RequestSectionCard({
   title,
   titleHref,
   description,
+  badge,
   icon: Icon,
   tone = "primary",
   children,
@@ -61,7 +63,7 @@ export function RequestSectionCard({
             <Icon className="size-[18px]" />
           </div>
           <div className="min-w-0 flex-1 space-y-0.5">
-            <CardTitle className="font-heading text-base font-semibold">
+            <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
               {titleHref ? (
                 <Link
                   href={titleHref}
@@ -72,6 +74,16 @@ export function RequestSectionCard({
               ) : (
                 title
               )}
+              {typeof badge === "number" ? (
+                <span
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded-full text-[11px] font-bold",
+                    TONE_CLASS[tone],
+                  )}
+                >
+                  {badge}
+                </span>
+              ) : null}
             </CardTitle>
             {description ? (
               <CardDescription className="text-[13px] leading-relaxed">

@@ -180,8 +180,9 @@ export default function UniversityDetailPage() {
         description={
           programCount === 0
             ? "No degree programs configured yet."
-            : `${programCount} program${programCount === 1 ? "" : "s"} configured. Deactivated programs are hidden from student profiles. A program can only be deleted if no student is enrolled in it.`
+            : "Deactivated programs are hidden from student profiles. A program can only be deleted if no student is enrolled in it."
         }
+        badge={programCount}
         icon={GraduationCap}
         tone="accent"
         headerAction={
@@ -206,8 +207,9 @@ export default function UniversityDetailPage() {
         description={
           semesterCount === 0
             ? "No semesters configured yet."
-            : `${semesterCount} semester${semesterCount === 1 ? "" : "s"} on record. Deactivated semesters are hidden from new submissions. A semester can only be deleted if no payment request has been linked to it.`
+            : "Deactivated semesters are hidden from new submissions. A semester can only be deleted if no payment request has been linked to it."
         }
+        badge={semesterCount}
         icon={CalendarDays}
         tone="primary"
         headerAction={

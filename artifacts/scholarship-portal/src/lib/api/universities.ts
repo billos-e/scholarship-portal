@@ -32,7 +32,7 @@ export type UniversityListItem = {
   }[];
 };
 
-export type UniversityDetail = UniversityListItem & {
+export type UniversityDetail = Omit<UniversityListItem, "semesters"> & {
   students: {
     id: string;
     firstName: string;

@@ -3,12 +3,22 @@
 import React, { useEffect, useImperativeHandle, useState, useTransition } from "react";
 import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { TermCode } from "@prisma/client";
+import type { TermCode } from "@/shims/prisma-client";
 
 import {
   deleteUniversitySemester,
   toggleUniversitySemesterActive,
 } from "@/lib/actions/universities";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -24,7 +34,7 @@ type SemesterRow = {
   id: string;
   label: string;
   academicYear: string;
-  termCode: TermCode;
+  termCode: string;
   startDate: Date | string;
   endDate: Date | string;
   isActive: boolean;
@@ -154,6 +164,7 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
     const [pending, startTransition] = useTransition();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingSemester, setEditingSemester] = useState<SemesterEditValues | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<SemesterRow | null>(null);
 
     useEffect(() => {
       setItems(semesters);
@@ -206,10 +217,14 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
       });
     }
 
-    function confirmDelete(semester: SemesterRow) {
+    function confirmDelete() {
+      if (!deleteTarget) return;
+      const target = deleteTarget;
+      setDeleteTarget(null);
+
       startTransition(async () => {
         try {
-          await deleteUniversitySemester(semester.id, universityId);
+          await deleteUniversitySemester(target.id, universityId);
           toast.success("Semester deleted.");
           onSuccess?.();
         } catch (err) {
@@ -234,7 +249,7 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
                 semester={semester}
                 pending={pending}
                 onEdit={openEdit}
-                onDeleteRequest={confirmDelete}
+                onDeleteRequest={setDeleteTarget}
                 onToggleActive={toggleActive}
               />
             ))}
@@ -255,6 +270,34 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
           }}
           onSuccess={onSuccess}
         />
+
+        <AlertDialog
+          open={deleteTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete semester?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget
+                  ? `"${deleteTarget.label}" will be permanently removed. This cannot be undone.`
+                  : null}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={pending}
+                onClick={confirmDelete}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </>
     );
   },
