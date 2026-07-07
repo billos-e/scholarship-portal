@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -16,6 +16,8 @@ import {
   Landmark,
   CreditCard,
 } from "lucide-react";
+
+import Image from "next/image";
 
 import { StudentStatusBadge } from "@/components/student-status-badge";
 import { StatusBadge } from "@/components/status-badge";
@@ -34,6 +36,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { formatDate, formatCurrency } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import { uploadPublicUrl } from "@/lib/upload-path";
 import NotFound from "@/pages/not-found";
 import { ArchiveStudentButton } from "./archive-student-button";
 
@@ -43,12 +46,14 @@ export default function StudentDetailPage() {
   const [student, setStudent] = useState<StudentDetail | null | undefined>(
     undefined,
   );
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     fetchStudent(id)
       .then(setStudent)
       .catch(() => setStudent(null));
-  }, [id]);
+  }, [id, refreshKey]);
 
   if (student === undefined) {
     return (
@@ -81,7 +86,18 @@ export default function StudentDetailPage() {
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white shadow-md sm:size-24 bg-primary text-2xl font-medium text-primary-foreground">
-            {initials}
+            {student.photoUrl?.trim() ? (
+              <Image
+                src={uploadPublicUrl(student.photoUrl)}
+                alt={fullName}
+                fill
+                sizes="(max-width: 640px) 80px, 96px"
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              initials
+            )}
           </div>
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -115,7 +131,7 @@ export default function StudentDetailPage() {
             Edit Profile
           </Button>
           {student.status === "ACTIVE" ? (
-            <ArchiveStudentButton studentId={id} />
+            <ArchiveStudentButton studentId={id} onSuccess={refresh} />
           ) : null}
         </div>
       </header>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   BookOpen,
@@ -45,12 +45,14 @@ export default function AdminRequestDetailPage() {
   const [request, setRequest] = useState<RequestDetail | null | undefined>(
     undefined,
   );
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     fetchRequest(id)
       .then(setRequest)
       .catch(() => setRequest(null));
-  }, [id]);
+  }, [id, refreshKey]);
 
   if (request === undefined) {
     return (
@@ -90,6 +92,7 @@ export default function AdminRequestDetailPage() {
         requestId={request.id}
         amountDueRaw={request.amountDue.toString()}
         paidAt={request.paidAt}
+        onSuccess={refresh}
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -207,6 +210,7 @@ export default function AdminRequestDetailPage() {
             <AdminNotesComment
               requestId={request.id}
               value={request.adminNotes ?? ""}
+              onSuccess={refresh}
             />
           </div>
 
@@ -231,6 +235,7 @@ export default function AdminRequestDetailPage() {
                 <PaymentNotesForm
                   requestId={request.id}
                   value={payment.internalNotes ?? ""}
+                  onSuccess={refresh}
                 />
               </div>
             </RequestSectionCard>

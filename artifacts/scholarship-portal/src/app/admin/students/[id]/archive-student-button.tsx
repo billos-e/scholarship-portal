@@ -18,16 +18,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 
-export function ArchiveStudentButton({ studentId }: { studentId: string }) {
+export function ArchiveStudentButton({
+  studentId,
+  onSuccess,
+}: {
+  studentId: string;
+  onSuccess?: () => void;
+}) {
   const [state, formAction] = useActionState<ActionState, FormData>(
     archiveStudent,
     {},
   );
 
   useEffect(() => {
-    if (state.success) toast.success("Student archived.");
+    if (state.success) {
+      toast.success("Student archived.");
+      onSuccess?.();
+    }
     if (state.error) toast.error(state.error);
-  }, [state.success, state.error]);
+  }, [state]);
 
   return (
     <AlertDialog>

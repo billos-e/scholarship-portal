@@ -53,7 +53,7 @@ export function UniversityImageForm({
       pendingFileUrlRef.current = null;
     }
     if (state.error) toast.error(state.error);
-  }, [state.success, state.error]);
+  }, [state]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -102,9 +102,11 @@ export function UniversityImageForm({
 export function DeactivateUniversityButton({
   universityId,
   isActive,
+  onSuccess,
 }: {
   universityId: string;
   isActive: boolean;
+  onSuccess?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -119,6 +121,7 @@ export function DeactivateUniversityButton({
         startTransition(async () => {
           await deactivateUniversity(universityId);
           toast.success("University deactivated.");
+          onSuccess?.();
         })
       }
     >

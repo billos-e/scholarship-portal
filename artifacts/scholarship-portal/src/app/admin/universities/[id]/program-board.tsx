@@ -188,9 +188,11 @@ function ProgramColumn({
 export function ProgramBoard({
   programs,
   universityId,
+  onSuccess,
 }: {
   programs: ProgramRow[];
   universityId: string;
+  onSuccess?: () => void;
 }) {
   const [items, setItems] = useState(programs);
   const [pending, startTransition] = useTransition();
@@ -248,6 +250,7 @@ export function ProgramBoard({
         toast.success(
           targetActive ? "Program activated." : "Program deactivated.",
         );
+        onSuccess?.();
       } catch {
         setItems(previous);
         toast.error("Could not move program.");
@@ -271,6 +274,7 @@ export function ProgramBoard({
       try {
         await deleteUniversityDegreeProgram(target.id, universityId);
         toast.success("Program deleted.");
+        onSuccess?.();
       } catch (err) {
         toast.error(
           err instanceof Error ? err.message : "Could not delete program.",
@@ -339,6 +343,7 @@ export function ProgramBoard({
         program={editingProgram}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onSuccess={onSuccess}
       />
 
       <AlertDialog

@@ -168,6 +168,7 @@ type RequestStatusBarProps = {
   status: RequestStatus;
   amountDue: string;
   paidAt: Date | null;
+  onSuccess?: () => void;
 };
 
 export function RequestStatusBar({
@@ -175,6 +176,7 @@ export function RequestStatusBar({
   status,
   amountDue,
   paidAt,
+  onSuccess,
 }: RequestStatusBarProps) {
   const [state, formAction] = useActionState<RequestActionState, FormData>(
     transitionRequestStatus,
@@ -186,9 +188,10 @@ export function RequestStatusBar({
     if (state.success) {
       toast.success("Status updated.");
       setShowPaidForm(false);
+      onSuccess?.();
     }
     if (state.error) toast.error(state.error);
-  }, [state.success, state.error]);
+  }, [state]);
 
   function changeStatus(nextStatus: RequestStatus) {
     const fd = new FormData();

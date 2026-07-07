@@ -31,11 +31,13 @@ export function ProgramEditDialog({
   program,
   open,
   onOpenChange,
+  onSuccess,
 }: {
   universityId: string;
   program: ProgramEditValues | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }) {
   const isEdit = program !== null;
   const [error, setError] = useState<string>();
@@ -57,6 +59,7 @@ export function ProgramEditDialog({
       }
       toast.success(isEdit ? "Program updated." : "Program added.");
       onOpenChange(false);
+      onSuccess?.();
     });
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CalendarDays, GraduationCap, Pencil, Users } from "lucide-react";
@@ -28,13 +28,15 @@ export default function UniversityDetailPage() {
   requireAdmin();
   const { id } = useParams<{ id: string }>();
   const [university, setUniversity] = useState<UniversityDetail | null | undefined>(undefined);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     setUniversity(undefined);
     fetchUniversity(id)
       .then(setUniversity)
       .catch(() => setUniversity(null));
-  }, [id]);
+  }, [id, refreshKey]);
 
   if (university === undefined) {
     return (
@@ -87,6 +89,7 @@ export default function UniversityDetailPage() {
             <DeactivateUniversityButton
               universityId={university.id}
               isActive={university.isActive}
+              onSuccess={refresh}
             />
           </>
         }
@@ -154,6 +157,7 @@ export default function UniversityDetailPage() {
             canDelete: !assignedProgramNames.has(program.name.toLowerCase()),
           }))}
           universityId={university.id}
+          onSuccess={refresh}
         />
       </RequestSectionCard>
 
@@ -179,6 +183,7 @@ export default function UniversityDetailPage() {
             canDelete: semester._count.tuitionPaymentRequests === 0,
           }))}
           universityId={university.id}
+          onSuccess={refresh}
         />
       </RequestSectionCard>
 

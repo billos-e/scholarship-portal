@@ -26,12 +26,14 @@ type AdminNotesCommentProps = {
   requestId: string;
   value: string;
   className?: string;
+  onSuccess?: () => void;
 };
 
 export function AdminNotesComment({
   requestId,
   value,
   className,
+  onSuccess,
 }: AdminNotesCommentProps) {
   const [editing, setEditing] = useState(false);
   const [state, formAction] = useActionState<RequestActionState, FormData>(
@@ -43,9 +45,10 @@ export function AdminNotesComment({
     if (state.success) {
       toast.success("Notes saved.");
       setEditing(false);
+      onSuccess?.();
     }
     if (state.error) toast.error(state.error);
-  }, [state.success, state.error]);
+  }, [state]);
 
   const hasNotes = value.trim().length > 0;
 

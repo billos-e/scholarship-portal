@@ -233,7 +233,7 @@ router.put("/students/:id", async (req, res) => {
     if ("degreeProgram" in body) studentPatch.degreeProgram = (body.degreeProgram as string)?.trim() || null;
     if ("yearOfStudy" in body) studentPatch.yearOfStudy = (body.yearOfStudy as string)?.trim() || null;
     if ("currentSemesterLabel" in body) studentPatch.currentSemesterLabel = (body.currentSemesterLabel as string)?.trim() || null;
-    if ("gpa" in body) studentPatch.gpa = (body.gpa as string)?.trim() || null;
+    if ("gpa" in body) studentPatch.gpa = body.gpa != null ? String(body.gpa).trim() || null : null;
     if ("status" in body) {
       const validStatuses = ["ACTIVE", "GRADUATED", "INACTIVE"];
       if (!validStatuses.includes(body.status)) {

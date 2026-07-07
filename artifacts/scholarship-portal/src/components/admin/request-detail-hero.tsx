@@ -29,6 +29,7 @@ type RequestDetailHeroProps = {
   requestId: string;
   amountDueRaw: string;
   paidAt: Date | null;
+  onSuccess?: () => void;
 };
 
 export function RequestDetailHero({
@@ -45,6 +46,7 @@ export function RequestDetailHero({
   requestId,
   amountDueRaw,
   paidAt,
+  onSuccess,
 }: RequestDetailHeroProps) {
   const initials = getInitials(studentName);
 
@@ -140,6 +142,7 @@ export function RequestDetailHero({
               status={status}
               amountDue={amountDueRaw}
               paidAt={paidAt}
+              onSuccess={onSuccess}
             />
           </div>
         </div>

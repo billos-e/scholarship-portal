@@ -58,7 +58,7 @@ function profileToPayload(
     degreeProgram: rest.degreeProgram ?? null,
     yearOfStudy: rest.yearOfStudy ?? null,
     currentSemesterLabel: rest.currentSemesterLabel ?? null,
-    gpa: rest.gpa ?? null,
+    gpa: rest.gpa != null ? String(rest.gpa) : null,
     status: rest.status,
     universityId: universityId ?? null,
   };

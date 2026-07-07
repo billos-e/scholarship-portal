@@ -37,9 +37,11 @@ function PendingButton({
 export function PaymentNotesForm({
   requestId,
   value,
+  onSuccess,
 }: {
   requestId: string;
   value: string;
+  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState<RequestActionState, FormData>(
     updatePaymentInternalNotes,
@@ -47,9 +49,12 @@ export function PaymentNotesForm({
   );
 
   useEffect(() => {
-    if (state.success) toast.success("Payment notes saved.");
+    if (state.success) {
+      toast.success("Payment notes saved.");
+      onSuccess?.();
+    }
     if (state.error) toast.error(state.error);
-  }, [state.success, state.error]);
+  }, [state]);
 
   return (
     <form action={formAction} className="space-y-3 border-t border-border/50 pt-4">

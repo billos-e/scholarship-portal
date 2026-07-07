@@ -51,9 +51,11 @@ const SORT_ACCESSORS: Record<SortKey, (row: SemesterRow) => unknown> = {
 export function SemesterTable({
   semesters,
   universityId,
+  onSuccess,
 }: {
   semesters: SemesterRow[];
   universityId: string;
+  onSuccess?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -74,6 +76,7 @@ export function SemesterTable({
       try {
         await toggleUniversitySemesterActive(id, universityId, isActive);
         toast.success(isActive ? "Semester activated." : "Semester deactivated.");
+        onSuccess?.();
       } catch {
         toast.error("Could not update semester.");
       }
@@ -85,6 +88,7 @@ export function SemesterTable({
       try {
         await deleteUniversitySemester(id, universityId);
         toast.success("Semester deleted.");
+        onSuccess?.();
       } catch (err) {
         toast.error(
           err instanceof Error ? err.message : "Could not delete semester.",
@@ -225,6 +229,7 @@ export function SemesterTable({
           if (!open) closeDialog();
           else setDialogOpen(true);
         }}
+        onSuccess={onSuccess}
       />
     </>
   );

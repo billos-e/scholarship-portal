@@ -45,11 +45,13 @@ export function SemesterEditDialog({
   semester,
   open,
   onOpenChange,
+  onSuccess,
 }: {
   universityId: string;
   semester: SemesterEditValues | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }) {
   const isEdit = semester !== null;
   const [error, setError] = useState<string>();
@@ -69,6 +71,7 @@ export function SemesterEditDialog({
       }
       toast.success(isEdit ? "Semester updated." : "Semester added.");
       onOpenChange(false);
+      onSuccess?.();
     });
   }
 

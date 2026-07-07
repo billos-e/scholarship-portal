@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,6 +26,8 @@ export default function StudentProfileEditPage() {
       semestersByUniversity: {},
       programsByUniversity: {},
     });
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     Promise.all([
@@ -39,7 +41,7 @@ export default function StudentProfileEditPage() {
         setAcademicOptions(options);
       })
       .catch(() => setStudent(null));
-  }, [sessionStudent.id]);
+  }, [sessionStudent.id, refreshKey]);
 
   if (student === undefined) {
     return (
@@ -65,6 +67,7 @@ export default function StudentProfileEditPage() {
         profileHref="/student/profile"
         universities={universities}
         academicOptions={academicOptions}
+        onSuccess={refresh}
         student={{
           firstName: student.firstName,
           lastName: student.lastName,

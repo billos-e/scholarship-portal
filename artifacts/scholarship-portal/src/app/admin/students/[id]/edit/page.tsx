@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
 import {
-  fetchActiveUniversities,
-  type ActiveUniversity,
+  fetchUniversities,
+  type UniversityListItem,
 } from "@/lib/api/universities";
 import { fetchAcademicOptions } from "@/lib/api/academic";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
@@ -23,26 +23,28 @@ export default function StudentEditPage() {
   const [student, setStudent] = useState<StudentDetail | null | undefined>(
     undefined,
   );
-  const [universities, setUniversities] = useState<ActiveUniversity[]>([]);
+  const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [academicOptions, setAcademicOptions] =
     useState<StudentAcademicOptions>({
       semestersByUniversity: {},
       programsByUniversity: {},
     });
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     Promise.all([
       fetchStudent(id),
-      fetchActiveUniversities(),
+      fetchUniversities(),
       fetchAcademicOptions(),
     ])
       .then(([loadedStudent, loadedUniversities, options]) => {
         setStudent(loadedStudent);
-        setUniversities(loadedUniversities);
+        setUniversities(loadedUniversities.map((u) => ({ id: u.id, name: u.name })));
         setAcademicOptions(options);
       })
       .catch(() => setStudent(null));
-  }, [id]);
+  }, [id, refreshKey]);
 
   if (student === undefined) {
     return (
@@ -71,6 +73,7 @@ export default function StudentEditPage() {
         profileHref={`/admin/students/${id}`}
         universities={universities}
         academicOptions={academicOptions}
+        onSuccess={refresh}
         student={{
           id: student.id,
           userId: student.userId,

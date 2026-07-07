@@ -80,7 +80,7 @@ export async function updateOwnProfile(
     degreeProgram: profileFields.degreeProgram ?? null,
     yearOfStudy: profileFields.yearOfStudy ?? null,
     currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
-    gpa: profileFields.gpa ?? null,
+    gpa: profileFields.gpa != null ? String(profileFields.gpa) : null,
   };
 
   if (email !== user.email) {
@@ -147,7 +147,7 @@ export async function saveOwnProfileEdit(
     degreeProgram: profileFields.degreeProgram ?? null,
     yearOfStudy: profileFields.yearOfStudy ?? null,
     currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
-    gpa: profileFields.gpa ?? null,
+    gpa: profileFields.gpa != null ? String(profileFields.gpa) : null,
     ...bankParsed.data,
     ...(photoUrl ? { photoUrl } : {}),
   };
