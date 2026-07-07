@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { toast } from "sonner";
 import {
   Pencil,
   Receipt,
@@ -15,6 +16,8 @@ import {
   Building2,
   Landmark,
   CreditCard,
+  Copy,
+  Check,
 } from "lucide-react";
 
 import Image from "next/image";
@@ -40,6 +43,39 @@ import { uploadPublicUrl } from "@/lib/upload-path";
 import NotFound from "@/pages/not-found";
 import { ArchiveStudentButton } from "./archive-student-button";
 import { ActivateStudentButton } from "./activate-student-button";
+
+function CopyField({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success(`${label} copied.`);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(`Could not copy ${label.toLowerCase()}.`);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 group cursor-pointer"
+      aria-label={`Copy ${label.toLowerCase()}`}
+    >
+      <span className="font-mono font-medium text-foreground group-hover:text-primary transition-colors">
+        {value}
+      </span>
+      {copied ? (
+        <Check className="size-3.5 text-success shrink-0" />
+      ) : (
+        <Copy className="size-3.5 text-muted-foreground group-hover:text-foreground shrink-0 transition-colors" />
+      )}
+    </button>
+  );
+}
 
 export default function StudentDetailPage() {
   requireAdmin();
@@ -391,18 +427,14 @@ export default function StudentDetailPage() {
                         Account Number
                       </p>
                     </div>
-                    <p className="font-mono font-medium text-foreground">
-                      {bank.bankAccountNumber}
-                    </p>
+                    <CopyField value={bank.bankAccountNumber!} label="Account number" />
                   </div>
                   {bank.promptpayNumber ? (
                     <div className="bg-muted/30 p-3 rounded-md border border-border/50">
                       <p className="text-muted-foreground text-xs mb-1">
                         PromptPay
                       </p>
-                      <p className="font-mono font-medium text-foreground">
-                        {bank.promptpayNumber}
-                      </p>
+                      <CopyField value={bank.promptpayNumber} label="PromptPay" />
                     </div>
                   ) : null}
                 </>
