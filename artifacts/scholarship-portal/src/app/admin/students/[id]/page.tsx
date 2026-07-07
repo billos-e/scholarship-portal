@@ -299,7 +299,6 @@ export default function StudentDetailPage() {
         <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
           {/* Contact Info */}
           <Card className="shadow-sm border-border/80 overflow-hidden">
-            <div className="h-1 bg-foreground w-full" />
             <CardHeader className="pb-4">
               <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <User className="h-4 w-4" />
@@ -347,7 +346,6 @@ export default function StudentDetailPage() {
 
           {/* Banking Details */}
           <Card className="shadow-sm border-border/80 overflow-hidden">
-            <div className="h-1 bg-accent w-full" />
             <CardHeader className="pb-4">
               <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Landmark className="h-4 w-4" />
