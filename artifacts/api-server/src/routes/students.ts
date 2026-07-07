@@ -360,4 +360,35 @@ router.put("/students/:id/archive", async (req, res) => {
   }
 });
 
+router.patch("/students/:id/activate", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [existing] = await db
+      .select({ userId: students.userId })
+      .from(students)
+      .where(eq(students.id, id))
+      .limit(1);
+
+    if (!existing) {
+      res.status(404).json({ error: "Student not found." });
+      return;
+    }
+
+    await db
+      .update(students)
+      .set({ status: "ACTIVE", updatedAt: new Date() } as any)
+      .where(eq(students.id, id));
+
+    await db
+      .update(users)
+      .set({ isActive: true, updatedAt: new Date() } as any)
+      .where(eq(users.id, existing.userId));
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("PATCH /students/:id/activate error", err);
+    res.status(500).json({ error: "Failed to activate student." });
+  }
+});
+
 export default router;

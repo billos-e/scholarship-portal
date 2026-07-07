@@ -22,7 +22,7 @@ import { fetchUniversity, type UniversityDetail } from "@/lib/api/universities";
 import NotFound from "@/pages/not-found";
 import { SemesterTable } from "./semester-table";
 import { ProgramBoard } from "./program-board";
-import { DeactivateUniversityButton } from "./university-actions";
+import { UniversityStatusButton } from "./university-actions";
 
 export default function UniversityDetailPage() {
   requireAdmin();
@@ -86,7 +86,7 @@ export default function UniversityDetailPage() {
               <Pencil className="size-3.5" />
               Edit profile
             </Button>
-            <DeactivateUniversityButton
+            <UniversityStatusButton
               universityId={university.id}
               isActive={university.isActive}
               onSuccess={refresh}

@@ -99,7 +99,7 @@ export function UniversityImageForm({
   );
 }
 
-export function DeactivateUniversityButton({
+export function UniversityStatusButton({
   universityId,
   isActive,
   onSuccess,
@@ -110,22 +110,20 @@ export function DeactivateUniversityButton({
 }) {
   const [pending, startTransition] = useTransition();
 
-  if (!isActive) return null;
-
   return (
     <Button
-      variant="destructive"
+      variant={isActive ? "destructive" : "default"}
       size="sm"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          await deactivateUniversity(universityId);
-          toast.success("University deactivated.");
+          await toggleUniversityActive(universityId, !isActive);
+          toast.success(isActive ? "University deactivated." : "University activated.");
           onSuccess?.();
         })
       }
     >
-      Deactivate
+      {isActive ? "Deactivate" : "Activate"}
     </Button>
   );
 }

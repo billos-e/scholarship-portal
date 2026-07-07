@@ -264,6 +264,16 @@ export async function archiveStudent(
   return { success: true };
 }
 
+export async function activateStudent(id: string): Promise<ActionState> {
+  await requireAdmin();
+  if (!id) return { error: "Missing student id." };
+  const result = await apiFetch(`/students/${id}/activate`, "PATCH", {});
+  if (!result.ok) return { error: result.error };
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${id}`);
+  return { success: true };
+}
+
 export async function uploadStudentPhoto(
   _prev: ActionState,
   formData: FormData,

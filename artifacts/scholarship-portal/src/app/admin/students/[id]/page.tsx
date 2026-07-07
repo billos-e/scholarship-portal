@@ -39,6 +39,7 @@ import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import NotFound from "@/pages/not-found";
 import { ArchiveStudentButton } from "./archive-student-button";
+import { ActivateStudentButton } from "./activate-student-button";
 
 export default function StudentDetailPage() {
   requireAdmin();
@@ -132,7 +133,9 @@ export default function StudentDetailPage() {
           </Button>
           {student.status === "ACTIVE" ? (
             <ArchiveStudentButton studentId={id} onSuccess={refresh} />
-          ) : null}
+          ) : (
+            <ActivateStudentButton studentId={id} onSuccess={refresh} />
+          )}
         </div>
       </header>
 
