@@ -109,7 +109,16 @@ export default function StudentDetailPage() {
             </div>
             <p className="text-muted-foreground text-base sm:text-lg flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
-              {student.university?.name ?? "—"}
+              {student.university ? (
+                <Link
+                  href={`/admin/universities/${student.university.id}`}
+                  className="hover:text-foreground hover:underline transition-colors"
+                >
+                  {student.university.name}
+                </Link>
+              ) : (
+                "—"
+              )}
               {student.degreeProgram ? (
                 <>
                   <span aria-hidden className="text-border">
