@@ -67,31 +67,35 @@ function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
             aria-current={visual === "current" ? "step" : undefined}
           >
             <div className="flex w-full items-center">
-              <div
+              {index > 0 ? (
+                <div
                   className={cn(
                     "h-0.5 flex-1 transition-colors",
-                    index === 0
-                      ? connectorFilled(visual) || visual === "current"
-                        ? "bg-primary"
-                        : "bg-border"
-                      : prevVisual && connectorFilled(prevVisual)
-                        ? visual === "rejected"
-                          ? "bg-destructive/40"
-                          : "bg-primary"
-                        : "bg-border",
+                    prevVisual && connectorFilled(prevVisual)
+                      ? visual === "rejected"
+                        ? "bg-destructive/40"
+                        : "bg-primary"
+                      : "bg-border",
                   )}
                   aria-hidden
                 />
+              ) : (
+                <div className="h-0.5 flex-1 invisible" aria-hidden />
+              )}
 
               <StepCircle visual={visual} index={index} />
 
-              <div
+              {index < CLIENT_REQUEST_STATUSES.length - 1 ? (
+                <div
                   className={cn(
                     "h-0.5 flex-1 transition-colors",
                     connectorFilled(visual) ? "bg-primary" : "bg-border",
                   )}
                   aria-hidden
                 />
+              ) : (
+                <div className="h-0.5 flex-1 invisible" aria-hidden />
+              )}
             </div>
 
             <span
