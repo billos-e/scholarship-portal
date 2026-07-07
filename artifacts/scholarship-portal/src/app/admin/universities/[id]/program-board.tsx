@@ -113,12 +113,14 @@ function ProgramChip({
         pending && "pointer-events-none opacity-40",
       )}
     >
-      {/* Text — always visible */}
-      <span className="truncate px-4 py-1.5">{program.name}</span>
+      {/* Text — blurs on hover so icons sit on top */}
+      <span className="truncate px-4 py-1.5 transition-[filter] duration-200 group-hover/chip:blur-sm">
+        {program.name}
+      </span>
 
       {/* Icon overlay — centered on the chip */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/chip:opacity-100">
-        <div className="flex items-center gap-1 px-2 py-1">
+        <div className="flex items-center gap-1 px-2 py-1 bg-background">
           <Tooltip>
             <TooltipTrigger render={editBtn} />
             <TooltipContent>Edit</TooltipContent>
