@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useImperativeHandle, useState, useTransition } from "react";
-import { Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TermCode } from "@prisma/client";
 
@@ -9,18 +9,12 @@ import {
   deleteUniversitySemester,
   toggleUniversitySemesterActive,
 } from "@/lib/actions/universities";
-import { SortableTableHead } from "@/components/sortable-table-head";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useTableSort } from "@/hooks/use-table-sort";
-import { formatDate } from "@/lib/format";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import {
   SemesterEditDialog,
   type SemesterEditValues,
@@ -37,16 +31,112 @@ type SemesterRow = {
   canDelete: boolean;
 };
 
-type SortKey = "label" | "term" | "year" | "start" | "end" | "active";
+function SemesterChip({
+  semester,
+  pending,
+  onEdit,
+  onDeleteRequest,
+  onToggleActive,
+}: {
+  semester: SemesterRow;
+  pending: boolean;
+  onEdit: (semester: SemesterRow) => void;
+  onDeleteRequest: (semester: SemesterRow) => void;
+  onToggleActive: (semester: SemesterRow) => void;
+}) {
+  const editBtn = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onEdit(semester);
+      }}
+      className={cn(
+        "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+        "hover:bg-primary/10 hover:text-primary",
+      )}
+    >
+      <Pencil className="size-3" />
+    </button>
+  );
 
-const SORT_ACCESSORS: Record<SortKey, (row: SemesterRow) => unknown> = {
-  label: (row) => row.label,
-  term: (row) => row.termCode,
-  year: (row) => row.academicYear,
-  start: (row) => row.startDate,
-  end: (row) => row.endDate,
-  active: (row) => row.isActive,
-};
+  const deleteBtn = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onDeleteRequest(semester);
+      }}
+      className={cn(
+        "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+        "hover:bg-destructive/10 hover:text-destructive",
+      )}
+    >
+      <Trash2 className="size-3" />
+    </button>
+  );
+
+  const toggleBtn = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleActive(semester);
+      }}
+      className={cn(
+        "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+        semester.isActive
+          ? "hover:bg-amber-500/10 hover:text-amber-600"
+          : "hover:bg-emerald-500/10 hover:text-emerald-600",
+      )}
+    >
+      {semester.isActive ? (
+        <EyeOff className="size-3" />
+      ) : (
+        <Eye className="size-3" />
+      )}
+    </button>
+  );
+
+  return (
+    <div
+      className={cn(
+        "group/chip relative inline-flex items-center justify-center rounded-full border border-border/80 bg-background text-sm font-medium shadow-sm transition-all",
+        "hover:border-primary/35 hover:bg-primary/[0.03] hover:shadow-md",
+        !semester.isActive && "opacity-50 blur-[0.5px] hover:opacity-100 hover:blur-none",
+        pending && "pointer-events-none opacity-40",
+        "min-w-[8rem]",
+      )}
+    >
+      <span className="truncate px-4 py-1.5 transition-[filter] duration-200 group-hover/chip:blur-sm">
+        {semester.label}
+      </span>
+
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/chip:opacity-100">
+        <div className="flex items-center gap-1 px-2 py-1">
+          <Tooltip>
+            <TooltipTrigger render={editBtn} />
+            <TooltipContent>Edit</TooltipContent>
+          </Tooltip>
+
+          {semester.canDelete ? (
+            <Tooltip>
+              <TooltipTrigger render={deleteBtn} />
+              <TooltipContent>Delete</TooltipContent>
+            </Tooltip>
+          ) : null}
+
+          <Tooltip>
+            <TooltipTrigger render={toggleBtn} />
+            <TooltipContent>
+              {semester.isActive ? "Deactivate" : "Activate"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export interface SemesterTableHandle {
   openCreate: () => void;
@@ -60,17 +150,19 @@ interface SemesterTableProps {
 
 export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTableProps>(
   function SemesterTable({ semesters, universityId, onSuccess }, ref) {
+    const [items, setItems] = useState(semesters);
     const [pending, startTransition] = useTransition();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingSemester, setEditingSemester] = useState<SemesterEditValues | null>(null);
-    const { sortedItems, sortKey, sortDirection, onSort } = useTableSort<
-      SemesterRow,
-      SortKey
-    >(
-      semesters,
-      SORT_ACCESSORS,
-      { key: "start", direction: "desc" },
-    );
+
+    useEffect(() => {
+      setItems(semesters);
+    }, [semesters]);
+
+    const sorted = [...items].sort((a, b) => {
+      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    });
 
     useImperativeHandle(ref, () => ({
       openCreate: () => {
@@ -78,32 +170,6 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
         setDialogOpen(true);
       },
     }));
-
-    function handleToggle(id: string, isActive: boolean) {
-      startTransition(async () => {
-        try {
-          await toggleUniversitySemesterActive(id, universityId, isActive);
-          toast.success(isActive ? "Semester activated." : "Semester deactivated.");
-          onSuccess?.();
-        } catch {
-          toast.error("Could not update semester.");
-        }
-      });
-    }
-
-    function handleDelete(id: string) {
-      startTransition(async () => {
-        try {
-          await deleteUniversitySemester(id, universityId);
-          toast.success("Semester deleted.");
-          onSuccess?.();
-        } catch (err) {
-          toast.error(
-            err instanceof Error ? err.message : "Could not delete semester.",
-          );
-        }
-      });
-    }
 
     function openEdit(semester: SemesterRow) {
       setEditingSemester({
@@ -118,105 +184,61 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
       setDialogOpen(true);
     }
 
-    function closeDialog() {
-      setDialogOpen(false);
-      setEditingSemester(null);
+    function toggleActive(semester: SemesterRow) {
+      const targetActive = !semester.isActive;
+      const previous = items;
+
+      setItems((current) =>
+        current.map((item) =>
+          item.id === semester.id ? { ...item, isActive: targetActive } : item,
+        ),
+      );
+
+      startTransition(async () => {
+        try {
+          await toggleUniversitySemesterActive(semester.id, universityId, targetActive);
+          toast.success(targetActive ? "Semester activated." : "Semester deactivated.");
+          onSuccess?.();
+        } catch {
+          setItems(previous);
+          toast.error("Could not update semester.");
+        }
+      });
+    }
+
+    function confirmDelete(semester: SemesterRow) {
+      startTransition(async () => {
+        try {
+          await deleteUniversitySemester(semester.id, universityId);
+          toast.success("Semester deleted.");
+          onSuccess?.();
+        } catch (err) {
+          toast.error(
+            err instanceof Error ? err.message : "Could not delete semester.",
+          );
+        }
+      });
     }
 
     return (
       <>
-        {semesters.length === 0 ? (
+        {items.length === 0 ? (
           <p className="text-sm leading-relaxed text-muted-foreground">
             No semesters configured yet. Add semesters so students can submit requests.
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableTableHead
-                  label="Label"
-                  sortKey="label"
-                  activeKey={sortKey}
-                  direction={sortDirection}
-                  onSort={onSort}
-                />
-                <SortableTableHead
-                  label="Term"
-                  sortKey="term"
-                  activeKey={sortKey}
-                  direction={sortDirection}
-                  onSort={onSort}
-                />
-                <SortableTableHead
-                  label="Academic year"
-                  sortKey="year"
-                  activeKey={sortKey}
-                  direction={sortDirection}
-                  onSort={onSort}
-                />
-                <SortableTableHead
-                  label="Start"
-                  sortKey="start"
-                  activeKey={sortKey}
-                  direction={sortDirection}
-                  onSort={onSort}
-                />
-                <SortableTableHead
-                  label="End"
-                  sortKey="end"
-                  activeKey={sortKey}
-                  direction={sortDirection}
-                  onSort={onSort}
-                />
-                <SortableTableHead
-                  label="Active"
-                  sortKey="active"
-                  activeKey={sortKey}
-                  direction={sortDirection}
-                  onSort={onSort}
-                />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedItems.map((semester) => (
-                <TableRow
-                  key={semester.id}
-                  className="group cursor-pointer transition-colors hover:bg-muted/40"
-                  onClick={() => openEdit(semester)}
-                >
-                  <TableCell className="font-medium">{semester.label}</TableCell>
-                  <TableCell>{semester.termCode}</TableCell>
-                  <TableCell>{semester.academicYear}</TableCell>
-                  <TableCell>{formatDate(semester.startDate)}</TableCell>
-                  <TableCell>{formatDate(semester.endDate)}</TableCell>
-                  <TableCell onClick={(event) => event.stopPropagation()}>
-                    <div className="flex items-center justify-between gap-2">
-                      <Switch
-                        checked={semester.isActive}
-                        disabled={pending}
-                        onCheckedChange={(checked) =>
-                          handleToggle(semester.id, checked)
-                        }
-                      />
-                      {semester.canDelete ? (
-                        <Button
-                          type="button"
-                          size="icon-sm"
-                          variant="ghost"
-                          disabled={pending}
-                          aria-label={`Delete ${semester.label}`}
-                          className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                          onClick={() => handleDelete(semester.id)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="flex flex-wrap gap-2">
+            {sorted.map((semester) => (
+              <SemesterChip
+                key={semester.id}
+                semester={semester}
+                pending={pending}
+                onEdit={openEdit}
+                onDeleteRequest={confirmDelete}
+                onToggleActive={toggleActive}
+              />
+            ))}
+          </div>
         )}
 
         <SemesterEditDialog
@@ -224,8 +246,12 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
           semester={editingSemester}
           open={dialogOpen}
           onOpenChange={(open) => {
-            if (!open) closeDialog();
-            else setDialogOpen(true);
+            if (!open) {
+              setDialogOpen(false);
+              setEditingSemester(null);
+            } else {
+              setDialogOpen(true);
+            }
           }}
           onSuccess={onSuccess}
         />
