@@ -19,6 +19,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   ProgramEditDialog,
@@ -45,62 +50,95 @@ function ProgramChip({
   onDeleteRequest: (program: ProgramRow) => void;
   onToggleActive: (program: ProgramRow) => void;
 }) {
+  const editBtn = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onEdit(program);
+      }}
+      className={cn(
+        "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+        "hover:bg-primary/10 hover:text-primary",
+      )}
+    >
+      <Pencil className="size-3" />
+    </button>
+  );
+
+  const deleteBtn = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onDeleteRequest(program);
+      }}
+      className={cn(
+        "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+        "hover:bg-destructive/10 hover:text-destructive",
+      )}
+    >
+      <Trash2 className="size-3" />
+    </button>
+  );
+
+  const toggleBtn = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleActive(program);
+      }}
+      className={cn(
+        "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+        program.isActive
+          ? "hover:bg-amber-500/10 hover:text-amber-600"
+          : "hover:bg-emerald-500/10 hover:text-emerald-600",
+      )}
+    >
+      {program.isActive ? (
+        <EyeOff className="size-3" />
+      ) : (
+        <Eye className="size-3" />
+      )}
+    </button>
+  );
+
   return (
     <div
       className={cn(
-        "group relative inline-flex items-center gap-2 rounded-full border border-border/80 bg-background pl-4 pr-3 py-1.5 text-sm font-medium shadow-sm transition-all",
+        "group/chip relative inline-flex items-center justify-center rounded-full border border-border/80 bg-background text-sm font-medium shadow-sm transition-all",
         "hover:border-primary/35 hover:bg-primary/[0.03] hover:shadow-md",
         !program.isActive && "opacity-50 blur-[0.5px] hover:opacity-100 hover:blur-none",
         pending && "pointer-events-none opacity-40",
       )}
     >
-      <span className="truncate">{program.name}</span>
+      {/* Text — always visible */}
+      <span className="truncate px-4 py-1.5">{program.name}</span>
 
-      <span className="ml-1 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          aria-label={`Edit ${program.name}`}
-          onClick={(e) => { e.stopPropagation(); onEdit(program); }}
-          className={cn(
-            "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
-            "hover:bg-primary/10 hover:text-primary",
-          )}
-        >
-          <Pencil className="size-3" />
-        </button>
+      {/* Icon overlay — centered on the chip */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/chip:opacity-100">
+        <div className="flex items-center gap-1 rounded-full bg-background/95 px-2 py-1 shadow-sm border border-border/50 backdrop-blur-sm">
+          <Tooltip>
+            <TooltipTrigger render={editBtn} />
+            <TooltipContent>Edit</TooltipContent>
+          </Tooltip>
 
-        {program.canDelete ? (
-          <button
-            type="button"
-            aria-label={`Delete ${program.name}`}
-            onClick={(e) => { e.stopPropagation(); onDeleteRequest(program); }}
-            className={cn(
-              "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
-              "hover:bg-destructive/10 hover:text-destructive",
-            )}
-          >
-            <Trash2 className="size-3" />
-          </button>
-        ) : null}
+          {program.canDelete ? (
+            <Tooltip>
+              <TooltipTrigger render={deleteBtn} />
+              <TooltipContent>Delete</TooltipContent>
+            </Tooltip>
+          ) : null}
 
-        <button
-          type="button"
-          aria-label={program.isActive ? `Deactivate ${program.name}` : `Activate ${program.name}`}
-          onClick={(e) => { e.stopPropagation(); onToggleActive(program); }}
-          className={cn(
-            "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
-            program.isActive
-              ? "hover:bg-amber-500/10 hover:text-amber-600"
-              : "hover:bg-emerald-500/10 hover:text-emerald-600",
-          )}
-        >
-          {program.isActive ? (
-            <EyeOff className="size-3" />
-          ) : (
-            <Eye className="size-3" />
-          )}
-        </button>
-      </span>
+          <Tooltip>
+            <TooltipTrigger render={toggleBtn} />
+            <TooltipContent>
+              {program.isActive ? "Deactivate" : "Activate"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
     </div>
   );
 }
