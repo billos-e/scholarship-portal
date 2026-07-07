@@ -32,7 +32,7 @@ export function StatusStepper({
   if (variant === "dots") {
     return (
       <ol
-        className={cn("flex w-full max-w-lg items-start gap-1 sm:gap-2", className)}
+        className={cn("flex w-full max-w-lg items-start", className)}
         aria-label="Request status progress"
       >
         {STEPS.map((step, index) => {
@@ -46,18 +46,16 @@ export function StatusStepper({
               aria-current={active ? "step" : undefined}
             >
               <div className="flex w-full items-center">
-                {index > 0 ? (
-                  <div
-                    className={cn(
-                      "h-0.5 flex-1",
-                      !rejected && (done || active) ? "bg-primary" : "bg-border",
-                      rejected && "bg-border opacity-40",
-                    )}
-                    aria-hidden
-                  />
-                ) : (
-                  <div className="h-0.5 flex-1 invisible" aria-hidden />
-                )}
+                <div
+                  className={cn(
+                    "h-0.5 flex-1",
+                    index === 0 && "bg-border",
+                    index > 0 && !rejected && (done || active) && "bg-primary",
+                    index > 0 && (!(!rejected && (done || active))) && "bg-border",
+                    rejected && "bg-border opacity-40",
+                  )}
+                  aria-hidden
+                />
                 <div
                   className={cn(
                     "flex size-6 shrink-0 items-center justify-center rounded-full leading-none transition-colors sm:size-7",
@@ -69,18 +67,16 @@ export function StatusStepper({
                 >
                   {done && !rejected ? <Check className="size-3 sm:size-3.5" /> : null}
                 </div>
-                {index < STEPS.length - 1 ? (
-                  <div
-                    className={cn(
-                      "h-0.5 flex-1",
-                      !rejected && done ? "bg-primary" : "bg-border",
-                      rejected && "bg-border opacity-40",
-                    )}
-                    aria-hidden
-                  />
-                ) : (
-                  <div className="h-0.5 flex-1 invisible" aria-hidden />
-                )}
+                <div
+                  className={cn(
+                    "h-0.5 flex-1",
+                    index === STEPS.length - 1 && "bg-border",
+                    index < STEPS.length - 1 && !rejected && done && "bg-primary",
+                    index < STEPS.length - 1 && !(!rejected && done) && "bg-border",
+                    rejected && "bg-border opacity-40",
+                  )}
+                  aria-hidden
+                />
               </div>
               <span
                 className={cn(
