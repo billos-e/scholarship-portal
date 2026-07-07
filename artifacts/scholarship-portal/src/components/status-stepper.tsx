@@ -114,7 +114,9 @@ export function StatusStepper({
                     )}
                     aria-hidden
                   />
-                ) : null}
+                ) : (
+                  <div className="h-0.5 flex-1 invisible" aria-hidden />
+                )}
                 <div
                   className={cn(
                     "flex shrink-0 items-center justify-center rounded-full border-2 font-medium leading-none transition-colors",
@@ -140,7 +142,9 @@ export function StatusStepper({
                     )}
                     aria-hidden
                   />
-                ) : null}
+                ) : (
+                  <div className="h-0.5 flex-1 invisible" aria-hidden />
+                )}
               </div>
               <span
                 className={cn(

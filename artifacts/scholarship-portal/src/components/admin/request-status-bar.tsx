@@ -79,7 +79,9 @@ function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
                   )}
                   aria-hidden
                 />
-              ) : null}
+              ) : (
+                <div className="h-0.5 flex-1 invisible" aria-hidden />
+              )}
 
               <StepCircle visual={visual} index={index} />
 
@@ -91,7 +93,9 @@ function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
                   )}
                   aria-hidden
                 />
-              ) : null}
+              ) : (
+                <div className="h-0.5 flex-1 invisible" aria-hidden />
+              )}
             </div>
 
             <span
