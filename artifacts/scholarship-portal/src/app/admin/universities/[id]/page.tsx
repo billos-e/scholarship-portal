@@ -232,6 +232,7 @@ export default function UniversityDetailPage() {
             canDelete: semester._count.tuitionPaymentRequests === 0,
           }))}
           universityId={university.id}
+          hasSummerSemester={university.hasSummerSemester}
           onSuccess={refresh}
         />
       </RequestSectionCard>

@@ -155,11 +155,12 @@ export interface SemesterTableHandle {
 interface SemesterTableProps {
   semesters: SemesterRow[];
   universityId: string;
+  hasSummerSemester?: boolean;
   onSuccess?: () => void;
 }
 
 export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTableProps>(
-  function SemesterTable({ semesters, universityId, onSuccess }, ref) {
+  function SemesterTable({ semesters, universityId, hasSummerSemester, onSuccess }, ref) {
     const [items, setItems] = useState(semesters);
     const [pending, startTransition] = useTransition();
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -187,7 +188,7 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
         id: semester.id,
         label: semester.label,
         academicYear: semester.academicYear,
-        termCode: semester.termCode,
+        termCode: semester.termCode as TermCode,
         startDate: semester.startDate,
         endDate: semester.endDate,
         isActive: semester.isActive,
@@ -259,6 +260,7 @@ export const SemesterTable = React.forwardRef<SemesterTableHandle, SemesterTable
         <SemesterEditDialog
           universityId={universityId}
           semester={editingSemester}
+          hasSummerSemester={hasSummerSemester}
           open={dialogOpen}
           onOpenChange={(open) => {
             if (!open) {

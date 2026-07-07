@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { TermCode } from "@prisma/client";
+import type { TermCode } from "@/shims/prisma-client";
 
 import {
   createUniversitySemester,
@@ -43,12 +43,14 @@ function toDateInputValue(value: Date | string): string {
 export function SemesterEditDialog({
   universityId,
   semester,
+  hasSummerSemester,
   open,
   onOpenChange,
   onSuccess,
 }: {
   universityId: string;
   semester: SemesterEditValues | null;
+  hasSummerSemester?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
@@ -115,7 +117,9 @@ export function SemesterEditDialog({
               >
                 <option value="FALL">Fall</option>
                 <option value="SPRING">Spring</option>
-                <option value="SUMMER">Summer</option>
+                {hasSummerSemester || semester?.termCode === "SUMMER" ? (
+                  <option value="SUMMER">Summer</option>
+                ) : null}
                 <option value="WINTER">Winter</option>
               </NativeSelect>
             </div>
