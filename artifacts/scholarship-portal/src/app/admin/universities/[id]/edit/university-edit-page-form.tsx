@@ -72,10 +72,7 @@ export function UniversityEditPageForm({
       toast.success("University updated.");
       router.push(profileHref);
     }
-    if (state.error) {
-      toast.error(state.error);
-    }
-  }, [state]);
+  }, [state.success]);
 
   return (
     <div className="space-y-6">
@@ -266,6 +263,10 @@ export function UniversityEditPageForm({
             </div>
           </div>
         </ProfileInfoCard>
+
+        {state.error ? (
+          <p className="text-sm font-medium text-destructive">{state.error}</p>
+        ) : null}
 
         <div className="flex justify-end pt-2 pb-6">
           <SubmitButton />
