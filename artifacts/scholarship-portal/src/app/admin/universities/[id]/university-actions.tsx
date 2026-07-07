@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import {
   deactivateUniversity,
+  toggleUniversityActive,
   uploadUniversityImage,
   type ActionState,
 } from "@/lib/actions/universities";

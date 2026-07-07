@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Plus, X } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -32,156 +32,76 @@ export type ProgramRow = {
   canDelete: boolean;
 };
 
-type ColumnId = "active" | "inactive";
-
-function ProgramTile({
+function ProgramChip({
   program,
   pending,
   onEdit,
   onDeleteRequest,
-  onDragStart,
-  onDragEnd,
+  onToggleActive,
 }: {
   program: ProgramRow;
   pending: boolean;
   onEdit: (program: ProgramRow) => void;
   onDeleteRequest: (program: ProgramRow) => void;
-  onDragStart: (programId: string) => void;
-  onDragEnd: () => void;
+  onToggleActive: (program: ProgramRow) => void;
 }) {
   return (
     <div
-      draggable={!pending}
-      onDragStart={(event) => {
-        onDragStart(program.id);
-        event.dataTransfer.setData("text/plain", program.id);
-        event.dataTransfer.effectAllowed = "move";
-      }}
-      onDragEnd={onDragEnd}
-      onClick={() => onEdit(program)}
       className={cn(
-        "group relative inline-flex max-w-full cursor-grab items-center rounded-full border border-border/80 bg-background px-4 py-2 pr-8 text-sm font-medium shadow-sm transition-all",
+        "group relative inline-flex items-center gap-2 rounded-full border border-border/80 bg-background pl-4 pr-3 py-1.5 text-sm font-medium shadow-sm transition-all",
         "hover:border-primary/35 hover:bg-primary/[0.03] hover:shadow-md",
-        "active:cursor-grabbing",
-        pending && "pointer-events-none opacity-60",
+        !program.isActive && "opacity-50 blur-[0.5px] hover:opacity-100 hover:blur-none",
+        pending && "pointer-events-none opacity-40",
       )}
     >
       <span className="truncate">{program.name}</span>
-      {program.canDelete ? (
+
+      <span className="ml-1 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           type="button"
-          aria-label={`Delete ${program.name}`}
+          aria-label={`Edit ${program.name}`}
+          onClick={(e) => { e.stopPropagation(); onEdit(program); }}
           className={cn(
-            "absolute top-1 right-1 flex size-5 items-center justify-center rounded-full",
-            "bg-muted/90 text-muted-foreground opacity-0 transition-opacity",
-            "hover:bg-destructive/10 hover:text-destructive",
-            "group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",
+            "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+            "hover:bg-primary/10 hover:text-primary",
           )}
-          onClick={(event) => {
-            event.stopPropagation();
-            onDeleteRequest(program);
-          }}
         >
-          <X className="size-3" />
+          <Pencil className="size-3" />
         </button>
-      ) : null}
-    </div>
-  );
-}
 
-function ProgramColumn({
-  columnId,
-  title,
-  description,
-  programs,
-  pending,
-  dragOver,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onEdit,
-  onDeleteRequest,
-  onDragStart,
-  onDragEnd,
-}: {
-  columnId: ColumnId;
-  title: string;
-  description: string;
-  programs: ProgramRow[];
-  pending: boolean;
-  dragOver: boolean;
-  onDragOver: (columnId: ColumnId) => void;
-  onDragLeave: () => void;
-  onDrop: (columnId: ColumnId) => void;
-  onEdit: (program: ProgramRow) => void;
-  onDeleteRequest: (program: ProgramRow) => void;
-  onDragStart: (programId: string) => void;
-  onDragEnd: () => void;
-}) {
-  const isActive = columnId === "active";
+        {program.canDelete ? (
+          <button
+            type="button"
+            aria-label={`Delete ${program.name}`}
+            onClick={(e) => { e.stopPropagation(); onDeleteRequest(program); }}
+            className={cn(
+              "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+              "hover:bg-destructive/10 hover:text-destructive",
+            )}
+          >
+            <Trash2 className="size-3" />
+          </button>
+        ) : null}
 
-  return (
-    <section
-      onDragOver={(event) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = "move";
-        onDragOver(columnId);
-      }}
-      onDragLeave={onDragLeave}
-      onDrop={(event) => {
-        event.preventDefault();
-        onDrop(columnId);
-      }}
-      className={cn(
-        "flex min-h-56 flex-col rounded-2xl border border-dashed p-4 transition-colors",
-        isActive
-          ? "border-primary/25 bg-primary/[0.03]"
-          : "border-border/70 bg-muted/20",
-        dragOver &&
-          (isActive
-            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-            : "border-muted-foreground/40 bg-muted/35 ring-2 ring-muted-foreground/15"),
-      )}
-    >
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">{title}</h3>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-        <span
+        <button
+          type="button"
+          aria-label={program.isActive ? `Deactivate ${program.name}` : `Activate ${program.name}`}
+          onClick={(e) => { e.stopPropagation(); onToggleActive(program); }}
           className={cn(
-            "inline-flex min-w-7 items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold",
-            isActive
-              ? "bg-primary/15 text-primary"
-              : "bg-muted text-muted-foreground",
+            "flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+            program.isActive
+              ? "hover:bg-amber-500/10 hover:text-amber-600"
+              : "hover:bg-emerald-500/10 hover:text-emerald-600",
           )}
         >
-          {programs.length}
-        </span>
-      </header>
-
-      <div className="flex flex-1 flex-wrap content-start gap-2">
-        {programs.length === 0 ? (
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {isActive
-              ? "Drag programs here to make them available to students."
-              : "Drag programs here to hide them from student selection."}
-          </p>
-        ) : (
-          programs.map((program) => (
-            <ProgramTile
-              key={program.id}
-              program={program}
-              pending={pending}
-              onEdit={onEdit}
-              onDeleteRequest={onDeleteRequest}
-              onDragStart={onDragStart}
-              onDragEnd={onDragEnd}
-            />
-          ))
-        )}
-      </div>
-    </section>
+          {program.isActive ? (
+            <EyeOff className="size-3" />
+          ) : (
+            <Eye className="size-3" />
+          )}
+        </button>
+      </span>
+    </div>
   );
 }
 
@@ -196,24 +116,18 @@ export function ProgramBoard({
 }) {
   const [items, setItems] = useState(programs);
   const [pending, startTransition] = useTransition();
-  const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null);
-  const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingProgram, setEditingProgram] = useState<ProgramEditValues | null>(
-    null,
-  );
+  const [editingProgram, setEditingProgram] = useState<ProgramEditValues | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProgramRow | null>(null);
 
   useEffect(() => {
     setItems(programs);
   }, [programs]);
 
-  const activePrograms = items
-    .filter((program) => program.isActive)
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const inactivePrograms = items
-    .filter((program) => !program.isActive)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = [...items].sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
 
   function openCreate() {
     setEditingProgram(null);
@@ -221,48 +135,30 @@ export function ProgramBoard({
   }
 
   function openEdit(program: ProgramRow) {
-    setEditingProgram({
-      id: program.id,
-      name: program.name,
-      isActive: program.isActive,
-    });
+    setEditingProgram({ id: program.id, name: program.name, isActive: program.isActive });
     setDialogOpen(true);
   }
 
-  function moveProgram(programId: string, targetActive: boolean) {
-    const program = items.find((item) => item.id === programId);
-    if (!program || program.isActive === targetActive) return;
-
+  function toggleActive(program: ProgramRow) {
+    const targetActive = !program.isActive;
     const previous = items;
+
     setItems((current) =>
       current.map((item) =>
-        item.id === programId ? { ...item, isActive: targetActive } : item,
+        item.id === program.id ? { ...item, isActive: targetActive } : item,
       ),
     );
 
     startTransition(async () => {
       try {
-        await toggleUniversityDegreeProgramActive(
-          programId,
-          universityId,
-          targetActive,
-        );
-        toast.success(
-          targetActive ? "Program activated." : "Program deactivated.",
-        );
+        await toggleUniversityDegreeProgramActive(program.id, universityId, targetActive);
+        toast.success(targetActive ? "Program activated." : "Program deactivated.");
         onSuccess?.();
       } catch {
         setItems(previous);
-        toast.error("Could not move program.");
+        toast.error("Could not update program.");
       }
     });
-  }
-
-  function handleColumnDrop(targetColumn: ColumnId) {
-    setDragOverColumn(null);
-    if (!draggedId) return;
-    moveProgram(draggedId, targetColumn === "active");
-    setDraggedId(null);
   }
 
   function confirmDelete() {
@@ -276,9 +172,7 @@ export function ProgramBoard({
         toast.success("Program deleted.");
         onSuccess?.();
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Could not delete program.",
-        );
+        toast.error(err instanceof Error ? err.message : "Could not delete program.");
       }
     });
   }
@@ -298,43 +192,17 @@ export function ProgramBoard({
           them on their profile.
         </p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          <ProgramColumn
-            columnId="active"
-            title="Active"
-            description="Visible to students on their profile."
-            programs={activePrograms}
-            pending={pending}
-            dragOver={dragOverColumn === "active"}
-            onDragOver={setDragOverColumn}
-            onDragLeave={() => setDragOverColumn(null)}
-            onDrop={handleColumnDrop}
-            onEdit={openEdit}
-            onDeleteRequest={setDeleteTarget}
-            onDragStart={setDraggedId}
-            onDragEnd={() => {
-              setDraggedId(null);
-              setDragOverColumn(null);
-            }}
-          />
-          <ProgramColumn
-            columnId="inactive"
-            title="Inactive"
-            description="Hidden from student selection."
-            programs={inactivePrograms}
-            pending={pending}
-            dragOver={dragOverColumn === "inactive"}
-            onDragOver={setDragOverColumn}
-            onDragLeave={() => setDragOverColumn(null)}
-            onDrop={handleColumnDrop}
-            onEdit={openEdit}
-            onDeleteRequest={setDeleteTarget}
-            onDragStart={setDraggedId}
-            onDragEnd={() => {
-              setDraggedId(null);
-              setDragOverColumn(null);
-            }}
-          />
+        <div className="flex flex-wrap gap-2">
+          {sorted.map((program) => (
+            <ProgramChip
+              key={program.id}
+              program={program}
+              pending={pending}
+              onEdit={openEdit}
+              onDeleteRequest={setDeleteTarget}
+              onToggleActive={toggleActive}
+            />
+          ))}
         </div>
       )}
 
@@ -357,7 +225,7 @@ export function ProgramBoard({
             <AlertDialogTitle>Delete program?</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget
-                ? `“${deleteTarget.name}” will be permanently removed. This cannot be undone.`
+                ? `"${deleteTarget.name}" will be permanently removed. This cannot be undone.`
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
