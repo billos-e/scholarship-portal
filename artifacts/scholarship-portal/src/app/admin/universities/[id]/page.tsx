@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { CalendarDays, GraduationCap, Pencil, Users } from "lucide-react";
+import { CalendarDays, GraduationCap, Pencil, Plus, Users } from "lucide-react";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
 import {
@@ -21,8 +21,25 @@ import { formatDate } from "@/lib/format";
 import { fetchUniversity, type UniversityDetail } from "@/lib/api/universities";
 import NotFound from "@/pages/not-found";
 import { SemesterTable } from "./semester-table";
-import { ProgramBoard } from "./program-board";
+import { ProgramBoard, type ProgramBoardHandle } from "./program-board";
 import { UniversityStatusButton } from "./university-actions";
+
+function ProgramBoardButton({
+  boardRef,
+}: {
+  boardRef: React.RefObject<ProgramBoardHandle | null>;
+}) {
+  return (
+    <Button
+      type="button"
+      size="sm"
+      onClick={() => boardRef.current?.openCreate()}
+    >
+      <Plus className="size-3.5" />
+      Add program
+    </Button>
+  );
+}
 
 export default function UniversityDetailPage() {
   requireAdmin();
@@ -30,6 +47,7 @@ export default function UniversityDetailPage() {
   const [university, setUniversity] = useState<UniversityDetail | null | undefined>(undefined);
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const programBoardRef = useRef<ProgramBoardHandle | null>(null);
 
   useEffect(() => {
     setUniversity(undefined);
@@ -144,12 +162,16 @@ export default function UniversityDetailPage() {
         description={
           programCount === 0
             ? "No degree programs configured yet."
-            : `${programCount} program${programCount === 1 ? "" : "s"} · drag between Active and Inactive.`
+            : `${programCount} program${programCount === 1 ? "" : "s"} configured.`
         }
         icon={GraduationCap}
         tone="accent"
+        headerAction={
+          <ProgramBoardButton boardRef={programBoardRef} />
+        }
       >
         <ProgramBoard
+          ref={programBoardRef}
           programs={university.degreePrograms.map((program) => ({
             id: program.id,
             name: program.name,

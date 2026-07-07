@@ -29,6 +29,7 @@ type RequestSectionCardProps = {
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  headerAction?: React.ReactNode;
 };
 
 export function RequestSectionCard({
@@ -40,6 +41,7 @@ export function RequestSectionCard({
   children,
   footer,
   className,
+  headerAction,
 }: RequestSectionCardProps) {
   return (
     <Card
@@ -58,7 +60,7 @@ export function RequestSectionCard({
           >
             <Icon className="size-[18px]" />
           </div>
-          <div className="min-w-0 space-y-0.5">
+          <div className="min-w-0 flex-1 space-y-0.5">
             <CardTitle className="font-heading text-base font-semibold">
               {titleHref ? (
                 <Link
@@ -77,6 +79,9 @@ export function RequestSectionCard({
               </CardDescription>
             ) : null}
           </div>
+          {headerAction ? (
+            <div className="shrink-0 pt-0.5">{headerAction}</div>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent className="px-4 pt-4 sm:px-6 sm:pt-5">{children}</CardContent>

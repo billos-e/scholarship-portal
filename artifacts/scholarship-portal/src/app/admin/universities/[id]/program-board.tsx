@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import React, { useEffect, useImperativeHandle, useState, useTransition } from "react";
+import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -18,7 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -146,15 +145,21 @@ function ProgramChip({
   );
 }
 
-export function ProgramBoard({
-  programs,
-  universityId,
-  onSuccess,
-}: {
+export interface ProgramBoardHandle {
+  openCreate: () => void;
+}
+
+interface ProgramBoardProps {
   programs: ProgramRow[];
   universityId: string;
   onSuccess?: () => void;
-}) {
+}
+
+export const ProgramBoard = React.forwardRef<ProgramBoardHandle, ProgramBoardProps>(function ProgramBoard({
+  programs,
+  universityId,
+  onSuccess,
+}, ref) {
   const [items, setItems] = useState(programs);
   const [pending, startTransition] = useTransition();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -169,6 +174,13 @@ export function ProgramBoard({
     if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
+
+  useImperativeHandle(ref, () => ({
+    openCreate: () => {
+      setEditingProgram(null);
+      setDialogOpen(true);
+    },
+  }));
 
   function openCreate() {
     setEditingProgram(null);
@@ -220,13 +232,6 @@ export function ProgramBoard({
 
   return (
     <>
-      <div className="flex justify-end">
-        <Button type="button" size="sm" onClick={openCreate}>
-          <Plus className="size-3.5" />
-          Add program
-        </Button>
-      </div>
-
       {items.length === 0 ? (
         <p className="text-sm leading-relaxed text-muted-foreground">
           No degree programs configured yet. Add programs so students can select
@@ -284,4 +289,4 @@ export function ProgramBoard({
       </AlertDialog>
     </>
   );
-}
+});
