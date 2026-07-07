@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -77,16 +77,23 @@ export function StudentEditPageForm({
 
   const [state, formAction] = useActionState<ActionState, FormData>(
     async (prev, formData) => {
+      const attempt = (prev?.submitAttempt ?? 0) + 1;
       const profileCheck = validateStudentProfileEdit(
         readStudentProfileFromFormData(formData),
       );
       if (!profileCheck.success) {
-        return { error: profileCheck.error };
+        return { error: profileCheck.error, submitAttempt: attempt };
       }
       return saveStudentEdit(prev, formData);
     },
     {},
   );
+
+  useEffect(() => {
+    if (state.error && state.submitAttempt) {
+      toast.error(state.error);
+    }
+  }, [state.error, state.submitAttempt]);
 
   useEffect(() => {
     if (state.success) {
@@ -310,10 +317,6 @@ export function StudentEditPageForm({
           </div>
         </div>
       </ProfileInfoCard>
-
-      {state.error ? (
-        <p className="text-sm font-medium text-destructive">{state.error}</p>
-      ) : null}
 
       <div className="flex justify-end">
         <SubmitButton />

@@ -63,11 +63,6 @@
   Brand palette — institutional fuchsia + orange on a warm cream canvas.
   Structure and hierarchy follow docs/pencil-new.pen; accent colors match the client nonprofit.
 */
-html,
-body {
-  overflow: hidden;
-}
-
 :root {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;

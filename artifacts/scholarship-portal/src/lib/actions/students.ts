@@ -28,6 +28,7 @@ export type ActionState = {
   error?: string;
   success?: boolean;
   generatedPassword?: string;
+  submitAttempt?: number;
 };
 
 function profileToStudentData(
@@ -220,32 +221,34 @@ export async function saveStudentEdit(
 ): Promise<ActionState> {
   await requireAdmin();
 
+  const attempt = (_prev?.submitAttempt ?? 0) + 1;
+
   const id = formData.get("id") as string;
   const userId = formData.get("userId") as string;
-  if (!id || !userId) return { error: "Missing student id." };
+  if (!id || !userId) return { error: "Missing student id.", submitAttempt: attempt };
 
   const parsed = validateStudentProfileEdit(
     readStudentProfileFromFormData(formData),
   );
   if (!parsed.success) {
-    return { error: parsed.error };
+    return { error: parsed.error, submitAttempt: attempt };
   }
 
   const contextError = await validateUniversityContext(parsed.data, {
     studentId: id,
   });
   if (contextError) {
-    return { error: contextError };
+    return { error: contextError, submitAttempt: attempt };
   }
 
   const student = rawStudents.find((s: Any) => s.id === id);
-  if (!student) return { error: "Student not found." };
+  if (!student) return { error: "Student not found.", submitAttempt: attempt };
 
   if (parsed.data.studentId) {
     const dup = rawStudents.find(
       (s: Any) => s.studentId === parsed.data.studentId && s.id !== id,
     );
-    if (dup) return { error: "This Student ID is already in use." };
+    if (dup) return { error: "This Student ID is already in use.", submitAttempt: attempt };
   }
 
   const bankParsed = bankSchema.safeParse({
@@ -255,7 +258,7 @@ export async function saveStudentEdit(
     promptpayNumber: optionalString(formData.get("promptpayNumber")),
   });
   if (!bankParsed.success) {
-    return { error: "Invalid bank information." };
+    return { error: "Invalid bank information.", submitAttempt: attempt };
   }
 
   const password = optionalString(formData.get("password"));
@@ -268,6 +271,7 @@ export async function saveStudentEdit(
       return {
         error:
           passwordCheck.error.issues[0]?.message ?? "Invalid password.",
+        submitAttempt: attempt,
       };
     }
   }
@@ -277,7 +281,7 @@ export async function saveStudentEdit(
   if (file instanceof File && file.size > 0) {
     const { validateUpload, saveStudentUpload } = await import("@/lib/uploads");
     const check = validateUpload(file, "profile-photo");
-    if (!check.ok) return { error: check.error };
+    if (!check.ok) return { error: check.error, submitAttempt: attempt };
 
     try {
       photoUrl = await saveStudentUpload(file, {
@@ -287,6 +291,7 @@ export async function saveStudentEdit(
     } catch (err) {
       return {
         error: err instanceof Error ? err.message : "Failed to upload photo.",
+        submitAttempt: attempt,
       };
     }
   }
@@ -312,7 +317,7 @@ export async function saveStudentEdit(
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
   revalidatePath(`/admin/students/${id}/edit`);
-  return { success: true };
+  return { success: true, submitAttempt: attempt };
 }
 
 export async function archiveStudent(

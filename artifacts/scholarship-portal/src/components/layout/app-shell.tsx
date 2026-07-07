@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -43,6 +43,16 @@ export function AppShell({
       writeCollapsedCookie(next);
       return next;
     });
+  }, []);
+
+  useLayoutEffect(() => {
+    const prev = [document.documentElement.style.overflow, document.body.style.overflow];
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = prev[0];
+      document.body.style.overflow = prev[1];
+    };
   }, []);
 
   return (
