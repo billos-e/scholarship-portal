@@ -123,7 +123,6 @@ export function StudentEditPageForm({
     >
       <input type="hidden" name="id" value={student.id} />
       <input type="hidden" name="userId" value={student.userId} />
-
       <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-6 py-6 shadow-sm sm:px-8 sm:py-8">
         <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
           <div
@@ -164,13 +163,10 @@ export function StudentEditPageForm({
                 }
               }}
             />
-            <p className="text-xs text-muted-foreground">
-              JPEG, PNG, or WebP. Leave unchanged to keep the current photo.
-            </p>
+            <p className="text-xs text-muted-foreground">Leave unchanged to keep the current photo.</p>
           </div>
         </div>
       </section>
-
       <ProfileInfoCard title="Personal information">
           <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
@@ -224,123 +220,118 @@ export function StudentEditPageForm({
             </div>
           </div>
         </ProfileInfoCard>
-
-        <ProfileInfoCard title="Academic information">
-          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-            <StudentAcademicFields
-              idPrefix="edit"
-              universities={universities}
-              academicOptions={academicOptions}
-              defaultUniversityId={student.universityId}
-              defaultDegreeProgram={student.degreeProgram}
-              defaultSemesterLabel={student.currentSemesterLabel}
-              defaultYearOfStudy={student.yearOfStudy}
+      <ProfileInfoCard title="Academic information">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+          <StudentAcademicFields
+            idPrefix="edit"
+            universities={universities}
+            academicOptions={academicOptions}
+            defaultUniversityId={student.universityId}
+            defaultDegreeProgram={student.degreeProgram}
+            defaultSemesterLabel={student.currentSemesterLabel}
+            defaultYearOfStudy={student.yearOfStudy}
+          />
+          <div className="space-y-2">
+            <Label htmlFor="gpa">GPA</Label>
+            <Input
+              id="gpa"
+              name="gpa"
+              type="number"
+              step="0.01"
+              min="0"
+              max="4"
+              defaultValue={student.gpa ?? ""}
             />
-            <div className="space-y-2">
-              <Label htmlFor="gpa">GPA</Label>
-              <Input
-                id="gpa"
-                name="gpa"
-                type="number"
-                step="0.01"
-                min="0"
-                max="4"
-                defaultValue={student.gpa ?? ""}
-              />
-            </div>
           </div>
-        </ProfileInfoCard>
-
-        <ProfileInfoCard title="Bank information">
-          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="bankName">Bank name</Label>
-              <Input
-                id="bankName"
-                name="bankName"
-                defaultValue={student.bankName ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bankAccountName">Account holder</Label>
-              <Input
-                id="bankAccountName"
-                name="bankAccountName"
-                defaultValue={student.bankAccountName ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bankAccountNumber">Account number</Label>
-              <Input
-                id="bankAccountNumber"
-                name="bankAccountNumber"
-                defaultValue={student.bankAccountNumber ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promptpayNumber">PromptPay</Label>
-              <Input
-                id="promptpayNumber"
-                name="promptpayNumber"
-                defaultValue={student.promptpayNumber ?? ""}
-              />
-            </div>
-          </div>
-        </ProfileInfoCard>
-
-        <ProfileInfoCard title="Login credentials">
-          <div className="space-y-4">
-            <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Account email
-              </p>
-              <p className="mt-1 text-sm font-medium">{student.email}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">New temporary password</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="password"
-                  name="password"
-                  type="text"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  minLength={8}
-                  className="font-mono"
-                  autoComplete="new-password"
-                  placeholder="Leave blank to keep current password"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0"
-                  onClick={handleGeneratePassword}
-                >
-                  <Sparkles />
-                  Generate
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Optional. Generate a secure password or enter one manually, then
-                save to apply.
-              </p>
-            </div>
-          </div>
-        </ProfileInfoCard>
-
-        {state.error ? (
-          <p className="text-sm font-medium text-destructive">{state.error}</p>
-        ) : null}
-
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="bg-accent text-accent-foreground hover:bg-accent/90"
-          >
-            {isPending ? "Saving..." : "Save changes"}
-          </Button>
         </div>
-      </form>
+      </ProfileInfoCard>
+      <ProfileInfoCard title="Bank information">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="bankName">Bank name</Label>
+            <Input
+              id="bankName"
+              name="bankName"
+              defaultValue={student.bankName ?? ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bankAccountName">Account holder</Label>
+            <Input
+              id="bankAccountName"
+              name="bankAccountName"
+              defaultValue={student.bankAccountName ?? ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bankAccountNumber">Account number</Label>
+            <Input
+              id="bankAccountNumber"
+              name="bankAccountNumber"
+              defaultValue={student.bankAccountNumber ?? ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="promptpayNumber">PromptPay</Label>
+            <Input
+              id="promptpayNumber"
+              name="promptpayNumber"
+              defaultValue={student.promptpayNumber ?? ""}
+            />
+          </div>
+        </div>
+      </ProfileInfoCard>
+      <ProfileInfoCard title="Login credentials">
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Account email
+            </p>
+            <p className="mt-1 text-sm font-medium">{student.email}</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">New temporary password</Label>
+            <div className="flex gap-2">
+              <Input
+                id="password"
+                name="password"
+                type="text"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={8}
+                className="font-mono"
+                autoComplete="new-password"
+                placeholder="Leave blank to keep current password"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0"
+                onClick={handleGeneratePassword}
+              >
+                <Sparkles />
+                Generate
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Optional. Generate a secure password or enter one manually, then
+              save to apply.
+            </p>
+          </div>
+        </div>
+      </ProfileInfoCard>
+      {state.error ? (
+        <p className="text-sm font-medium text-destructive">{state.error}</p>
+      ) : null}
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="bg-accent text-accent-foreground hover:bg-accent/90"
+        >
+          {isPending ? "Saving..." : "Save changes"}
+        </Button>
+      </div>
+    </form>
   );
 }
