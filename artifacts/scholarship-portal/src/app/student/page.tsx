@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requireStudent } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 
@@ -35,16 +35,31 @@ function greetingForHour(hour: number): string {
 }
 
 export default function StudentDashboard() {
-  const { student: sessionStudent } = requireStudent();
+  const user = getCurrentUser();
+  const studentProfileId = user?.studentProfileId ?? null;
+
   const [student, setStudent] = useState<StudentDetail | null | undefined>(
     undefined,
   );
 
   useEffect(() => {
-    fetchStudent(sessionStudent.id)
+    if (!studentProfileId) {
+      setStudent(null);
+      return;
+    }
+    fetchStudent(studentProfileId)
       .then(setStudent)
       .catch(() => setStudent(null));
-  }, [sessionStudent.id]);
+  }, [studentProfileId]);
+
+  if (!studentProfileId) {
+    return (
+      <EmptyState
+        title="Profile not set up yet"
+        description="Your student profile hasn't been linked to your account. Please contact your administrator."
+      />
+    );
+  }
 
   if (student === undefined) {
     return (
