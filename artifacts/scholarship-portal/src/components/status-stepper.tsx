@@ -47,7 +47,7 @@ export function StatusStepper({
             >
               <div
                 className={cn(
-                  "flex size-6 shrink-0 items-center justify-center rounded-full transition-colors sm:size-7",
+                  "flex size-6 shrink-0 items-center justify-center rounded-full leading-none transition-colors sm:size-7",
                   rejected && "bg-border opacity-40",
                   !rejected && done && "bg-primary text-primary-foreground",
                   !rejected && active && !done && "bg-primary text-primary-foreground",
@@ -117,7 +117,7 @@ export function StatusStepper({
                 ) : null}
                 <div
                   className={cn(
-                    "flex shrink-0 items-center justify-center rounded-full border-2 font-medium transition-colors",
+                    "flex shrink-0 items-center justify-center rounded-full border-2 font-medium leading-none transition-colors",
                     compact ? "size-6 text-[10px]" : "size-8 text-xs",
                     done && "border-primary bg-primary text-primary-foreground",
                     active &&
