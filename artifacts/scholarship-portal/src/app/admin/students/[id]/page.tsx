@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -26,18 +29,35 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
 import { formatDate, formatCurrency } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
-import { getStudent } from "@/lib/stub/sample-data";
+import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 import NotFound from "@/pages/not-found";
 import { ArchiveStudentButton } from "./archive-student-button";
 
 export default function StudentDetailPage() {
   requireAdmin();
   const { id } = useParams<{ id: string }>();
+  const [student, setStudent] = useState<StudentDetail | null | undefined>(
+    undefined,
+  );
 
-  const student = getStudent(id);
+  useEffect(() => {
+    fetchStudent(id)
+      .then(setStudent)
+      .catch(() => setStudent(null));
+  }, [id]);
+
+  if (student === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!student) return <NotFound />;
 

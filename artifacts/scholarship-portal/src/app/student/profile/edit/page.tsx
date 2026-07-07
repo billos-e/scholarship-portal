@@ -1,19 +1,56 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
-import { getActiveUniversities } from "@/lib/stub/sample-data";
+import {
+  fetchActiveUniversities,
+  type ActiveUniversity,
+} from "@/lib/api/universities";
+import { fetchAcademicOptions } from "@/lib/api/academic";
+import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import type { StudentAcademicOptions } from "@/lib/student-academic-options";
+import NotFound from "@/pages/not-found";
 import { StudentProfileEditForm } from "./student-profile-edit-form";
 
 export default function StudentProfileEditPage() {
-  const { user, student } = requireStudent();
+  const { user, student: sessionStudent } = requireStudent();
+  const [student, setStudent] = useState<StudentDetail | null | undefined>(
+    undefined,
+  );
+  const [universities, setUniversities] = useState<ActiveUniversity[]>([]);
+  const [academicOptions, setAcademicOptions] =
+    useState<StudentAcademicOptions>({
+      semestersByUniversity: {},
+      programsByUniversity: {},
+    });
 
-  const universities = getActiveUniversities();
-  const academicOptions = {
-    semestersByUniversity: {} as Record<
-      string,
-      { id: string; label: string; academicYear: string; startDate: string; endDate: string }[]
-    >,
-    programsByUniversity: {} as Record<string, string[]>,
-  };
+  useEffect(() => {
+    Promise.all([
+      fetchStudent(sessionStudent.id),
+      fetchActiveUniversities(),
+      fetchAcademicOptions(),
+    ])
+      .then(([loadedStudent, loadedUniversities, options]) => {
+        setStudent(loadedStudent);
+        setUniversities(loadedUniversities);
+        setAcademicOptions(options);
+      })
+      .catch(() => setStudent(null));
+  }, [sessionStudent.id]);
+
+  if (student === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-6 w-64" />
+        <Skeleton className="h-[36rem] w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!student) return <NotFound />;
 
   return (
     <div className="space-y-6">
@@ -40,10 +77,8 @@ export default function StudentProfileEditPage() {
           currentSemesterLabel: student.currentSemesterLabel,
           gpa: student.gpa ? student.gpa.toString() : null,
           photoUrl: student.photoUrl,
-          bankAccountName:
-            student.bankInformation?.bankAccountName ?? null,
-          bankAccountNumber:
-            student.bankInformation?.bankAccountNumber ?? null,
+          bankAccountName: student.bankInformation?.bankAccountName ?? null,
+          bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,
           bankName: student.bankInformation?.bankName ?? null,
           promptpayNumber: student.bankInformation?.promptpayNumber ?? null,
         }}

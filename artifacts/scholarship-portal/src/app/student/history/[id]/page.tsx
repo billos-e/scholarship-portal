@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, FileText, ImageIcon } from "lucide-react";
@@ -12,9 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { getRequest } from "@/lib/stub/sample-data";
+import { fetchRequest, type RequestDetail } from "@/lib/api/requests";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { StatusStepper } from "@/components/status-stepper";
 import {
@@ -114,8 +118,24 @@ function WellbeingValue({ value }: { value: number | null }) {
 export default function StudentSubmissionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { student } = requireStudent();
+  const [request, setRequest] = useState<RequestDetail | null | undefined>(
+    undefined,
+  );
 
-  const request = getRequest(id);
+  useEffect(() => {
+    fetchRequest(id)
+      .then(setRequest)
+      .catch(() => setRequest(null));
+  }, [id]);
+
+  if (request === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!request || request.studentId !== student.id) {
     return <NotFound />;

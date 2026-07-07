@@ -1,8 +1,18 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
-import { getActiveUniversities, getStudent, getUniversities } from "@/lib/stub/sample-data";
+import {
+  fetchActiveUniversities,
+  type ActiveUniversity,
+} from "@/lib/api/universities";
+import { fetchAcademicOptions } from "@/lib/api/academic";
+import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import type { StudentAcademicOptions } from "@/lib/student-academic-options";
 import NotFound from "@/pages/not-found";
 import { StudentEditPageForm } from "./student-edit-page-form";
 
@@ -10,38 +20,37 @@ export default function StudentEditPage() {
   requireAdmin();
   const { id } = useParams<{ id: string }>();
 
-  const student = getStudent(id);
-  const universities = getActiveUniversities();
+  const [student, setStudent] = useState<StudentDetail | null | undefined>(
+    undefined,
+  );
+  const [universities, setUniversities] = useState<ActiveUniversity[]>([]);
+  const [academicOptions, setAcademicOptions] =
+    useState<StudentAcademicOptions>({
+      semestersByUniversity: {},
+      programsByUniversity: {},
+    });
 
-  const academicOptions = {
-    semestersByUniversity: {} as Record<string, {
-      id: string;
-      label: string;
-      academicYear: string;
-      startDate: string;
-      endDate: string;
-    }[]>,
-    programsByUniversity: {} as Record<string, string[]>,
-  };
-  for (const uni of getUniversities()) {
-    academicOptions.semestersByUniversity[uni.id] = uni.semesters
-      .filter((s: { isActive: boolean }) => s.isActive)
-      .map((s: {
-        id: string;
-        label: string;
-        academicYear: string;
-        startDate: Date;
-        endDate: Date;
-      }) => ({
-        id: s.id,
-        label: s.label,
-        academicYear: s.academicYear,
-        startDate: s.startDate.toISOString().slice(0, 10),
-        endDate: s.endDate.toISOString().slice(0, 10),
-      }));
-    academicOptions.programsByUniversity[uni.id] = uni.degreePrograms
-      .filter((p: { isActive: boolean }) => p.isActive)
-      .map((p: { name: string }) => p.name);
+  useEffect(() => {
+    Promise.all([
+      fetchStudent(id),
+      fetchActiveUniversities(),
+      fetchAcademicOptions(),
+    ])
+      .then(([loadedStudent, loadedUniversities, options]) => {
+        setStudent(loadedStudent);
+        setUniversities(loadedUniversities);
+        setAcademicOptions(options);
+      })
+      .catch(() => setStudent(null));
+  }, [id]);
+
+  if (student === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-6 w-64" />
+        <Skeleton className="h-[36rem] w-full rounded-2xl" />
+      </div>
+    );
   }
 
   if (!student) return <NotFound />;

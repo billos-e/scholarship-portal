@@ -52,6 +52,20 @@ router.get("/universities", async (_req, res) => {
   }
 });
 
+router.get("/universities/active", async (_req, res) => {
+  try {
+    const rows = await db
+      .select({ id: universities.id, name: universities.name })
+      .from(universities)
+      .where(eq(universities.isActive, true))
+      .orderBy(universities.name);
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /universities/active error", err);
+    res.status(500).json({ error: "Failed to fetch universities." });
+  }
+});
+
 router.post("/universities", async (req, res) => {
   try {
     const { name, city, country, addressLine, websiteUrl, hasSummerSemester, isActive, notes } =
@@ -283,6 +297,31 @@ router.post("/universities/:id/image", async (req, res) => {
 // ---------------------------------------------------------------------------
 // Semesters
 // ---------------------------------------------------------------------------
+
+router.get("/universities/:id/semesters", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const activeOnly = req.query.activeOnly !== "false";
+
+    const rows = await db
+      .select()
+      .from(universitySemesters)
+      .where(
+        activeOnly
+          ? and(
+              eq(universitySemesters.universityId, id),
+              eq(universitySemesters.isActive, true),
+            )
+          : eq(universitySemesters.universityId, id),
+      )
+      .orderBy(universitySemesters.startDate);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /universities/:id/semesters error", err);
+    res.status(500).json({ error: "Failed to fetch semesters." });
+  }
+});
 
 router.post("/universities/:id/semesters", async (req, res) => {
   try {

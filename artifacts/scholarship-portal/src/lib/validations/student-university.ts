@@ -1,4 +1,5 @@
-import { rawUniversities, rawSemesters } from "@/lib/stub/sample-data";
+import { fetchActiveUniversities } from "@/lib/api/universities";
+import { fetchUniversitySemesters } from "@/lib/api/academic";
 
 import type { StudentProfileFormData } from "./student-profile";
 
@@ -16,19 +17,17 @@ export async function validateUniversityContext(
     return null;
   }
 
-  const university = rawUniversities.find(
-    (u) => u.id === data.universityId && u.isActive,
-  );
+  const universities = await fetchActiveUniversities();
+  const university = universities.find((u) => u.id === data.universityId);
   if (!university) {
     return "Selected university is not available.";
   }
 
   if (data.currentSemesterLabel) {
-    const semester = rawSemesters.find(
+    const semesters = await fetchUniversitySemesters(data.universityId, true);
+    const semester = semesters.find(
       (s) =>
-        s.universityId === data.universityId &&
-        s.label.toLowerCase() === data.currentSemesterLabel.toLowerCase() &&
-        s.isActive,
+        s.label.toLowerCase() === data.currentSemesterLabel.toLowerCase(),
     );
     if (!semester) {
       return "Current semester must match an active semester for this university.";

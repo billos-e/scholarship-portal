@@ -1,10 +1,16 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { SubmissionBlocked } from "@/components/student/submission-blocked";
 import { SubmissionHero } from "@/components/student/submission-hero";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
+import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 import {
-  getRequestsForStudent,
-  getUniversitySemesters,
-} from "@/lib/stub/sample-data";
+  fetchUniversitySemesters,
+  type UniversitySemesterRow,
+} from "@/lib/api/academic";
 import { SubmissionForm } from "./submit-form";
 import {
   Card,
@@ -14,7 +20,50 @@ import {
 } from "@/components/ui/card";
 
 export default function StudentSubmitPage() {
-  const { student } = requireStudent();
+  const { student: sessionStudent } = requireStudent();
+  const [student, setStudent] = useState<StudentDetail | null | undefined>(
+    undefined,
+  );
+  const [semesters, setSemesters] = useState<UniversitySemesterRow[]>([]);
+
+  useEffect(() => {
+    fetchStudent(sessionStudent.id)
+      .then(async (loaded) => {
+        setStudent(loaded);
+        if (loaded?.universityId) {
+          const rows = await fetchUniversitySemesters(loaded.universityId, true);
+          setSemesters(rows);
+        } else {
+          setSemesters([]);
+        }
+      })
+      .catch(() => setStudent(null));
+  }, [sessionStudent.id]);
+
+  if (student === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <Card className="border-border shadow-none">
+        <CardHeader>
+          <CardTitle className="font-heading text-xl">
+            Profile unavailable
+          </CardTitle>
+          <CardDescription className="text-sm leading-relaxed">
+            We couldn&apos;t load your profile. Please try again later.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   const eligibility = {
     canStart: true,
     missingProfileFields: [],
@@ -23,18 +72,11 @@ export default function StudentSubmitPage() {
   const bank = student.bankInformation;
 
   const semesterHint =
-    student.currentSemesterLabel ??
-    (student.universityId
-      ? getUniversitySemesters(student.universityId, true)[0]?.label ?? null
-      : null);
-
-  const semesters = student.universityId
-    ? getUniversitySemesters(student.universityId, true)
-    : [];
+    student.currentSemesterLabel ?? semesters[0]?.label ?? null;
 
   const submittedSemesterIds = eligibility.canStart
     ? new Set(
-        getRequestsForStudent(student.id)
+        student.tuitionPaymentRequests
           .filter(
             (row) =>
               row.universitySemesterId !== null &&

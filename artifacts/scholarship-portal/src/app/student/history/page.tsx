@@ -1,23 +1,47 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
-import { getLatestRequestForStudent } from "@/lib/stub/sample-data";
+import { fetchStudent } from "@/lib/api/students";
 
 export default function StudentHistoryIndexPage() {
-  const { student } = requireStudent();
+  const { student: sessionStudent } = requireStudent();
+  const [loading, setLoading] = useState(true);
+
   const eligibility = {
     canStart: true,
     missingProfileFields: [] as string[],
     openRequest: null as { id: string; semesterLabel: string } | null,
   };
 
-  const first = getLatestRequestForStudent(student.id);
+  useEffect(() => {
+    let active = true;
+    fetchStudent(sessionStudent.id)
+      .then((student) => {
+        if (!active) return;
+        const first = student?.tuitionPaymentRequests[0] ?? null;
+        if (first) {
+          redirect(`/student/history/${first.id}`);
+          return;
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [sessionStudent.id]);
 
-  if (first) {
-    redirect(`/student/history/${first.id}`);
+  if (loading) {
+    return <Skeleton className="h-64 w-full rounded-2xl" />;
   }
 
   return (

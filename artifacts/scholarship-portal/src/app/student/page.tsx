@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -20,13 +23,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
-import {
-  getCurrentStudentProfile,
-  getLatestRequestForStudent,
-  getRequestsForStudent,
-} from "@/lib/stub/sample-data";
+import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 
 function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
@@ -35,8 +35,36 @@ function greetingForHour(hour: number): string {
 }
 
 export default function StudentDashboard() {
-  requireStudent();
-  const student = getCurrentStudentProfile();
+  const { student: sessionStudent } = requireStudent();
+  const [student, setStudent] = useState<StudentDetail | null | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    fetchStudent(sessionStudent.id)
+      .then(setStudent)
+      .catch(() => setStudent(null));
+  }, [sessionStudent.id]);
+
+  if (student === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <EmptyState
+        title="Profile unavailable"
+        description="We couldn't load your profile. Please try again later."
+      />
+    );
+  }
+
   const hour = new Date().getHours();
   const eligibility = {
     canStart: true,
@@ -44,8 +72,9 @@ export default function StudentDashboard() {
     openRequest: null as { id: string; semesterLabel: string } | null,
   };
 
-  const latestRequest = getLatestRequestForStudent(student.id);
-  const recentRequests = getRequestsForStudent(student.id).slice(0, 5);
+  const requests = student.tuitionPaymentRequests;
+  const latestRequest = requests[0] ?? null;
+  const recentRequests = requests.slice(0, 5);
 
   const semesterHint =
     eligibility.openRequest?.semesterLabel ??

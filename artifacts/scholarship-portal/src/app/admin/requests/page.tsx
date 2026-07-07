@@ -1,17 +1,49 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { RequestsList } from "@/components/admin/requests-list";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
 import {
-  getActiveUniversities,
-  getDistinctSemesterLabels,
-  getRequests,
-} from "@/lib/stub/sample-data";
+  fetchActiveUniversities,
+  type ActiveUniversity,
+} from "@/lib/api/universities";
+import {
+  fetchRequests,
+  fetchSemesterLabels,
+  type RequestRecord,
+} from "@/lib/api/requests";
 
 export default function AdminRequestsPage() {
   requireAdmin();
 
-  const requests = getRequests();
-  const universities = getActiveUniversities();
-  const semesters = getDistinctSemesterLabels();
+  const [requests, setRequests] = useState<RequestRecord[] | null>(null);
+  const [universities, setUniversities] = useState<ActiveUniversity[]>([]);
+  const [semesters, setSemesters] = useState<string[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetchRequests(),
+      fetchActiveUniversities(),
+      fetchSemesterLabels(),
+    ])
+      .then(([loadedRequests, loadedUniversities, labels]) => {
+        setRequests(loadedRequests);
+        setUniversities(loadedUniversities);
+        setSemesters(labels);
+      })
+      .catch(() => setRequests([]));
+  }, []);
+
+  if (requests === null) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
     <RequestsList
@@ -33,7 +65,7 @@ export default function AdminRequestsPage() {
         },
       }))}
       universities={universities}
-      semesters={semesters}
+      semesters={semesters.map((semesterLabel) => ({ semesterLabel }))}
     />
   );
 }

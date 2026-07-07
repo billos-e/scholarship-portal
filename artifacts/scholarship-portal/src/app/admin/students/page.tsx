@@ -1,42 +1,50 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { StudentsList } from "@/components/admin/students-list";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
-import { getActiveUniversities, getStudents, getUniversities } from "@/lib/stub/sample-data";
+import {
+  fetchActiveUniversities,
+  type ActiveUniversity,
+} from "@/lib/api/universities";
+import { fetchAcademicOptions } from "@/lib/api/academic";
+import { fetchStudents, type StudentRecord } from "@/lib/api/students";
+import type { StudentAcademicOptions } from "@/lib/student-academic-options";
 
 export default function AdminStudentsPage() {
   requireAdmin();
 
-  const students = getStudents();
-  const universities = getActiveUniversities();
+  const [students, setStudents] = useState<StudentRecord[] | null>(null);
+  const [universities, setUniversities] = useState<ActiveUniversity[]>([]);
+  const [academicOptions, setAcademicOptions] =
+    useState<StudentAcademicOptions>({
+      semestersByUniversity: {},
+      programsByUniversity: {},
+    });
 
-  const academicOptions = {
-    semestersByUniversity: {} as Record<string, {
-      id: string;
-      label: string;
-      academicYear: string;
-      startDate: string;
-      endDate: string;
-    }[]>,
-    programsByUniversity: {} as Record<string, string[]>,
-  };
-  for (const uni of getUniversities()) {
-    academicOptions.semestersByUniversity[uni.id] = uni.semesters
-      .filter((s: { isActive: boolean }) => s.isActive)
-      .map((s: {
-        id: string;
-        label: string;
-        academicYear: string;
-        startDate: Date;
-        endDate: Date;
-      }) => ({
-        id: s.id,
-        label: s.label,
-        academicYear: s.academicYear,
-        startDate: s.startDate.toISOString().slice(0, 10),
-        endDate: s.endDate.toISOString().slice(0, 10),
-      }));
-    academicOptions.programsByUniversity[uni.id] = uni.degreePrograms
-      .filter((p: { isActive: boolean }) => p.isActive)
-      .map((p: { name: string }) => p.name);
+  useEffect(() => {
+    Promise.all([
+      fetchStudents(),
+      fetchActiveUniversities(),
+      fetchAcademicOptions(),
+    ])
+      .then(([loadedStudents, loadedUniversities, options]) => {
+        setStudents(loadedStudents);
+        setUniversities(loadedUniversities);
+        setAcademicOptions(options);
+      })
+      .catch(() => setStudents([]));
+  }, []);
+
+  if (students === null) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
   }
 
   return (

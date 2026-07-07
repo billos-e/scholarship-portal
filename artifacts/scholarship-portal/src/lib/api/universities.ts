@@ -58,3 +58,11 @@ export async function fetchUniversity(id: string): Promise<UniversityDetail | nu
   if (!res.ok) throw new Error("Failed to fetch university");
   return res.json();
 }
+
+export type ActiveUniversity = { id: string; name: string };
+
+export async function fetchActiveUniversities(): Promise<ActiveUniversity[]> {
+  const res = await fetch(`${apiBase}/api/universities/active`);
+  if (!res.ok) throw new Error("Failed to fetch universities");
+  return res.json();
+}

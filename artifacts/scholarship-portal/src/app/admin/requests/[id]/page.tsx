@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   BookOpen,
@@ -23,9 +26,10 @@ import {
   ContextPanel,
   WellbeingGrid,
 } from "@/components/admin/wellbeing-context";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { getRequest } from "@/lib/stub/sample-data";
+import { fetchRequest, type RequestDetail } from "@/lib/api/requests";
 import {
   ACTIVITY_OPTIONS,
   CHALLENGE_OPTIONS,
@@ -38,8 +42,24 @@ import { PaymentNotesForm } from "./status-actions";
 export default function AdminRequestDetailPage() {
   requireAdmin();
   const { id } = useParams<{ id: string }>();
+  const [request, setRequest] = useState<RequestDetail | null | undefined>(
+    undefined,
+  );
 
-  const request = getRequest(id);
+  useEffect(() => {
+    fetchRequest(id)
+      .then(setRequest)
+      .catch(() => setRequest(null));
+  }, [id]);
+
+  if (request === undefined) {
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!request) return <NotFound />;
 

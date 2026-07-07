@@ -1,10 +1,90 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
-import { and, eq, ilike, ne } from "drizzle-orm";
+import { and, desc, eq, ilike, ne } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { db, students, users, bankInformation } from "@workspace/db";
+import {
+  db,
+  students,
+  users,
+  bankInformation,
+  universities,
+  tuitionPaymentRequests,
+} from "@workspace/db";
 
 const router: IRouter = Router();
+
+router.get("/students", async (_req, res) => {
+  try {
+    const rows = await db
+      .select({
+        student: students,
+        university: universities,
+        userEmail: users.email,
+        userRole: users.role,
+        bank: bankInformation,
+      })
+      .from(students)
+      .leftJoin(universities, eq(students.universityId, universities.id))
+      .innerJoin(users, eq(students.userId, users.id))
+      .leftJoin(bankInformation, eq(bankInformation.studentId, students.id))
+      .orderBy(desc(students.createdAt));
+
+    const result = rows.map((r) => ({
+      ...r.student,
+      university: r.university ?? null,
+      user: { email: r.userEmail, role: r.userRole },
+      bankInformation: r.bank ?? null,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error("GET /students error", err);
+    res.status(500).json({ error: "Failed to fetch students." });
+  }
+});
+
+router.get("/students/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [row] = await db
+      .select({
+        student: students,
+        university: universities,
+        userEmail: users.email,
+        userRole: users.role,
+        bank: bankInformation,
+      })
+      .from(students)
+      .leftJoin(universities, eq(students.universityId, universities.id))
+      .innerJoin(users, eq(students.userId, users.id))
+      .leftJoin(bankInformation, eq(bankInformation.studentId, students.id))
+      .where(eq(students.id, id))
+      .limit(1);
+
+    if (!row) {
+      res.status(404).json({ error: "Student not found." });
+      return;
+    }
+
+    const requests = await db
+      .select()
+      .from(tuitionPaymentRequests)
+      .where(eq(tuitionPaymentRequests.studentId, id))
+      .orderBy(desc(tuitionPaymentRequests.submittedAt));
+
+    res.json({
+      ...row.student,
+      university: row.university ?? null,
+      user: { email: row.userEmail, role: row.userRole },
+      bankInformation: row.bank ?? null,
+      tuitionPaymentRequests: requests,
+    });
+  } catch (err) {
+    console.error("GET /students/:id error", err);
+    res.status(500).json({ error: "Failed to fetch student." });
+  }
+});
 
 router.post("/students", async (req, res) => {
   try {

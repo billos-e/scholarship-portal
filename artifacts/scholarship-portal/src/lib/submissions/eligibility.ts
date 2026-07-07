@@ -1,7 +1,7 @@
 import type { BankInformation, RequestStatus, Student } from "@prisma/client";
 
 import { REQUEST_STATUS_LABELS } from "@/lib/request-status";
-import { prisma } from "@/lib/prisma";
+import { fetchStudent } from "@/lib/api/students";
 
 /** Terminal statuses — student may start a new submission when all requests are in one of these. */
 export const TERMINAL_REQUEST_STATUSES: RequestStatus[] = ["PAID", "REJECTED"];
@@ -82,44 +82,43 @@ export function isProfileCompleteForSubmission(
 export async function findOpenRequest(
   studentId: string,
 ): Promise<OpenRequestSummary | null> {
-  const request = await prisma.tuitionPaymentRequest.findFirst({
-    where: {
-      studentId,
-      status: { in: BLOCKING_REQUEST_STATUSES },
-    },
-    orderBy: { submittedAt: "desc" },
-    select: { id: true, semesterLabel: true, status: true },
-  });
-  return request;
+  const student = await fetchStudent(studentId);
+  if (!student) return null;
+  const request = student.tuitionPaymentRequests.find((r) =>
+    BLOCKING_REQUEST_STATUSES.includes(r.status),
+  );
+  if (!request) return null;
+  return {
+    id: request.id,
+    semesterLabel: request.semesterLabel,
+    status: request.status,
+  };
 }
 
 export async function findDuplicateSemesterSubmission(
   studentId: string,
   opts: { universitySemesterId?: string; semesterLabel?: string },
-) {
-  if (opts.universitySemesterId) {
-    return prisma.tuitionPaymentRequest.findFirst({
-      where: {
-        studentId,
-        universitySemesterId: opts.universitySemesterId,
-        status: { notIn: ["REJECTED"] },
-      },
-      select: { id: true, semesterLabel: true, status: true },
-    });
-  }
+): Promise<OpenRequestSummary | null> {
+  const student = await fetchStudent(studentId);
+  if (!student) return null;
 
-  if (opts.semesterLabel) {
-    return prisma.tuitionPaymentRequest.findFirst({
-      where: {
-        studentId,
-        semesterLabel: opts.semesterLabel,
-        status: { notIn: ["REJECTED"] },
-      },
-      select: { id: true, semesterLabel: true, status: true },
-    });
-  }
+  const match = student.tuitionPaymentRequests.find((r) => {
+    if (r.status === "REJECTED") return false;
+    if (opts.universitySemesterId) {
+      return r.universitySemesterId === opts.universitySemesterId;
+    }
+    if (opts.semesterLabel) {
+      return r.semesterLabel === opts.semesterLabel;
+    }
+    return false;
+  });
 
-  return null;
+  if (!match) return null;
+  return {
+    id: match.id,
+    semesterLabel: match.semesterLabel,
+    status: match.status,
+  };
 }
 
 export async function getSubmissionEligibility(

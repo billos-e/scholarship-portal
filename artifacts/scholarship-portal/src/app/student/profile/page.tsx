@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 
@@ -9,15 +12,37 @@ import {
 import { StudentDetailHero } from "@/components/admin/student-detail-hero";
 import { StudentStatusBadge } from "@/components/student-status-badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
-import { getCurrentStudentProfile } from "@/lib/stub/sample-data";
+import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import NotFound from "@/pages/not-found";
 
 export default function StudentProfilePage() {
-  const { user } = requireStudent();
-  const student = getCurrentStudentProfile();
+  const { user, student: sessionStudent } = requireStudent();
+  const [student, setStudent] = useState<StudentDetail | null | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    fetchStudent(sessionStudent.id)
+      .then(setStudent)
+      .catch(() => setStudent(null));
+  }, [sessionStudent.id]);
+
+  if (student === undefined) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!student) return <NotFound />;
+
   const bank = student.bankInformation;
-  const fullName = `${student.firstName} ${student.lastName}`;
 
   return (
     <div className="space-y-6">
