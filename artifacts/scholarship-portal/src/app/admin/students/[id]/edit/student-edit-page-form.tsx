@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -143,17 +142,15 @@ export function StudentEditPageForm({
   student,
   universities,
   academicOptions,
-  profileHref,
   onSuccess,
 }: {
   student: StudentEditPageData;
   universities: UniversityOption[];
   academicOptions: StudentAcademicOptions;
-  profileHref: string;
   onSuccess?: () => void;
 }) {
-  const router = useRouter();
   const fullName = `${student.firstName} ${student.lastName}`;
+
   const initials = getInitials(fullName);
   const [password, setPassword] = useState("");
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(student.photoUrl);
@@ -184,7 +181,6 @@ export function StudentEditPageForm({
       toast.success("Student updated.");
       setPassword("");
       onSuccess?.();
-      router.push(profileHref);
     }
   }, [state]);
 

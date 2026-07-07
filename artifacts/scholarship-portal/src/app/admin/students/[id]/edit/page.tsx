@@ -70,7 +70,6 @@ export default function StudentEditPage() {
       />
 
       <StudentEditPageForm
-        profileHref={`/admin/students/${id}`}
         universities={universities}
         academicOptions={academicOptions}
         onSuccess={refresh}
