@@ -123,9 +123,7 @@ export function UniversityEditPageForm({
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">
-                JPEG, PNG, or WebP. Leave unchanged to keep the current image.
-              </p>
+              <p className="text-xs text-muted-foreground">Leave unchanged to keep the current image.</p>
             </div>
           </div>
         </section>
