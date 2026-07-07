@@ -8,11 +8,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { generateSecurePassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import {
-  updateStudentById,
-  updateBankByStudentId,
-  updateUserById,
   rawStudents,
-  userByEmail,
   type Any,
 } from "@/lib/stub/sample-data";
 import {
@@ -23,6 +19,10 @@ import {
   type StudentProfileFormData,
 } from "@/lib/validations/student-profile";
 import { validateUniversityContext } from "@/lib/validations/student-university";
+
+const apiBase = import.meta.env.BASE_URL
+  ? import.meta.env.BASE_URL.replace(/\/$/, "")
+  : "";
 
 export type ActionState = {
   error?: string;
@@ -132,21 +132,20 @@ export async function updateStudent(
     return { error: contextError };
   }
 
-  const student = rawStudents.find((s: Any) => s.id === id);
-  if (!student) return { error: "Student not found." };
-
-  if (parsed.data.studentId) {
-    const dup = rawStudents.find(
-      (s: Any) => s.studentId === parsed.data.studentId && s.id !== id,
-    );
-    if (dup) return { error: "This Student ID is already in use." };
-  }
-
   const studentData = profileToStudentData(parsed.data);
 
-  updateStudentById(id, studentData);
-  if (student.userId) {
-    updateUserById(student.userId, { isActive: parsed.data.status === "ACTIVE" });
+  try {
+    const res = await fetch(`${apiBase}/api/students/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(studentData),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as Any).error ?? "Failed to update student." };
+    }
+  } catch {
+    return { error: "Failed to update student." };
   }
 
   revalidatePath("/admin/students");
@@ -186,7 +185,19 @@ export async function updateStudentBank(
     return { error: "Invalid bank information." };
   }
 
-  updateBankByStudentId(studentId, parsed.data);
+  try {
+    const res = await fetch(`${apiBase}/api/students/${studentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parsed.data),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as Any).error ?? "Failed to update bank information." };
+    }
+  } catch {
+    return { error: "Failed to update bank information." };
+  }
 
   revalidatePath(`/admin/students/${studentId}`);
   return { success: true };
@@ -198,19 +209,30 @@ export async function resetStudentPassword(
 ): Promise<ActionState> {
   await requireAdmin();
 
-  const userId = formData.get("userId") as string;
+  const studentDbId = formData.get("studentId") as string;
   const password = formData.get("password") as string;
 
   const check = z
     .string()
     .min(8, "New password must be at least 8 characters.")
     .safeParse(password);
-  if (!userId || !check.success) {
-    return { error: check.success ? "Missing user id." : check.error.issues[0].message };
+  if (!studentDbId || !check.success) {
+    return { error: check.success ? "Missing student id." : check.error.issues[0].message };
   }
 
-  const passwordHash = await hashPassword(password);
-  updateUserById(userId, { passwordHash });
+  try {
+    const res = await fetch(`${apiBase}/api/students/${studentDbId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as Any).error ?? "Failed to reset password." };
+    }
+  } catch {
+    return { error: "Failed to reset password." };
+  }
 
   return { success: true };
 }
@@ -241,16 +263,6 @@ export async function saveStudentEdit(
     return { error: contextError, submitAttempt: attempt };
   }
 
-  const student = rawStudents.find((s: Any) => s.id === id);
-  if (!student) return { error: "Student not found.", submitAttempt: attempt };
-
-  if (parsed.data.studentId) {
-    const dup = rawStudents.find(
-      (s: Any) => s.studentId === parsed.data.studentId && s.id !== id,
-    );
-    if (dup) return { error: "This Student ID is already in use.", submitAttempt: attempt };
-  }
-
   const bankParsed = bankSchema.safeParse({
     bankAccountName: optionalString(formData.get("bankAccountName")),
     bankAccountNumber: optionalString(formData.get("bankAccountNumber")),
@@ -279,39 +291,43 @@ export async function saveStudentEdit(
   const file = formData.get("photo");
   let photoUrl: string | undefined;
   if (file instanceof File && file.size > 0) {
-    const { validateUpload, saveStudentUpload } = await import("@/lib/uploads");
+    const { validateUpload } = await import("@/lib/uploads");
     const check = validateUpload(file, "profile-photo");
     if (!check.ok) return { error: check.error, submitAttempt: attempt };
 
     try {
-      photoUrl = await saveStudentUpload(file, {
-        studentId: id,
-        kind: "profile-photo",
-      });
-    } catch (err) {
-      return {
-        error: err instanceof Error ? err.message : "Failed to upload photo.",
-        submitAttempt: attempt,
-      };
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const b64 = btoa(
+        Array.from(bytes)
+          .map((b) => String.fromCharCode(b))
+          .join(""),
+      );
+      photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+    } catch {
+      return { error: "Failed to process photo.", submitAttempt: attempt };
     }
   }
 
   const studentData = profileToStudentData(parsed.data);
-  const passwordHash = password ? await hashPassword(password) : undefined;
 
-  // Update in-memory sample data
-  updateStudentById(id, {
-    ...studentData,
-    ...(photoUrl ? { photoUrl } : {}),
-  });
-  updateBankByStudentId(id, bankParsed.data);
-  // Update user account in isolation (do NOT put passwordHash into student record)
-  if (passwordHash || parsed.data.status) {
-    const userId = formData.get("userId") as string;
-    const userUpdates: Record<string, unknown> = {};
-    if (passwordHash) userUpdates.passwordHash = passwordHash;
-    if (parsed.data.status) userUpdates.isActive = parsed.data.status === "ACTIVE";
-    updateUserById(userId, userUpdates);
+  try {
+    const res = await fetch(`${apiBase}/api/students/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...studentData,
+        ...bankParsed.data,
+        ...(photoUrl ? { photoUrl } : {}),
+        ...(password ? { password } : {}),
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as Any).error ?? "Failed to save student.", submitAttempt: attempt };
+    }
+  } catch {
+    return { error: "Failed to save student.", submitAttempt: attempt };
   }
 
   revalidatePath("/admin/students");
@@ -332,12 +348,18 @@ export async function archiveStudent(
     return { error: "Invalid archive request." };
   }
 
-  const student = rawStudents.find((s: Any) => s.id === id);
-  if (!student) return { error: "Student not found." };
-
-  updateStudentById(id, { status });
-  if (student.userId) {
-    updateUserById(student.userId, { isActive: false });
+  try {
+    const res = await fetch(`${apiBase}/api/students/${id}/archive`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as Any).error ?? "Failed to archive student." };
+    }
+  } catch {
+    return { error: "Failed to archive student." };
   }
 
   revalidatePath("/admin/students");
@@ -358,17 +380,29 @@ export async function uploadStudentPhoto(
     return { error: "Please choose a photo to upload." };
   }
 
-  const { validateUpload, saveStudentUpload } = await import("@/lib/uploads");
+  const { validateUpload } = await import("@/lib/uploads");
   const check = validateUpload(file, "profile-photo");
   if (!check.ok) return { error: check.error };
 
   try {
-    const photoUrl = await saveStudentUpload(file, {
-      studentId: id,
-      kind: "profile-photo",
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    const b64 = btoa(
+      Array.from(bytes)
+        .map((b) => String.fromCharCode(b))
+        .join(""),
+    );
+    const photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+
+    const res = await fetch(`${apiBase}/api/students/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ photoUrl }),
     });
-    const ok = updateStudentById(id, { photoUrl });
-    if (!ok) return { error: "Student not found." };
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: (body as Any).error ?? "Failed to upload photo." };
+    }
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to upload photo.",
