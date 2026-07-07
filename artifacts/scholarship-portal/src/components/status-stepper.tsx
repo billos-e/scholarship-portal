@@ -58,11 +58,11 @@ export function StatusStepper({
                 />
                 <div
                   className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full leading-none transition-colors sm:size-7",
-                    rejected && "bg-border opacity-40",
-                    !rejected && done && "bg-primary text-primary-foreground",
-                    !rejected && active && !done && "bg-primary text-primary-foreground",
-                    !rejected && !done && !active && "bg-border",
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 leading-none transition-colors sm:size-7",
+                    rejected && "border-border bg-border opacity-40",
+                    !rejected && done && "border-primary bg-primary text-primary-foreground",
+                    !rejected && active && !done && "border-primary bg-primary text-primary-foreground",
+                    !rejected && !done && !active && "border-primary/40 bg-transparent",
                   )}
                 >
                   {done && !rejected ? <Check className="size-3 sm:size-3.5" /> : null}
@@ -147,7 +147,7 @@ export function StatusStepper({
                     active &&
                       !done &&
                       "border-primary bg-primary/10 text-primary ring-2 ring-primary/20",
-                    upcoming && "border-border bg-muted text-muted-foreground",
+                    upcoming && "border-primary/40 bg-transparent text-muted-foreground",
                   )}
                 >
                   {done ? (
