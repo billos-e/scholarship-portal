@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileText, ImageIcon } from "lucide-react";
 
 import NotFound from "@/pages/not-found";
@@ -18,7 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { fetchRequest, type RequestDetail } from "@/lib/api/requests";
+import { fetchRequest } from "@/lib/api/requests";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { StatusStepper } from "@/components/status-stepper";
 import {
@@ -118,17 +118,14 @@ function WellbeingValue({ value }: { value: number | null }) {
 export default function StudentSubmissionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { student } = requireStudent();
-  const [request, setRequest] = useState<RequestDetail | null | undefined>(
-    undefined,
-  );
 
-  useEffect(() => {
-    fetchRequest(id)
-      .then(setRequest)
-      .catch(() => setRequest(null));
-  }, [id]);
+  const { data: request, isPending } = useQuery({
+    queryKey: ["request", id],
+    queryFn: () => fetchRequest(id),
+    staleTime: 30_000,
+  });
 
-  if (request === undefined) {
+  if (isPending) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-16 w-full rounded-2xl" />

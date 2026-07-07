@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { HistoryRequestNav } from "@/components/student/history-request-nav";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
-import {
-  fetchStudent,
-  type StudentRequestRow,
-} from "@/lib/api/students";
+import { fetchStudent } from "@/lib/api/students";
 
 export default function HistoryLayout({
   children,
@@ -17,13 +14,14 @@ export default function HistoryLayout({
   children: React.ReactNode;
 }) {
   const { student: sessionStudent } = requireStudent();
-  const [requests, setRequests] = useState<StudentRequestRow[] | null>(null);
 
-  useEffect(() => {
-    fetchStudent(sessionStudent.id)
-      .then((student) => setRequests(student?.tuitionPaymentRequests ?? []))
-      .catch(() => setRequests([]));
-  }, [sessionStudent.id]);
+  const { data: student } = useQuery({
+    queryKey: ["student", sessionStudent.id],
+    queryFn: () => fetchStudent(sessionStudent.id),
+    staleTime: 30_000,
+  });
+
+  const requests = student?.tuitionPaymentRequests ?? null;
 
   return (
     <div className="space-y-5 sm:space-y-6">
