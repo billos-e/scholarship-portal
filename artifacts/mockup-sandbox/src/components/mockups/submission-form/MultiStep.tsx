@@ -11,7 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import {
   BookOpen,
   Upload,
@@ -20,14 +23,14 @@ import {
   Check,
   ChevronRight,
   ChevronLeft,
-  Calendar,
+  Calendar as CalendarIcon,
   GraduationCap,
   Smile,
   MessageSquare,
 } from "lucide-react";
 
 const STEPS = [
-  { id: 1, label: "Semester", icon: Calendar },
+  { id: 1, label: "Semester", icon: CalendarIcon },
   { id: 2, label: "Tuition", icon: FileText },
   { id: 3, label: "Academic", icon: GraduationCap },
   { id: 4, label: "Wellbeing", icon: Heart },
@@ -229,6 +232,39 @@ function CheckGrid({
   );
 }
 
+function DueDatePicker() {
+  const [date, setDate] = useState<Date>();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            "w-full justify-start text-left font-normal h-10 px-3",
+            !date && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+          {date ? format(date, "PPP") : "Pick a date"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(d) => {
+            setDate(d);
+            setOpen(false);
+          }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function Step1() {
   return (
     <div className="space-y-5">
@@ -276,28 +312,7 @@ function Step2() {
         <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
           Due date <span className="text-red-400">*</span>
         </Label>
-        <div className="flex gap-3">
-          <Select>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Month" />
-            </SelectTrigger>
-            <SelectContent>
-              {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m, i) => (
-                <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select>
-            <SelectTrigger className="w-[110px]">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent>
-              {[2025,2026,2027,2028,2029,2030].map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <DueDatePicker />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <FileUploadField
