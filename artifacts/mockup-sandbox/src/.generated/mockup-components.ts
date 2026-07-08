@@ -18,5 +18,8 @@ export const modules: ModuleMap = {
   "./components/mockups/student-profile-edit/EditInlineDense.tsx": () => import("../components/mockups/student-profile-edit/EditInlineDense.tsx"),
   "./components/mockups/student-profile-edit/EditSplitPanel.tsx": () => import("../components/mockups/student-profile-edit/EditSplitPanel.tsx"),
   "./components/mockups/student-profile-edit/EditStepped.tsx": () => import("../components/mockups/student-profile-edit/EditStepped.tsx"),
-  "./components/mockups/submission-form/MultiStep.tsx": () => import("../components/mockups/submission-form/MultiStep.tsx")
+  "./components/mockups/submission-form/MultiStep.tsx": () => import("../components/mockups/submission-form/MultiStep.tsx"),
+  "./components/mockups/uni-mobile/AvatarList.tsx": () => import("../components/mockups/uni-mobile/AvatarList.tsx"),
+  "./components/mockups/uni-mobile/CardGrid.tsx": () => import("../components/mockups/uni-mobile/CardGrid.tsx"),
+  "./components/mockups/uni-mobile/FeaturedScroll.tsx": () => import("../components/mockups/uni-mobile/FeaturedScroll.tsx")
 };
