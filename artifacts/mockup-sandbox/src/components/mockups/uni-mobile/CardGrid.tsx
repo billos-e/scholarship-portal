@@ -28,7 +28,6 @@ export function CardGrid() {
       {/* Header */}
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm">
         <div className="mb-4">
-          <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">Admin</p>
           <h1 className="text-xl font-bold text-gray-900">Universities</h1>
         </div>
 
