@@ -191,11 +191,13 @@ function PassedCoursesToggle({
 function RatingRow({
   name,
   label,
+  defaultValue,
 }: {
   name: string;
   label: string;
+  defaultValue?: number;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(defaultValue ?? null);
   return (
     <div className="flex items-center justify-between border-b border-border/40 py-2.5 last:border-0">
       <span className="text-sm text-foreground">{label}</span>
@@ -210,6 +212,7 @@ function RatingRow({
               name={name}
               value={n}
               className="sr-only"
+              defaultChecked={n === (defaultValue ?? null)}
               onChange={() => setSelected(n)}
             />
             <span
@@ -455,11 +458,13 @@ function Step3({
 }
 
 function Step4({
+  defaults = {},
   defaultChallenges,
   defaultActivities,
   onChallengesChange,
   onActivitiesChange,
 }: {
+  defaults?: Record<string, string>;
   defaultChallenges?: string[];
   defaultActivities?: string[];
   onChallengesChange?: (v: string[]) => void;
@@ -477,7 +482,12 @@ function Step4({
         </Label>
         <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-1">
           {WELLBEING_QUESTIONS.map((q) => (
-            <RatingRow key={q.name} name={q.name} label={q.label} />
+            <RatingRow
+              key={q.name}
+              name={q.name}
+              label={q.label}
+              defaultValue={defaults[q.name] ? Number(defaults[q.name]) : undefined}
+            />
           ))}
         </div>
       </div>
@@ -628,7 +638,16 @@ export function SubmissionForm({
     <Step1 key={1} semesters={semesters} defaults={{ universitySemesterId: get("universitySemesterId"), semesterLabel: get("semesterLabel") }} />,
     <Step2 key={2} defaults={{ amountDue: get("amountDue"), dueDate: get("dueDate") }} />,
     <Step3 key={3} defaults={{ gpa: get("gpa"), creditsCompleted: get("creditsCompleted"), passedAllCourses: get("passedAllCourses") }} onPassedCoursesChange={(v) => save({ passedAllCourses: v })} />,
-    <Step4 key={4} defaultChallenges={JSON.parse(get("__chips_challenges", "[]"))} defaultActivities={JSON.parse(get("__chips_activities", "[]"))} onChallengesChange={(v) => save({ __chips_challenges: JSON.stringify(v) })} onActivitiesChange={(v) => save({ __chips_activities: JSON.stringify(v) })} />,
+    <Step4
+      key={4}
+      defaults={Object.fromEntries(
+        WELLBEING_QUESTIONS.map((q) => [q.name, get(q.name)]),
+      )}
+      defaultChallenges={JSON.parse(get("__chips_challenges", "[]"))}
+      defaultActivities={JSON.parse(get("__chips_activities", "[]"))}
+      onChallengesChange={(v) => save({ __chips_challenges: JSON.stringify(v) })}
+      onActivitiesChange={(v) => save({ __chips_activities: JSON.stringify(v) })}
+    />,
     <Step5 key={5} defaults={{ reflectionAchievement: get("reflectionAchievement"), reflectionChallenge: get("reflectionChallenge"), reflectionAdditional: get("reflectionAdditional") }} />,
   ];
 
