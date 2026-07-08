@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 
 const UNIVERSITIES = [
@@ -27,14 +27,9 @@ export function CardGrid() {
     <div className="min-h-screen bg-[#f5f4f0] font-sans">
       {/* Header */}
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">Admin</p>
-            <h1 className="text-xl font-bold text-gray-900">Universities</h1>
-          </div>
-          <button className="size-9 rounded-xl bg-gray-100 flex items-center justify-center">
-            <SlidersHorizontal className="size-4 text-gray-600" />
-          </button>
+        <div className="mb-4">
+          <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">Admin</p>
+          <h1 className="text-xl font-bold text-gray-900">Universities</h1>
         </div>
 
         {/* Search */}
