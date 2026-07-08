@@ -302,7 +302,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
 
                       {/* Status dot */}
                       <div className="absolute top-4 right-4">
-                        <div className={cn("size-3 rounded-full ring-1 ring-inset ring-black/20", university.isActive ? "bg-emerald-400" : "bg-gray-300")} style={{ boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)" }} />
+                        <div className={cn("size-3 rounded-full ring-1 ring-inset ring-black/20", university.isActive ? "bg-emerald-400" : "bg-gray-500")} style={{ boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)" }} />
                       </div>
 
                       {/* Bottom overlay */}
