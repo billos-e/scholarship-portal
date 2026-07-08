@@ -17,13 +17,6 @@ import { SortableTableHead } from "@/components/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Table,
   TableBody,
   TableCell,
@@ -231,16 +224,32 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All universities</CardTitle>
-          <CardDescription>
-            {filtered.length} universit{filtered.length === 1 ? "y" : "ies"} on
-            record.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2 items-center">
+              {(["", "active", "inactive"] as const).map((val) => {
+                const label = val === "" ? "All" : val === "active" ? "Active" : "Inactive";
+                const active = filters.status === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => updateFilters({ status: val })}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} universit{filtered.length === 1 ? "y" : "ies"}
+              </span>
+            </div>
             <SearchField
               id="university-search"
               label="Search"
@@ -248,28 +257,6 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
               placeholder="Name or location"
               onChange={(q) => updateFilters({ q })}
             />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {(["", "active", "inactive"] as const).map((val) => {
-              const label = val === "" ? "All" : val === "active" ? "Active" : "Inactive";
-              const active = filters.status === val;
-              return (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => updateFilters({ status: val })}
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
-                    active
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
           </div>
 
           {paginatedUniversities.length === 0 ? (
@@ -419,8 +406,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
               />
             </>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }
