@@ -283,11 +283,14 @@ async function main() {
     );
     const fall2026Status = fall2026Statuses[i % fall2026Statuses.length];
 
+    const now = new Date();
     for (let j = 0; j < uniSemesters.length; j++) {
       const sem = uniSemesters[j];
       const status = sem.label === "Fall 2026" ? fall2026Status : "PAID";
       const amount = 22000 + (j % 4) * 2500 + (i % 3) * 1000;
-      const submittedAt = addDays(sem.startDate, 14);
+      // Derive submittedAt as a past date: oldest semester furthest back
+      const daysAgo = (uniSemesters.length - j) * 90;
+      const submittedAt = addDays(now, -daysAgo);
       process.stdout.write(`    ${s.first} ${s.last} / ${sem.label} (${status})\n`);
       await seedRequest(studentId, studentId, sem, status, amount, submittedAt);
     }

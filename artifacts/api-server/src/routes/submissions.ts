@@ -162,7 +162,6 @@ router.post("/submissions", async (req, res) => {
       qrPaymentImageUrl: (qrPaymentImageUrl as string) || null,
       universitySemesterId: (universitySemesterId as string) || null,
       submittedAt: now,
-      createdAt: now,
       updatedAt: now,
     });
 
@@ -187,7 +186,6 @@ router.post("/submissions", async (req, res) => {
       reflectionAdditional: (reflectionAdditional as string) || null,
       universitySemesterId: (universitySemesterId as string) || null,
       submittedAt: now,
-      createdAt: now,
       updatedAt: now,
     });
 

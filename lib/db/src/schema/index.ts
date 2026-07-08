@@ -176,7 +176,6 @@ export const tuitionPaymentRequests = pgTable(
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     rejectedAt: timestamp("rejected_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -216,7 +215,6 @@ export const semesterReports = pgTable(
       () => universitySemesters.id,
     ),
     submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("semester_reports_student_id_idx").on(t.studentId)],

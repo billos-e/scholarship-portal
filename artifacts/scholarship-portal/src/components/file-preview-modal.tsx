@@ -42,8 +42,11 @@ export function FilePreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex w-full max-w-lg flex-col gap-0 overflow-hidden p-0">
-        <DialogHeader className="flex flex-row items-center justify-between gap-3 border-b px-5 py-3 pr-12">
+      <DialogContent
+        className="flex flex-col gap-0 overflow-hidden p-0"
+        style={{ width: "75vw", maxWidth: "75vw", maxHeight: "90vh" }}
+      >
+        <DialogHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b px-5 py-3 pr-12">
           <DialogTitle className="truncate text-base font-semibold">
             {label}
           </DialogTitle>
@@ -61,18 +64,19 @@ export function FilePreviewModal({
           </a>
         </DialogHeader>
 
-        <div className="aspect-square w-full bg-muted/30">
+        <div className="min-h-0 flex-1 bg-muted/30">
           {isImage ? (
             <img
               src={url}
               alt={label}
-              className="h-full w-full object-contain"
+              className="h-full max-h-[80vh] w-full object-contain"
             />
           ) : (
             <iframe
               src={url}
               title={label}
               className="h-full w-full border-0"
+              style={{ minHeight: "70vh" }}
             />
           )}
         </div>

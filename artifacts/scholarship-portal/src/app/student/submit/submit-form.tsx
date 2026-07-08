@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useState, useCallback, useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useFormDraft } from "@/lib/use-form-draft";
 import {
   AlertTriangle,
@@ -15,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { getCurrentUser } from "@/lib/auth/session";
 
 import { FormFileField } from "@/components/form-file-field";
 import { Button } from "@/components/ui/button";
@@ -577,6 +580,11 @@ export function SubmissionForm({
   const [stepError, setStepError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+  const user = getCurrentUser();
+  const studentProfileId = user?.studentProfileId ?? null;
+
   const [state, formAction] = useActionState<SubmissionState, FormData>(
     createSubmission,
     {},
@@ -591,8 +599,16 @@ export function SubmissionForm({
   }, [state.error, isProfileError]);
 
   useEffect(() => {
-    if (state.success) clearDraft();
-  }, [state.success]);
+    if (state.success) {
+      clearDraft();
+      if (studentProfileId) {
+        queryClient.invalidateQueries({ queryKey: ["student", studentProfileId] });
+      }
+      if (state.requestId) {
+        navigate(`/student/history/${state.requestId}`);
+      }
+    }
+  }, [state.success, state.requestId]);
 
   const validateStep = useCallback(
     (s: number, form: HTMLFormElement): boolean => {

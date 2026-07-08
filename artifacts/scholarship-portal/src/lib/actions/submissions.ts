@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
@@ -21,6 +19,7 @@ const apiBase = import.meta.env.BASE_URL
 export type SubmissionState = {
   error?: string;
   success?: boolean;
+  requestId?: string;
 };
 
 async function apiFetch(
@@ -237,23 +236,6 @@ export async function createSubmission(
     return { error: result.error ?? "Could not save your submission. Please try again or contact the team." };
   }
 
-  revalidatePath("/student");
-  revalidatePath("/student/history");
-  revalidatePath("/student/profile");
-
-  const createdRequestId = result.data?.requestId;
-  if (createdRequestId) {
-    try {
-      redirect(`/student/history/${createdRequestId}`);
-    } catch (e) {
-      // The redirect shim calls window.location.assign() then throws NEXT_REDIRECT
-      // to halt execution (Next.js convention). Catch it here so useActionState
-      // receives { success: true } instead of an unhandled error.
-      if (e instanceof Error && e.message.startsWith("NEXT_REDIRECT:")) {
-        return { success: true };
-      }
-      throw e;
-    }
-  }
-  return { success: true };
+  const createdRequestId = result.data?.requestId as string | undefined;
+  return { success: true, requestId: createdRequestId };
 }

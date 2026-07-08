@@ -10,6 +10,7 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "migrate": "drizzle-kit migrate --config ./drizzle.config.ts",
     "seed": "node /home/runner/workspace/node_modules/.pnpm/tsx@4.22.4/node_modules/tsx/dist/cli.mjs /home/runner/workspace/lib/db/seed.ts"
   },
   "dependencies": {
