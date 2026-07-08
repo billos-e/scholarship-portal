@@ -220,7 +220,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
       <UniversityDialog
         trigger={
           <button
-            className="fixed bottom-6 right-6 z-50 size-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            className="fixed bottom-16 right-6 z-50 size-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             title="New University"
           >
             <Plus className="size-6" />
