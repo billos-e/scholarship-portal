@@ -133,7 +133,7 @@ export function EditInlineDense() {
             <SelInput value={student.university} />
           </Row>
           <PairRow
-            label1="Degree program" children1={<TextInput value={student.degreeProgram} />}
+            label1="Degree program" children1={<SelInput value={student.degreeProgram} />}
             label2="Year of study" children2={<TextInput value={student.yearOfStudy} />}
           />
           <PairRow

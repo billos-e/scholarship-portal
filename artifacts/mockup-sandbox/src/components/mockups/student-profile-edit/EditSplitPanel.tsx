@@ -115,7 +115,7 @@ export function EditSplitPanel() {
 
           <Block title="Academic information">
             <Sel label="University" value={student.university} wide />
-            <F label="Degree program" value={student.degreeProgram} />
+            <Sel label="Degree program" value={student.degreeProgram} />
             <F label="Year of study" value={student.yearOfStudy} />
             <Sel label="Current semester" value={student.currentSemester} />
             <F label="GPA" value={student.gpa} type="number" />

@@ -120,7 +120,7 @@ export function EditStepped() {
       children: (
         <div className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-3">
           <Sel label="University" value={student.university} wide />
-          <F label="Degree program" value={student.degreeProgram} />
+          <Sel label="Degree program" value={student.degreeProgram} />
           <F label="Year of study" value={student.yearOfStudy} />
           <Sel label="Current semester" value={student.currentSemester} />
           <F label="GPA" value={student.gpa} type="number" />
