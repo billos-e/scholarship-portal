@@ -315,7 +315,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
                       </div>
 
                       {/* Bottom overlay */}
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-4 pt-8 pb-4">
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-4 pt-12 pb-4">
                         <p className="text-white font-bold text-sm leading-tight line-clamp-2">{university.name}</p>
                         <p className="text-white/70 text-xs mt-1">
                           {[location, university.studentCount > 0 ? `${university.studentCount} students` : null].filter(Boolean).join(" · ")}
