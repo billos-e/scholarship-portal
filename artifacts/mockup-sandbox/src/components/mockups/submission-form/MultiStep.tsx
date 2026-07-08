@@ -266,18 +266,37 @@ function Step2() {
           Enter your tuition details and upload payment proof.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-            Amount due (THB) <span className="text-red-400">*</span>
-          </Label>
-          <Input type="number" placeholder="0.00" />
-        </div>
-        <div>
-          <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-            Due date <span className="text-red-400">*</span>
-          </Label>
-          <Input type="date" />
+      <div>
+        <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+          Amount due (THB) <span className="text-red-400">*</span>
+        </Label>
+        <Input type="number" placeholder="0.00" />
+      </div>
+      <div>
+        <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+          Due date <span className="text-red-400">*</span>
+        </Label>
+        <div className="flex gap-3">
+          <Select>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m, i) => (
+                <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select>
+            <SelectTrigger className="w-[110px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {[2025,2026,2027,2028,2029,2030].map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
