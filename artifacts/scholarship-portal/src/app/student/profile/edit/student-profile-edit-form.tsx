@@ -1,25 +1,27 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Lock, Camera } from "lucide-react";
+import Link from "next/link";
 
-import { ProfileInfoCard } from "@/components/admin/profile-info-card";
-import { StudentAcademicFields } from "@/components/admin/student-academic-fields";
 import {
   type ActionState,
   saveOwnProfileEdit,
   uploadOwnPhoto,
 } from "@/lib/actions/profile";
 import { getInitials } from "@/lib/initials";
-import type { StudentAcademicOptions } from "@/lib/student-academic-options";
+import type {
+  SemesterOption,
+  StudentAcademicOptions,
+} from "@/lib/student-academic-options";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
-import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 
 type UniversityOption = { id: string; name: string };
 
@@ -40,6 +42,129 @@ export type StudentProfileEditData = {
   bankName: string | null;
   promptpayNumber: string | null;
 };
+
+// ── Merge helpers (same logic as StudentAcademicFields) ───────────────────────
+
+function mergeProgramOptions(programs: string[], current?: string | null) {
+  if (!current?.trim()) return programs;
+  const set = new Set(programs);
+  set.add(current.trim());
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+function mergeSemesterOptions(
+  semesters: SemesterOption[],
+  currentLabel?: string | null,
+) {
+  if (!currentLabel?.trim()) return semesters;
+  if (semesters.some((s) => s.label === currentLabel)) return semesters;
+  return [
+    ...semesters,
+    {
+      id: `legacy-${currentLabel}`,
+      label: currentLabel,
+      academicYear: "",
+      startDate: "",
+      endDate: "",
+    },
+  ];
+}
+
+// ── Layout primitives ─────────────────────────────────────────────────────────
+
+const LABEL_W = "w-44 shrink-0";
+
+function Row({
+  label,
+  locked,
+  children,
+}: {
+  label: string;
+  locked?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-5 border-b border-border/30 py-3 last:border-0",
+        locked && "opacity-60",
+      )}
+    >
+      <div className={`${LABEL_W} flex items-center gap-1.5`}>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        {locked && <Lock className="size-2.5 text-muted-foreground/50" />}
+      </div>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function PairRow({
+  label1,
+  children1,
+  label2,
+  children2,
+}: {
+  label1: string;
+  children1: React.ReactNode;
+  label2: string;
+  children2: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center border-b border-border/30 py-3 last:border-0">
+      <div className="flex flex-1 items-center gap-5">
+        <div className={`${LABEL_W} text-xs font-medium text-muted-foreground`}>{label1}</div>
+        <div className="flex-1 min-w-0">{children1}</div>
+      </div>
+      <div className="mx-5 h-6 w-px shrink-0 bg-border/40" />
+      <div className="flex flex-1 items-center gap-5">
+        <div className="w-36 shrink-0 text-xs font-medium text-muted-foreground">{label2}</div>
+        <div className="flex-1 min-w-0">{children2}</div>
+      </div>
+    </div>
+  );
+}
+
+function LockedValue({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-8 items-center rounded-md border border-dashed border-border/50 bg-muted/30 px-2.5 text-sm text-muted-foreground">
+      {children}
+    </div>
+  );
+}
+
+function FieldInput(props: React.ComponentProps<typeof Input>) {
+  return (
+    <Input
+      {...props}
+      className="h-8 rounded-md px-2.5 text-sm"
+    />
+  );
+}
+
+function FieldSelect(props: React.ComponentProps<typeof NativeSelect>) {
+  return (
+    <NativeSelect
+      {...props}
+      className="h-8 rounded-md px-2.5 text-sm"
+    />
+  );
+}
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+        {title}
+      </p>
+      <div className="overflow-hidden rounded-xl border border-border/70 bg-card px-6 shadow-sm">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Photo section (separate upload form) ──────────────────────────────────────
 
 function StudentPhotoSection({
   photoUrl,
@@ -75,38 +200,49 @@ function StudentPhotoSection({
   }, [uploadState]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border/80 bg-card px-4 py-5 shadow-sm sm:px-6 sm:py-6 md:px-8 md:py-8">
-      <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
-        <div
-          className={cn(
-            "relative size-24 shrink-0 overflow-hidden rounded-full sm:size-28",
-            !displayUrl &&
-              "flex items-center justify-center bg-primary text-3xl font-bold text-primary-foreground",
-          )}
-        >
-          {displayUrl ? (
-            <Image
-              src={displayUrl}
-              alt={`${fullName} profile photo`}
-              fill
-              sizes="(max-width: 640px) 96px, 112px"
-              className="object-cover"
-              unoptimized
-            />
-          ) : (
-            initials
-          )}
+    <Group title="Photo">
+      <form
+        action={uploadAction}
+        className="flex items-center gap-6 py-4"
+      >
+        {/* Avatar */}
+        <div className="relative shrink-0">
+          <div
+            className={cn(
+              "relative size-14 overflow-hidden rounded-full",
+              !displayUrl &&
+                "flex items-center justify-center bg-primary text-base font-bold text-primary-foreground",
+            )}
+          >
+            {displayUrl ? (
+              <Image
+                src={displayUrl}
+                alt={`${fullName} profile photo`}
+                fill
+                sizes="56px"
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              initials
+            )}
+          </div>
+          <label
+            htmlFor="photo"
+            className="absolute -bottom-0.5 -right-0.5 flex size-6 cursor-pointer items-center justify-center rounded-full border border-card bg-accent text-accent-foreground shadow hover:bg-accent/90"
+          >
+            <Camera className="size-3" />
+          </label>
         </div>
 
-        <form action={uploadAction} className="min-w-0 flex-1 space-y-2">
-          <Label htmlFor="photo" className="text-base font-semibold">
-            Profile photo
-          </Label>
+        {/* Controls */}
+        <div className="flex flex-1 items-center gap-4">
           <Input
             id="photo"
             name="photo"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            className="flex-1 h-8 rounded-md text-xs"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
@@ -115,17 +251,25 @@ function StudentPhotoSection({
               }
             }}
           />
-          <p className="text-xs text-muted-foreground">
-            JPG, PNG, or WebP. Max 10 MB.
+          <p className="shrink-0 text-xs text-muted-foreground">
+            JPG, PNG, WebP · Max 10 MB
           </p>
-          <Button type="submit" size="sm" variant="outline" disabled={uploading}>
-            {uploading ? "Uploading..." : "Upload photo"}
+          <Button
+            type="submit"
+            size="sm"
+            variant="outline"
+            disabled={uploading}
+            className="shrink-0 h-8 rounded-md text-xs"
+          >
+            {uploading ? "Uploading…" : "Upload"}
           </Button>
-        </form>
-      </div>
-    </section>
+        </div>
+      </form>
+    </Group>
   );
 }
+
+// ── Main form ─────────────────────────────────────────────────────────────────
 
 export function StudentProfileEditForm({
   student,
@@ -146,6 +290,40 @@ export function StudentProfileEditForm({
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(student.photoUrl);
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Academic controlled state (mirrors StudentAcademicFields logic)
+  const [universityId, setUniversityId] = useState(student.universityId ?? "");
+  const [degreeProgram, setDegreeProgram] = useState(student.degreeProgram ?? "");
+  const [semesterLabel, setSemesterLabel] = useState(student.currentSemesterLabel ?? "");
+  const [yearOfStudy, setYearOfStudy] = useState(student.yearOfStudy ?? "");
+
+  const programs = useMemo(
+    () =>
+      universityId
+        ? mergeProgramOptions(
+            academicOptions.programsByUniversity[universityId] ?? [],
+            student.degreeProgram,
+          )
+        : [],
+    [universityId, academicOptions.programsByUniversity, student.degreeProgram],
+  );
+
+  const semesters = useMemo(
+    () =>
+      universityId
+        ? mergeSemesterOptions(
+            academicOptions.semestersByUniversity[universityId] ?? [],
+            student.currentSemesterLabel,
+          )
+        : [],
+    [universityId, academicOptions.semestersByUniversity, student.currentSemesterLabel],
+  );
+
+  function handleUniversityChange(nextId: string) {
+    setUniversityId(nextId);
+    setDegreeProgram("");
+    setSemesterLabel("");
+  }
+
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     saveOwnProfileEdit,
     {},
@@ -161,6 +339,35 @@ export function StudentProfileEditForm({
 
   return (
     <div className="space-y-6">
+      {/* ── Page heading + actions ── */}
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="font-heading text-2xl font-bold text-foreground">Edit profile</h1>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            render={<Link href={profileHref} />}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isPending}
+            className="bg-accent text-accent-foreground hover:bg-accent/90"
+            onClick={() => {
+              if (formRef.current) {
+                formAction(new FormData(formRef.current));
+              }
+            }}
+          >
+            {isPending ? "Saving…" : "Save changes"}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Photo ── */}
       <StudentPhotoSection
         photoUrl={currentPhotoUrl}
         fullName={fullName}
@@ -168,80 +375,128 @@ export function StudentProfileEditForm({
         onUploaded={setCurrentPhotoUrl}
       />
 
+      {/* ── Main form ── */}
       <form
         ref={formRef}
         onSubmit={(e) => {
           e.preventDefault();
           formAction(new FormData(e.currentTarget));
         }}
-        className="space-y-6"
+        className="space-y-5"
       >
-        <ProfileInfoCard title="Personal information">
-          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First name</Label>
-              <Input
-                id="firstName"
-                name="firstName"
-                required
-                defaultValue={student.firstName}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input
-                id="lastName"
-                name="lastName"
-                required
-                defaultValue={student.lastName}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                Student ID
-                <Lock className="size-3 text-muted-foreground/60" />
-              </Label>
-              <div className="flex h-9 items-center rounded-lg border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground">
-                {student.studentId ?? <span className="italic opacity-60">Not set</span>}
-              </div>
-              <input type="hidden" name="studentId" value={student.studentId ?? ""} />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                Email address
-                <Lock className="size-3 text-muted-foreground/60" />
-              </Label>
-              <div className="flex h-9 items-center rounded-lg border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground">
-                {student.email}
-              </div>
-              <input type="hidden" name="email" value={student.email} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                defaultValue={student.phone ?? ""}
-              />
-            </div>
-          </div>
-        </ProfileInfoCard>
+        {/* Personal information */}
+        <Group title="Personal information">
+          <PairRow
+            label1="First name"
+            children1={
+              <FieldInput id="firstName" name="firstName" required defaultValue={student.firstName} />
+            }
+            label2="Last name"
+            children2={
+              <FieldInput id="lastName" name="lastName" required defaultValue={student.lastName} />
+            }
+          />
+          <Row label="Student ID" locked>
+            <LockedValue>
+              {student.studentId ?? <span className="italic opacity-60">Not set</span>}
+            </LockedValue>
+            <input type="hidden" name="studentId" value={student.studentId ?? ""} />
+          </Row>
+          <Row label="Email address" locked>
+            <LockedValue>{student.email}</LockedValue>
+            <input type="hidden" name="email" value={student.email} />
+          </Row>
+          <Row label="Phone number">
+            <FieldInput id="phone" name="phone" type="tel" defaultValue={student.phone ?? ""} />
+          </Row>
+        </Group>
 
-        <ProfileInfoCard title="Academic information">
-          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-            <StudentAcademicFields
-              idPrefix="edit"
-              universities={universities}
-              academicOptions={academicOptions}
-              defaultUniversityId={student.universityId}
-              defaultDegreeProgram={student.degreeProgram}
-              defaultSemesterLabel={student.currentSemesterLabel}
-              defaultYearOfStudy={student.yearOfStudy}
-            />
-            <div className="space-y-2">
-              <Label htmlFor="gpa">GPA</Label>
-              <Input
+        {/* Academic information */}
+        <Group title="Academic information">
+          {/* Hidden inputs for controlled values */}
+          <input type="hidden" name="universityId" value={universityId} />
+          <input type="hidden" name="degreeProgram" value={degreeProgram} />
+          <input type="hidden" name="currentSemesterLabel" value={semesterLabel} />
+          <input type="hidden" name="yearOfStudy" value={yearOfStudy} />
+
+          <Row label="University">
+            <FieldSelect
+              id="edit-universityId"
+              value={universityId}
+              onChange={(e) => handleUniversityChange(e.target.value)}
+            >
+              <option value="">— None —</option>
+              {universities.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </FieldSelect>
+          </Row>
+
+          <PairRow
+            label1="Degree program"
+            children1={
+              <div className="relative">
+                <FieldInput
+                  id="edit-degreeProgram"
+                  value={degreeProgram}
+                  onChange={(e) => setDegreeProgram(e.target.value)}
+                  disabled={!universityId}
+                  list={universityId ? "edit-degree-program-options" : undefined}
+                  placeholder={
+                    !universityId
+                      ? "Select a university first"
+                      : programs.length === 0
+                        ? "Enter degree program"
+                        : "Select or type a program"
+                  }
+                />
+                {universityId && (
+                  <datalist id="edit-degree-program-options">
+                    {programs.map((p) => (
+                      <option key={p} value={p} />
+                    ))}
+                  </datalist>
+                )}
+              </div>
+            }
+            label2="Year of study"
+            children2={
+              <FieldInput
+                id="edit-yearOfStudy"
+                value={yearOfStudy}
+                onChange={(e) => setYearOfStudy(e.target.value)}
+                placeholder="e.g. 2"
+              />
+            }
+          />
+
+          <PairRow
+            label1="Current semester"
+            children1={
+              <FieldSelect
+                id="edit-currentSemesterLabel"
+                value={semesterLabel}
+                onChange={(e) => setSemesterLabel(e.target.value)}
+                disabled={!universityId}
+              >
+                <option value="">
+                  {!universityId
+                    ? "Select a university first"
+                    : semesters.length === 0
+                      ? "No semesters configured"
+                      : "Select semester…"}
+                </option>
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.label}>
+                    {s.label}
+                    {s.academicYear ? ` (${s.academicYear})` : ""}
+                  </option>
+                ))}
+              </FieldSelect>
+            }
+            label2="GPA"
+            children2={
+              <FieldInput
                 id="gpa"
                 name="gpa"
                 type="number"
@@ -250,60 +505,37 @@ export function StudentProfileEditForm({
                 max="4"
                 defaultValue={student.gpa ?? ""}
               />
-            </div>
-          </div>
-        </ProfileInfoCard>
+            }
+          />
+        </Group>
 
-        <ProfileInfoCard title="Bank information">
-          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="bankName">Bank name</Label>
-              <Input
-                id="bankName"
-                name="bankName"
-                defaultValue={student.bankName ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bankAccountName">Account holder</Label>
-              <Input
-                id="bankAccountName"
-                name="bankAccountName"
-                defaultValue={student.bankAccountName ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bankAccountNumber">Account number</Label>
-              <Input
-                id="bankAccountNumber"
-                name="bankAccountNumber"
-                defaultValue={student.bankAccountNumber ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promptpayNumber">PromptPay</Label>
-              <Input
-                id="promptpayNumber"
-                name="promptpayNumber"
-                defaultValue={student.promptpayNumber ?? ""}
-              />
-            </div>
-          </div>
-        </ProfileInfoCard>
+        {/* Bank information */}
+        <Group title="Bank information">
+          <PairRow
+            label1="Bank name"
+            children1={
+              <FieldInput id="bankName" name="bankName" defaultValue={student.bankName ?? ""} />
+            }
+            label2="Account holder"
+            children2={
+              <FieldInput id="bankAccountName" name="bankAccountName" defaultValue={student.bankAccountName ?? ""} />
+            }
+          />
+          <PairRow
+            label1="Account number"
+            children1={
+              <FieldInput id="bankAccountNumber" name="bankAccountNumber" defaultValue={student.bankAccountNumber ?? ""} />
+            }
+            label2="PromptPay"
+            children2={
+              <FieldInput id="promptpayNumber" name="promptpayNumber" defaultValue={student.promptpayNumber ?? ""} />
+            }
+          />
+        </Group>
 
         {state.error ? (
           <p className="text-sm font-medium text-destructive">{state.error}</p>
         ) : null}
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto"
-          >
-            {isPending ? "Saving..." : "Save changes"}
-          </Button>
-        </div>
       </form>
     </div>
   );
