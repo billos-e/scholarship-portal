@@ -240,7 +240,7 @@ function Step1() {
       </div>
       <div>
         <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-          Semester
+          Semester <span className="text-red-400">*</span>
         </Label>
         <Select>
           <SelectTrigger className="w-full">
