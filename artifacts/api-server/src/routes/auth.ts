@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, users } from "@workspace/db";
+import { db, users, students } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -35,6 +35,20 @@ router.post("/auth/login", async (req, res) => {
       email: user.email,
       role: user.role,
     };
+
+    if (user.role === "STUDENT") {
+      const studentRows = await db
+        .select({ id: students.id, firstName: students.firstName, lastName: students.lastName })
+        .from(students)
+        .where(eq(students.userId, user.id))
+        .limit(1);
+      const profile = studentRows[0];
+      if (profile) {
+        response.studentProfileId = profile.id;
+        response.firstName = profile.firstName;
+        response.lastName = profile.lastName;
+      }
+    }
 
     res.json(response);
   } catch (err) {
