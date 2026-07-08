@@ -11,10 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import {
   BookOpen,
   Upload,
@@ -23,14 +20,14 @@ import {
   Check,
   ChevronRight,
   ChevronLeft,
-  Calendar as CalendarIcon,
+  Calendar,
   GraduationCap,
   Smile,
   MessageSquare,
 } from "lucide-react";
 
 const STEPS = [
-  { id: 1, label: "Semester", icon: CalendarIcon },
+  { id: 1, label: "Semester", icon: Calendar },
   { id: 2, label: "Tuition", icon: FileText },
   { id: 3, label: "Academic", icon: GraduationCap },
   { id: 4, label: "Wellbeing", icon: Heart },
@@ -232,39 +229,6 @@ function CheckGrid({
   );
 }
 
-function DueDatePicker() {
-  const [date, setDate] = useState<Date>();
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal h-10 px-3",
-            !date && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-          {date ? format(date, "PPP") : "Pick a date"}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={(d) => {
-            setDate(d);
-            setOpen(false);
-          }}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 function Step1() {
   return (
     <div className="space-y-5">
@@ -302,17 +266,19 @@ function Step2() {
           Enter your tuition details and upload payment proof.
         </p>
       </div>
-      <div>
-        <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-          Amount due (THB) <span className="text-red-400">*</span>
-        </Label>
-        <Input type="number" placeholder="0.00" />
-      </div>
-      <div>
-        <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-          Due date <span className="text-red-400">*</span>
-        </Label>
-        <DueDatePicker />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+            Amount due (THB) <span className="text-red-400">*</span>
+          </Label>
+          <Input type="number" placeholder="0.00" />
+        </div>
+        <div>
+          <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+            Due date <span className="text-red-400">*</span>
+          </Label>
+          <Input type="date" />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <FileUploadField
