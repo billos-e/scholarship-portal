@@ -1,6 +1,9 @@
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { FileText } from "lucide-react";
 
+import { FilePreviewModal } from "@/components/file-preview-modal";
+import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
 
 export function DetailField({
@@ -42,9 +45,13 @@ export function DetailFileLink({
   url: string | null;
   icon?: LucideIcon;
 }) {
+  const [open, setOpen] = useState(false);
+
   if (!url) {
     return <DetailField label={label} />;
   }
+
+  const resolvedUrl = uploadPublicUrl(url);
 
   return (
     <div className="rounded-lg border border-border/50 bg-muted/25 px-4 py-3">
@@ -52,16 +59,22 @@ export function DetailFileLink({
         {label}
       </dt>
       <dd className="mt-1">
-        <a
-          href={`/api/uploads/${url}`}
-          target="_blank"
-          rel="noreferrer noopener"
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
           className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
         >
           <Icon className="size-4 shrink-0" />
-          Open file
-        </a>
+          View file
+        </button>
       </dd>
+
+      <FilePreviewModal
+        open={open}
+        onClose={() => setOpen(false)}
+        url={resolvedUrl}
+        label={label}
+      />
     </div>
   );
 }

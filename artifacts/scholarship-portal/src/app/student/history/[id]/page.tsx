@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, ImageIcon } from "lucide-react";
+
+import { FilePreviewModal } from "@/components/file-preview-modal";
 
 import NotFound from "@/pages/not-found";
 import { StatusBadge } from "@/components/status-badge";
@@ -56,25 +59,36 @@ function FileLink({
   url: string | null;
   icon: typeof FileText;
 }) {
+  const [open, setOpen] = useState(false);
+
   if (!url) {
     return <Field label={label} />;
   }
+
+  const resolvedUrl = uploadPublicUrl(url);
+
   return (
     <div className="space-y-1">
       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
       <dd>
-        <a
-          href={uploadPublicUrl(url)}
-          target="_blank"
-          rel="noreferrer noopener"
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
           className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
           <Icon className="size-4" />
-          Open file
-        </a>
+          View file
+        </button>
       </dd>
+
+      <FilePreviewModal
+        open={open}
+        onClose={() => setOpen(false)}
+        url={resolvedUrl}
+        label={label}
+      />
     </div>
   );
 }
