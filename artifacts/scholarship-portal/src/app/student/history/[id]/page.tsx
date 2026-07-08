@@ -174,7 +174,7 @@ export default function StudentSubmissionDetailPage() {
           <StatusBadge status={request.status} />
         </CardHeader>
         <CardContent className="space-y-6">
-          <StatusStepper status={request.status} compact className="mb-2" />
+          <StatusStepper status={request.status} variant="dots" className="mb-2 max-w-none" />
           <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <Field
               label="Amount due"
