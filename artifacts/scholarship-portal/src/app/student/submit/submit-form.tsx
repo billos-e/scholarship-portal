@@ -212,7 +212,7 @@ function RatingRow({
                   ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : selected !== null && selected >= n
                     ? "bg-primary/15 text-primary"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary",
               )}
             >
               {n}
