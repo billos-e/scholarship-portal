@@ -280,7 +280,7 @@ export function StudentCreateDialog({
                       universityId={universityId}
                       onUniversityChange={onUniversityChange}
                     />
-                    <div className="min-w-0 space-y-2 sm:col-span-2">
+                    <div className="min-w-0 space-y-2">
                       <Label htmlFor="gpa">GPA</Label>
                       <Input
                         id="gpa"
@@ -290,7 +290,6 @@ export function StudentCreateDialog({
                         min="0"
                         max="4"
                         placeholder="0.00 – 4.00"
-                        className="max-w-xs"
                       />
                     </div>
                   </div>
