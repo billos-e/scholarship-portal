@@ -595,7 +595,7 @@ export function ImportWizard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="divide-y divide-border p-0">
-            <details open className="group/section">
+            <details open={!hasSemesterSheet && !hasDegreeProgramSheet} className="group/section">
               <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors">
                 {entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet)
                   ? "Universities"
@@ -647,7 +647,7 @@ export function ImportWizard() {
             </details>
 
             {hasSemesterSheet ? (
-              <details open className="group/section">
+              <details className="group/section">
                 <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors">
                   <span>
                     Semesters
@@ -699,7 +699,7 @@ export function ImportWizard() {
             ) : null}
 
             {hasDegreeProgramSheet ? (
-              <details open className="group/section">
+              <details className="group/section">
                 <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors">
                   <span>
                     Degree programs
