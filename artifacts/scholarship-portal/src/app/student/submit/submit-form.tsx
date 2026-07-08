@@ -1,22 +1,20 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState, useCallback } from "react";
 import { useFormStatus } from "react-dom";
 import {
-  BookOpen,
   Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
   GraduationCap,
   Heart,
-  Landmark,
   MessageSquare,
-  Sparkles,
-  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { RequestSectionCard } from "@/components/admin/request-section-card";
 import { FormFileField } from "@/components/form-file-field";
-import { WellbeingScaleGrid } from "@/components/student/wellbeing-scale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,16 +42,185 @@ type Defaults = {
   promptpayNumber: string;
 };
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+const STEPS = [
+  { id: 1, label: "Semester", icon: Calendar },
+  { id: 2, label: "Tuition", icon: FileText },
+  { id: 3, label: "Academic", icon: GraduationCap },
+  { id: 4, label: "Wellbeing", icon: Heart },
+  { id: 5, label: "Reflections", icon: MessageSquare },
+];
+
+/* ── Step Indicator ─────────────────────────────────────────── */
+
+function StepIndicator({ current }: { current: number }) {
   return (
-    <Button
-      type="submit"
-      disabled={pending}
-      className="w-full min-w-0 bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto sm:min-w-[180px]"
-    >
-      {pending ? "Submitting..." : "Submit semester"}
-    </Button>
+    <div className="mb-6 flex items-center justify-center gap-0">
+      {STEPS.map((step, idx) => {
+        const Icon = step.icon;
+        const done = current > step.id;
+        const active = current === step.id;
+        return (
+          <div key={step.id} className="flex items-center">
+            <div className="flex flex-col items-center gap-1.5">
+              <div
+                className={cn(
+                  "flex size-10 items-center justify-center rounded-full border-2 transition-all duration-200",
+                  done
+                    ? "border-success bg-success text-success-foreground"
+                    : active
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                      : "border-border bg-background text-muted-foreground",
+                )}
+              >
+                {done ? (
+                  <Check className="size-4" />
+                ) : (
+                  <Icon className="size-4" />
+                )}
+              </div>
+              <span
+                className={cn(
+                  "whitespace-nowrap text-xs font-medium",
+                  active
+                    ? "text-primary"
+                    : done
+                      ? "text-success"
+                      : "text-muted-foreground",
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+            {idx < STEPS.length - 1 && (
+              <div
+                className={cn(
+                  "mx-1 mb-5 h-0.5 w-10 transition-all duration-300",
+                  current > step.id ? "bg-success/60" : "bg-border",
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Reusable field pieces ────────────────────────────────── */
+
+function StepHeader({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+function RequiredMark() {
+  return (
+    <span className="text-destructive" aria-hidden>
+      {" "}*
+    </span>
+  );
+}
+
+function PassedCoursesToggle() {
+  const [val, setVal] = useState<string>("");
+  const options = [
+    { value: "true", label: "Yes", tone: "success" as const },
+    { value: "false", label: "No", tone: "destructive" as const },
+  ];
+  return (
+    <div>
+      <Label className="mb-1.5 block text-sm font-medium">
+        Passed all courses?
+      </Label>
+      <div className="flex gap-2">
+        {options.map((opt) => {
+          const active = val === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setVal(opt.value)}
+              className={cn(
+                "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
+                active
+                  ? opt.tone === "success"
+                    ? "border-success/40 bg-success/10 text-success"
+                    : "border-destructive/40 bg-destructive/10 text-destructive"
+                  : "border-border bg-background text-muted-foreground hover:border-border/80",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-4 items-center justify-center rounded-sm border text-[10px] font-bold",
+                  active
+                    ? opt.tone === "success"
+                      ? "border-success bg-success text-success-foreground"
+                      : "border-destructive bg-destructive text-destructive-foreground"
+                    : "border-border bg-transparent text-transparent",
+                )}
+              >
+                {opt.tone === "success" ? "\u2713" : "\u2717"}
+              </span>
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+      <input type="hidden" name="passedAllCourses" value={val} />
+    </div>
+  );
+}
+
+function RatingRow({
+  name,
+  label,
+}: {
+  name: string;
+  label: string;
+}) {
+  const [selected, setSelected] = useState<number | null>(null);
+  return (
+    <div className="flex items-center justify-between border-b border-border/40 py-2.5 last:border-0">
+      <span className="text-sm text-foreground">{label}</span>
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <label
+            key={n}
+            className="group flex cursor-pointer flex-col items-center"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={n}
+              className="sr-only"
+              onChange={() => setSelected(n)}
+            />
+            <span
+              className={cn(
+                "flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all",
+                selected === n
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                  : selected !== null && selected >= n
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+              )}
+            >
+              {n}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -88,6 +255,254 @@ function ChoiceGrid({
   );
 }
 
+/* ── Step contents ──────────────────────────────────────────── */
+
+function Step1({ semesters }: { semesters: SemesterOption[] }) {
+  return (
+    <div className="space-y-5">
+      <StepHeader
+        title="Select Semester"
+        description="Choose the semester this submission covers."
+      />
+      <div className="space-y-2">
+        <Label htmlFor="semester">
+          Semester
+          <RequiredMark />
+        </Label>
+        {semesters.length > 0 ? (
+          <>
+            <NativeSelect
+              id="semester"
+              name="universitySemesterId"
+              required
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select a semester
+              </option>
+              {semesters.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="text-xs text-muted-foreground">
+              Choose from your university&apos;s active semesters.
+            </p>
+          </>
+        ) : (
+          <>
+            <Input
+              id="semesterLabel"
+              name="semesterLabel"
+              required
+              list="semester-suggestions"
+              placeholder="Fall 2026"
+            />
+            <datalist id="semester-suggestions">
+              {SEMESTER_LABEL_SUGGESTIONS.map((label) => (
+                <option key={label} value={label} />
+              ))}
+            </datalist>
+            <p className="text-xs text-muted-foreground">
+              No semesters configured — enter the term name manually.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Step2() {
+  return (
+    <div className="space-y-5">
+      <StepHeader
+        title="Tuition Payment"
+        description="Enter your tuition details and upload payment proof."
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="amountDue">
+            Amount due (THB)
+            <RequiredMark />
+          </Label>
+          <Input
+            id="amountDue"
+            name="amountDue"
+            type="number"
+            required
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            placeholder="25000"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dueDate">
+            Due date
+            <RequiredMark />
+          </Label>
+          <Input id="dueDate" name="dueDate" type="date" required />
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormFileField
+          id="invoiceFile"
+          name="invoiceFile"
+          label="Invoice / bill"
+          hint="PDF, JPG or PNG"
+          accept="application/pdf,image/jpeg,image/png"
+          optional
+        />
+        <FormFileField
+          id="screenshotFile"
+          name="screenshotFile"
+          label="Payment screenshot"
+          hint="JPG or PNG"
+          accept="image/jpeg,image/png"
+          optional
+          variant="image"
+        />
+      </div>
+    </div>
+  );
+}
+
+function Step3() {
+  return (
+    <div className="space-y-5">
+      <StepHeader
+        title="Academic Report"
+        description="Share your academic progress this semester."
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="gpa">GPA (0–4)</Label>
+          <Input
+            id="gpa"
+            name="gpa"
+            type="number"
+            min="0"
+            max="4"
+            step="0.01"
+            inputMode="decimal"
+            placeholder="3.50"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="creditsCompleted">Credits completed</Label>
+          <Input
+            id="creditsCompleted"
+            name="creditsCompleted"
+            type="number"
+            min="0"
+            max="60"
+            step="1"
+            inputMode="numeric"
+            placeholder="18"
+          />
+        </div>
+      </div>
+      <PassedCoursesToggle />
+      <FormFileField
+        id="transcriptFile"
+        name="transcriptFile"
+        label="Transcript"
+        hint="PDF, JPG or PNG"
+        accept="application/pdf,image/jpeg,image/png"
+        optional
+      />
+    </div>
+  );
+}
+
+function Step4() {
+  return (
+    <div className="space-y-6">
+      <StepHeader
+        title="Wellbeing & Activities"
+        description="Rate your wellbeing and tell us how you've been engaged."
+      />
+      <div>
+        <Label className="mb-2 block text-sm font-medium">
+          Rate each area (1 = low, 5 = high)
+        </Label>
+        <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-1">
+          {WELLBEING_QUESTIONS.map((q) => (
+            <RatingRow key={q.name} name={q.name} label={q.label} />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Current challenges</Label>
+        <ChoiceGrid name="challenges" options={CHALLENGE_OPTIONS} />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Activities & involvement</Label>
+        <ChoiceGrid name="activities" options={ACTIVITY_OPTIONS} />
+      </div>
+    </div>
+  );
+}
+
+function Step5() {
+  return (
+    <div className="space-y-5">
+      <StepHeader
+        title="Reflections"
+        description="Share your thoughts and experiences this semester."
+      />
+      {[
+        {
+          key: "reflectionAchievement",
+          label: "Biggest achievement",
+          placeholder: "What are you most proud of this semester?",
+        },
+        {
+          key: "reflectionChallenge",
+          label: "Biggest challenge",
+          placeholder: "What was the hardest thing you faced?",
+        },
+        {
+          key: "reflectionAdditional",
+          label: "Anything else you'd like to share",
+          placeholder: "Optional — any other thoughts or feedback…",
+        },
+      ].map((field) => (
+        <div key={field.key} className="space-y-2">
+          <Label htmlFor={field.key}>{field.label}</Label>
+          <Textarea
+            id={field.key}
+            name={field.key}
+            rows={3}
+            className="resize-y"
+            placeholder={field.placeholder}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Submit button ──────────────────────────────────────────── */
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      disabled={pending}
+      className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+    >
+      <Check className="size-4" />
+      {pending ? "Submitting…" : "Submit"}
+    </Button>
+  );
+}
+
+/* ── Main form ──────────────────────────────────────────────── */
+
 export function SubmissionForm({
   defaults,
   semesters = [],
@@ -95,6 +510,10 @@ export function SubmissionForm({
   defaults: Defaults;
   semesters?: SemesterOption[];
 }) {
+  const [step, setStep] = useState(1);
+  const total = STEPS.length;
+  const [stepError, setStepError] = useState<string | null>(null);
+
   const [state, formAction] = useActionState<SubmissionState, FormData>(
     createSubmission,
     {},
@@ -104,297 +523,155 @@ export function SubmissionForm({
     if (state.error) toast.error(state.error);
   }, [state.error]);
 
+  const validateStep = useCallback(
+    (s: number, form: HTMLFormElement): boolean => {
+      setStepError(null);
+      const fd = new FormData(form);
+
+      if (s === 1) {
+        const hasSemesterId = trimmed(fd.get("universitySemesterId"));
+        const hasLabel = trimmed(fd.get("semesterLabel"));
+        if (!hasSemesterId && !hasLabel) {
+          setStepError("Please select or enter a semester.");
+          return false;
+        }
+      }
+
+      if (s === 2) {
+        const amount = trimmed(fd.get("amountDue"));
+        const due = trimmed(fd.get("dueDate"));
+        if (!amount || Number(amount) <= 0) {
+          setStepError("Please enter a valid tuition amount.");
+          return false;
+        }
+        if (!due) {
+          setStepError("Please select a due date.");
+          return false;
+        }
+      }
+
+      return true;
+    },
+    [],
+  );
+
+  const handleNext = useCallback(
+    (form: HTMLFormElement) => {
+      if (validateStep(step, form)) {
+        setStep((v) => Math.min(total, v + 1));
+      }
+    },
+    [step, total, validateStep],
+  );
+
+  const stepContent = [
+    <Step1 key={1} semesters={semesters} />,
+    <Step2 key={2} />,
+    <Step3 key={3} />,
+    <Step4 key={4} />,
+    <Step5 key={5} />,
+  ];
+
   return (
     <form
       action={formAction}
       className="space-y-6"
       encType="multipart/form-data"
+      id="submission-form"
+      onSubmit={(e) => {
+        if (step < total) {
+          e.preventDefault();
+          handleNext(e.currentTarget);
+        }
+      }}
     >
-      <RequestSectionCard
-        title="Semester"
-        description="Which semester this submission is for."
-        icon={Calendar}
-        tone="primary"
-      >
-        <div className="space-y-2">
-          <Label htmlFor="semester">Semester *</Label>
-          {semesters.length > 0 ? (
-            <>
-              <NativeSelect
-                id="semester"
-                name="universitySemesterId"
-                required
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Select a semester
-                </option>
-                {semesters.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </NativeSelect>
-              <p className="text-xs text-muted-foreground">
-                Choose from your university&apos;s active semesters.
-              </p>
-            </>
-          ) : (
-            <>
-              <Input
-                id="semesterLabel"
-                name="semesterLabel"
-                required
-                list="semester-suggestions"
-                defaultValue={defaults.semesterLabel}
-                placeholder="Fall 2026"
+      {/* Hidden bank inputs (auto-populated, not shown) */}
+      <input
+        type="hidden"
+        name="bankAccountName"
+        defaultValue={defaults.bankAccountName}
+      />
+      <input
+        type="hidden"
+        name="bankAccountNumber"
+        defaultValue={defaults.bankAccountNumber}
+      />
+      <input type="hidden" name="bankName" defaultValue={defaults.bankName} />
+      <input
+        type="hidden"
+        name="promptpayNumber"
+        defaultValue={defaults.promptpayNumber}
+      />
+
+      <StepIndicator current={step} />
+
+      <div className="rounded-2xl border border-border/80 bg-background p-6 shadow-sm sm:p-8">
+        {stepContent.map((content, idx) => (
+          <div key={idx} className={cn(idx + 1 !== step && "hidden")}>
+            {content}
+          </div>
+        ))}
+
+        {stepError ? (
+          <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+            {stepError}
+          </p>
+        ) : null}
+
+        <div className="mt-8 flex items-center justify-between border-t border-border/60 pt-6">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={step === 1}
+            onClick={() => {
+              setStepError(null);
+              setStep((s) => Math.max(1, s - 1));
+            }}
+            className="gap-1.5"
+          >
+            <ChevronLeft className="size-4" />
+            Back
+          </Button>
+
+          <div className="flex items-center gap-1.5">
+            {STEPS.map((s) => (
+              <div
+                key={s.id}
+                className={cn(
+                  "rounded-full transition-all duration-200",
+                  s.id === step
+                    ? "h-2 w-5 bg-primary"
+                    : s.id < step
+                      ? "h-2 w-2 bg-success"
+                      : "h-2 w-2 bg-muted",
+                )}
               />
-              <datalist id="semester-suggestions">
-                {SEMESTER_LABEL_SUGGESTIONS.map((label) => (
-                  <option key={label} value={label} />
-                ))}
-              </datalist>
-              <p className="text-xs text-muted-foreground">
-                No semesters configured for your university yet — enter the term
-                name manually, e.g. <em>Fall 2026</em>.
-              </p>
-            </>
+            ))}
+          </div>
+
+          {step < total ? (
+            <Button
+              type="submit"
+              className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Next
+              <ChevronRight className="size-4" />
+            </Button>
+          ) : (
+            <SubmitButton />
           )}
         </div>
-      </RequestSectionCard>
-
-      <RequestSectionCard
-        title="Tuition payment"
-        description="Amount, due date and the official invoice from your university."
-        icon={Wallet}
-        tone="accent"
-      >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="amountDue">Amount due (THB) *</Label>
-            <Input
-              id="amountDue"
-              name="amountDue"
-              type="number"
-              required
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              placeholder="25000"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">Due date</Label>
-            <Input id="dueDate" name="dueDate" type="date" />
-          </div>
-          <FormFileField
-            id="invoiceFile"
-            name="invoiceFile"
-            label="Invoice upload"
-            hint="PDF, JPG, or PNG · max 10 MB · optional"
-            accept="application/pdf,image/jpeg,image/png"
-            optional
-            className="sm:col-span-2"
-          />
-          <FormFileField
-            id="screenshotFile"
-            name="screenshotFile"
-            label="Payment screenshot"
-            hint="JPG or PNG · optional"
-            accept="image/jpeg,image/png"
-            optional
-            variant="image"
-            className="sm:col-span-2"
-          />
-        </div>
-      </RequestSectionCard>
-
-      <RequestSectionCard
-        title="Bank information"
-        description="Optional. A snapshot is saved with this submission if you fill these in."
-        icon={Landmark}
-        tone="info"
-      >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="bankAccountName">Account name</Label>
-            <Input
-              id="bankAccountName"
-              name="bankAccountName"
-              defaultValue={defaults.bankAccountName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bankAccountNumber">Account number</Label>
-            <Input
-              id="bankAccountNumber"
-              name="bankAccountNumber"
-              defaultValue={defaults.bankAccountNumber}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bankName">Bank name</Label>
-            <Input
-              id="bankName"
-              name="bankName"
-              defaultValue={defaults.bankName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="promptpayNumber">PromptPay number</Label>
-            <Input
-              id="promptpayNumber"
-              name="promptpayNumber"
-              defaultValue={defaults.promptpayNumber}
-            />
-          </div>
-        </div>
-      </RequestSectionCard>
-
-      <RequestSectionCard
-        title="Academic report"
-        description="Optional. Share your performance for this semester if you have it ready."
-        icon={GraduationCap}
-        tone="primary"
-      >
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="gpa">GPA</Label>
-            <Input
-              id="gpa"
-              name="gpa"
-              type="number"
-              min="0"
-              max="4"
-              step="0.01"
-              inputMode="decimal"
-              placeholder="3.50"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="creditsCompleted">Credits completed</Label>
-            <Input
-              id="creditsCompleted"
-              name="creditsCompleted"
-              type="number"
-              min="0"
-              max="60"
-              step="1"
-              inputMode="numeric"
-              placeholder="18"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="passedAllCourses">Passed all courses?</Label>
-            <NativeSelect
-              id="passedAllCourses"
-              name="passedAllCourses"
-              defaultValue=""
-            >
-              <option value="">— Select —</option>
-              <option value="true">Yes</option>
-              <option value="false">No</option>
-            </NativeSelect>
-          </div>
-          <FormFileField
-            id="transcriptFile"
-            name="transcriptFile"
-            label="Transcript"
-            hint="PDF, JPG, or PNG · max 10 MB"
-            accept="application/pdf,image/jpeg,image/png"
-            className="sm:col-span-2 lg:col-span-3"
-          />
-        </div>
-      </RequestSectionCard>
-
-      <RequestSectionCard
-        title="Wellbeing"
-        description="How you're doing this semester — grouped by health, studies, and stability."
-        icon={Heart}
-        tone="accent"
-      >
-        <WellbeingScaleGrid questions={WELLBEING_QUESTIONS} />
-      </RequestSectionCard>
-
-      <RequestSectionCard
-        title="Challenges"
-        description="Select any that apply this semester."
-        icon={BookOpen}
-        tone="info"
-      >
-        <ChoiceGrid name="challenges" options={CHALLENGE_OPTIONS} />
-      </RequestSectionCard>
-
-      <RequestSectionCard
-        title="Activities"
-        description="Select any that apply this semester."
-        icon={Sparkles}
-        tone="primary"
-      >
-        <ChoiceGrid name="activities" options={ACTIVITY_OPTIONS} />
-      </RequestSectionCard>
-
-      <RequestSectionCard
-        title="Reflections"
-        description="A few open-ended questions to help us support you."
-        icon={MessageSquare}
-        tone="accent"
-      >
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="reflectionAchievement">
-              Your biggest achievement this semester
-            </Label>
-            <Textarea
-              id="reflectionAchievement"
-              name="reflectionAchievement"
-              rows={3}
-              className="resize-y"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reflectionChallenge">
-              Your biggest challenge and how you faced it
-            </Label>
-            <Textarea
-              id="reflectionChallenge"
-              name="reflectionChallenge"
-              rows={3}
-              className="resize-y"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reflectionAdditional">
-              Anything else the team should know
-            </Label>
-            <Textarea
-              id="reflectionAdditional"
-              name="reflectionAdditional"
-              rows={3}
-              className="resize-y"
-            />
-          </div>
-        </div>
-      </RequestSectionCard>
-
-      {state.error ? (
-        <p
-          className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive"
-          aria-live="polite"
-        >
-          {state.error}
-        </p>
-      ) : null}
-
-      <div className="-mx-4 border-t border-border/80 bg-background px-4 py-4 md:-mx-8 md:px-8">
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-center text-xs leading-relaxed text-muted-foreground sm:text-left">
-            Only semester and tuition amount are required. Bank details, academic
-            report, and profile updates can be added later.
-          </p>
-          <SubmitButton />
-        </div>
       </div>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Step {step} of {total} · Bank details are auto-loaded from your profile
+      </p>
     </form>
   );
+}
+
+/* helpers */
+function trimmed(v: FormDataEntryValue | null): string | undefined {
+  const s = (v as string | null)?.trim();
+  return s && s.length > 0 ? s : undefined;
 }
