@@ -431,7 +431,7 @@ export function ImportWizard() {
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-fuchsia-light text-primary">
                   <FileSpreadsheet className="size-5" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 text-center">
                   <p className="truncate text-sm font-semibold text-foreground">{file.name}</p>
                   <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                 </div>
