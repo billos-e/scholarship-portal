@@ -69,7 +69,7 @@ function StepIndicator({ current }: { current: number }) {
                     ? "border-success bg-success text-success-foreground"
                     : active
                       ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                      : "border-border bg-background text-muted-foreground",
+                      : "border-border bg-card text-muted-foreground",
                 )}
               >
                 {done ? (
@@ -156,7 +156,7 @@ function PassedCoursesToggle() {
                   ? opt.tone === "success"
                     ? "border-success/40 bg-success/10 text-success"
                     : "border-destructive/40 bg-destructive/10 text-destructive"
-                  : "border-border bg-background text-muted-foreground hover:border-border/80",
+                  : "border-border bg-card text-muted-foreground hover:border-border/80",
               )}
             >
               <span
@@ -237,7 +237,7 @@ function ChoiceGrid({
         <label
           key={opt.value}
           className={cn(
-            "flex cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-background px-4 py-3.5 text-sm transition-colors",
+            "flex cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3.5 text-sm transition-colors",
             "hover:border-primary/25 hover:bg-primary/[0.03]",
             "has-[:checked]:border-primary has-[:checked]:bg-primary/5",
           )}
@@ -605,7 +605,7 @@ export function SubmissionForm({
 
       <StepIndicator current={step} />
 
-      <div className="rounded-2xl border border-border/80 bg-background p-6 shadow-sm sm:p-8">
+      <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
         {stepContent.map((content, idx) => (
           <div key={idx} className={cn(idx + 1 !== step && "hidden")}>
             {content}
