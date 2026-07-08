@@ -619,19 +619,22 @@ export function SubmissionForm({
         ) : null}
 
         <div className="mt-8 flex items-center justify-between border-t border-border/60 pt-6">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={step === 1}
-            onClick={() => {
-              setStepError(null);
-              setStep((s) => Math.max(1, s - 1));
-            }}
-            className="gap-1.5"
-          >
-            <ChevronLeft className="size-4" />
-            Back
-          </Button>
+          {step > 1 ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setStepError(null);
+                setStep((s) => Math.max(1, s - 1));
+              }}
+              className="gap-1.5"
+            >
+              <ChevronLeft className="size-4" />
+              Back
+            </Button>
+          ) : (
+            <span className="w-[4.5rem]" />
+          )}
 
           <div className="flex items-center gap-1.5">
             {STEPS.map((s) => (
