@@ -302,7 +302,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
 
                       {/* Status dot */}
                       <div className="absolute top-4 right-4">
-                        <div className={cn("size-2.5 rounded-full border-2 border-white/60", university.isActive ? "bg-emerald-400" : "bg-gray-300")} />
+                        <div className={cn("size-3 rounded-full shadow-[0_0_6px_2px_rgba(0,0,0,0.4)]", university.isActive ? "bg-emerald-400 shadow-emerald-400/70" : "bg-gray-200 shadow-gray-200/50")} />
                       </div>
 
                       {/* Bottom overlay */}
