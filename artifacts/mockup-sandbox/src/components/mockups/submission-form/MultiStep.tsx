@@ -211,28 +211,49 @@ function FileUploadField({
   );
 }
 
-function RatingRow({ label }: { label: string }) {
+function WellbeingCard({ label }: { label: string }) {
   const [val, setVal] = useState(0);
+  const colors = [
+    { bg: "bg-red-500", light: "bg-red-100" },
+    { bg: "bg-orange-500", light: "bg-orange-100" },
+    { bg: "bg-yellow-400", light: "bg-yellow-50" },
+    { bg: "bg-lime-400", light: "bg-lime-50" },
+    { bg: "bg-emerald-500", light: "bg-emerald-100" },
+  ];
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
-      <span className="text-sm text-slate-700">{label}</span>
-      <div className="flex gap-1.5">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            onClick={() => setVal(n)}
-            className={cn(
-              "w-8 h-8 rounded-lg text-xs font-semibold transition-all",
-              val === n
-                ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
-                : val >= n
-                  ? "bg-indigo-100 text-indigo-700"
-                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-            )}
-          >
-            {n}
-          </button>
-        ))}
+    <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-slate-700">{label}</span>
+        <span
+          className={cn(
+            "text-xs font-bold px-2 py-0.5 rounded-md transition-colors",
+            val > 0 ? "text-white" : "text-slate-300 bg-slate-100",
+            val > 0 && colors[val - 1].bg
+          )}
+        >
+          {val > 0 ? val : "-"}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-slate-400 font-medium shrink-0">Low</span>
+        <div className="flex gap-1.5 flex-1">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              onClick={() => setVal(n)}
+              className={cn(
+                "h-8 flex-1 rounded-lg transition-all duration-200 border",
+                val === n
+                  ? cn(colors[n - 1].bg, "border-transparent shadow-sm scale-[1.04] ring-2 ring-offset-1", colors[n - 1].light.replace("bg-", "ring-"))
+                  : val > n
+                    ? cn(colors[n - 1].light, "border-transparent")
+                    : "bg-slate-50 border-slate-200 hover:border-slate-300"
+              )}
+              aria-label={`${n} out of 5`}
+            />
+          ))}
+        </div>
+        <span className="text-[10px] text-slate-400 font-medium shrink-0">High</span>
       </div>
     </div>
   );
@@ -390,9 +411,9 @@ function Step4() {
         <Label className="text-sm font-medium text-slate-700 mb-2 block">
           Rate each area (1 = low, 5 = high)
         </Label>
-        <div className="bg-slate-50 rounded-xl px-4 py-1 border border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {WELLBEING_ITEMS.map((item) => (
-            <RatingRow key={item.key} label={item.label} />
+            <WellbeingCard key={item.key} label={item.label} />
           ))}
         </div>
       </div>
