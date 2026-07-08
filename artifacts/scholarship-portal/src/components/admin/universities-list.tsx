@@ -266,41 +266,50 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
             <EmptyState title="No universities match your filters" />
           ) : (
             <>
-              {/* Mobile: horizontal card strip */}
+              {/* Mobile: carousel */}
               <div className="flex gap-3 overflow-x-auto pb-2 md:hidden snap-x snap-mandatory -mx-1 px-1">
-                {paginatedUniversities.map((university) => {
+                {paginatedUniversities.map((university, idx) => {
                   const imgSrc = university.imageUrl ? uploadPublicUrl(university.imageUrl) : null;
                   const location = [university.city, university.country].filter(Boolean).join(", ");
+                  const CARD_COLORS = ["#6366f1","#0ea5e9","#f59e0b","#10b981","#ec4899","#8b5cf6","#ef4444","#14b8a6"];
+                  const cardColor = CARD_COLORS[idx % CARD_COLORS.length];
+                  const initial = university.name.charAt(0).toUpperCase();
                   return (
                     <button
                       key={university.id}
                       type="button"
                       onClick={() => openUniversity(university.id)}
-                      className="snap-start shrink-0 w-40 rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm cursor-pointer transition-colors hover:bg-muted/30 flex flex-col items-center text-center gap-2"
+                      className="snap-start shrink-0 w-64 h-72 relative overflow-hidden rounded-tl-3xl cursor-pointer"
+                      style={{ backgroundColor: cardColor }}
                     >
+                      {/* Background image or giant initial */}
                       {imgSrc ? (
                         <Image
                           src={imgSrc}
                           alt={university.name}
-                          width={56}
-                          height={56}
-                          className="size-14 rounded-lg object-contain"
+                          fill
+                          className="object-cover opacity-30"
                           unoptimized
                         />
                       ) : (
-                        <div className="size-14 rounded-lg bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground shrink-0">
-                          {university.name.charAt(0).toUpperCase()}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                          <span className="text-white/20 font-black" style={{ fontSize: "9rem", lineHeight: 1 }}>
+                            {initial}
+                          </span>
                         </div>
                       )}
-                      <div>
-                        <p className="font-semibold text-sm text-foreground leading-snug line-clamp-2">
-                          {university.name}
+
+                      {/* Status dot */}
+                      <div className="absolute top-4 right-4">
+                        <div className={cn("size-2.5 rounded-full border-2 border-white/60", university.isActive ? "bg-emerald-400" : "bg-gray-300")} />
+                      </div>
+
+                      {/* Bottom overlay */}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-4 pt-8 pb-4">
+                        <p className="text-white font-bold text-sm leading-tight line-clamp-2">{university.name}</p>
+                        <p className="text-white/70 text-xs mt-1">
+                          {[location, university.studentCount > 0 ? `${university.studentCount} students` : null].filter(Boolean).join(" · ")}
                         </p>
-                        {location && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {location}
-                          </p>
-                        )}
                       </div>
                     </button>
                   );
