@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { BLOCKING_REQUEST_STATUSES } from "@/lib/submissions/eligibility";
 
 export default function StudentSubmitPage() {
   const { student: sessionStudent } = requireStudent();
@@ -64,10 +65,21 @@ export default function StudentSubmitPage() {
     );
   }
 
+  const openRequest =
+    student.tuitionPaymentRequests.find((r) =>
+      BLOCKING_REQUEST_STATUSES.includes(r.status),
+    ) ?? null;
+
   const eligibility = {
-    canStart: true,
-    missingProfileFields: [],
-    openRequest: null as { id: string; semesterLabel: string; status: string } | null,
+    canStart: openRequest === null,
+    missingProfileFields: [] as string[],
+    openRequest: openRequest
+      ? {
+          id: openRequest.id,
+          semesterLabel: openRequest.semesterLabel,
+          status: openRequest.status,
+        }
+      : null,
   };
   const bank = student.bankInformation;
 
