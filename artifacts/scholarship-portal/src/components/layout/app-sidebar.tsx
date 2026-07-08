@@ -244,7 +244,7 @@ export function AppSidebar({
                   {isAdmin ? "Administrator" : "Student"}
                 </p>
               </div>
-              <SignOutButton className="shrink-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" showLabel={false} />
+              <SignOutButton className="shrink-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" showLabel={isAdmin} showIcon={!isAdmin} />
             </div>
           ) : (
             <div className={cn("flex flex-col items-center gap-2", !isAdmin && "gap-0")}>

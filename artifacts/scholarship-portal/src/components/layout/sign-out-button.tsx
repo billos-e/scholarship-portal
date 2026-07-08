@@ -14,11 +14,13 @@ import { logout } from "@/lib/auth/session";
 type SignOutButtonProps = {
   className?: string;
   showLabel?: boolean;
+  showIcon?: boolean;
 };
 
 export function SignOutButton({
   className,
   showLabel = true,
+  showIcon = true,
 }: SignOutButtonProps) {
   const button = (
     <Button
@@ -28,7 +30,7 @@ export function SignOutButton({
       className={cn("gap-2", className)}
       onClick={logout}
     >
-      <LogOut className="size-4" />
+      {showIcon ? <LogOut className="size-4" /> : null}
       {showLabel ? <span>Sign out</span> : null}
     </Button>
   );
