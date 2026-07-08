@@ -191,13 +191,11 @@ function PassedCoursesToggle({
 function RatingRow({
   name,
   label,
-  defaultValue,
 }: {
   name: string;
   label: string;
-  defaultValue?: number;
 }) {
-  const [selected, setSelected] = useState<number | null>(defaultValue ?? null);
+  const [selected, setSelected] = useState<number | null>(null);
   return (
     <div className="flex items-center justify-between border-b border-border/40 py-2.5 last:border-0">
       <span className="text-sm text-foreground">{label}</span>
@@ -212,7 +210,6 @@ function RatingRow({
               name={name}
               value={n}
               className="sr-only"
-              defaultChecked={selected === n}
               onChange={() => setSelected(n)}
             />
             <span
@@ -480,7 +477,7 @@ function Step4({
         </Label>
         <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-1">
           {WELLBEING_QUESTIONS.map((q) => (
-            <RatingRow key={q.name} name={q.name} label={q.label} defaultValue={Number(get(q.name) || 0) || undefined} />
+            <RatingRow key={q.name} name={q.name} label={q.label} />
           ))}
         </div>
       </div>
