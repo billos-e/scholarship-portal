@@ -12,5 +12,8 @@ export const modules: ModuleMap = {
   "./components/mockups/student-profile/SidebarLayout.tsx": () => import("../components/mockups/student-profile/SidebarLayout.tsx"),
   "./components/mockups/student-profile/Tabbed.tsx": () => import("../components/mockups/student-profile/Tabbed.tsx"),
   "./components/mockups/student-profile/Timeline.tsx": () => import("../components/mockups/student-profile/Timeline.tsx"),
+  "./components/mockups/student-profile-edit/EditAccessibility.tsx": () => import("../components/mockups/student-profile-edit/EditAccessibility.tsx"),
+  "./components/mockups/student-profile-edit/EditAffordances.tsx": () => import("../components/mockups/student-profile-edit/EditAffordances.tsx"),
+  "./components/mockups/student-profile-edit/EditHierarchy.tsx": () => import("../components/mockups/student-profile-edit/EditHierarchy.tsx"),
   "./components/mockups/submission-form/MultiStep.tsx": () => import("../components/mockups/submission-form/MultiStep.tsx")
 };
