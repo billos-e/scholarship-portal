@@ -81,7 +81,7 @@ export function AdminClerkLogin() {
             alertText: "text-foreground",
             alert: "bg-destructive/10 border-destructive/30",
             otpCodeFieldInput: "bg-white border-border text-foreground",
-            footerAction: "bg-transparent",
+            footerAction: "hidden",
             logoBox: "hidden",
             main: "",
             formFieldRow: "",
