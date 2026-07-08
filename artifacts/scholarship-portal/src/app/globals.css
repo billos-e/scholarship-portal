@@ -260,3 +260,7 @@
     }
   }
 }
+
+.cl-footerAction {
+  display: none !important;
+}
