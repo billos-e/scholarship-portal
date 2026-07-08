@@ -65,12 +65,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const ENTITIES: ImportEntity[] = ["students", "universities", "payments"];
@@ -102,13 +96,12 @@ function UniversityZipInfo({ disabled, onDownload }: { disabled: boolean; onDown
       <PopoverTrigger asChild>
         <Button
           type="button"
-          variant="ghost"
-          size="icon"
-          className="size-8"
+          variant="outline"
+          size="sm"
           disabled={disabled}
-          aria-label="Download ZIP template"
         >
-          <Download className="size-4" />
+          <Download className="size-3.5" />
+          ZIP
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="start">
@@ -465,66 +458,52 @@ export function ImportWizard() {
       ) : null}
 
       {step === "Upload" && entity ? (
-        <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <CardTitle>Upload spreadsheet</CardTitle>
-              <CardDescription>
-                Importing {getImportEntityLabel(entity).toLowerCase()} from CSV or
-                Excel (.xlsx, .xls).
-                {entity === "universities"
-                  ? " Multi-sheet Excel files and export ZIPs include semesters and degree programs automatically."
-                  : " First sheet is used."}
-              </CardDescription>
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Download template</span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={() => downloadBlob(generateCsvBlob(entity), `${entity}-template.csv`)}
+              >
+                <Download className="size-3.5" />
+                CSV
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={() => downloadBlob(generateExcelBlob(entity), `${entity}-template.xlsx`)}
+              >
+                <Download className="size-3.5" />
+                Excel
+              </Button>
+              {entity === "universities" && (
+                <UniversityZipInfo
+                  disabled={pending}
+                  onDownload={() => {
+                    generateUniversitiesZipBlob().then((blob) => {
+                      downloadBlob(blob, "universities-template.zip");
+                    });
+                  }}
+                />
+              )}
             </div>
-            <TooltipProvider>
-              <div className="flex shrink-0 items-center gap-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      disabled={pending}
-                      onClick={() => downloadBlob(generateCsvBlob(entity), `${entity}-template.csv`)}
-                    >
-                      <Download className="size-4" />
-                      <span className="sr-only">Download CSV template</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Download CSV template</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      disabled={pending}
-                      onClick={() => downloadBlob(generateExcelBlob(entity), `${entity}-template.xlsx`)}
-                    >
-                      <Download className="size-4" />
-                      <span className="sr-only">Download Excel template</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Download Excel template</TooltipContent>
-                </Tooltip>
-
-                {entity === "universities" && (
-                  <UniversityZipInfo
-                    disabled={pending}
-                    onDownload={() => {
-                      generateUniversitiesZipBlob().then((blob) => {
-                        downloadBlob(blob, "universities-template.zip");
-                      });
-                    }}
-                  />
-                )}
-              </div>
-            </TooltipProvider>
+          </div>
+          <Card>
+          <CardHeader>
+            <CardTitle>Upload spreadsheet</CardTitle>
+            <CardDescription>
+              Importing {getImportEntityLabel(entity).toLowerCase()} from CSV or
+              Excel (.xlsx, .xls).
+              {entity === "universities"
+                ? " Multi-sheet Excel files and export ZIPs include semesters and degree programs automatically."
+                : " First sheet is used."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <input
@@ -602,7 +581,8 @@ export function ImportWizard() {
               </div>
             )}
           </CardContent>
-        </Card>
+          </Card>
+        </>
       ) : null}
 
       {step === "Map columns" && entity ? (
