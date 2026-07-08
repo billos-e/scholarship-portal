@@ -200,27 +200,31 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Universities"
-        description="Manage partner universities, semester calendars, and degree programs."
-        actions={
-          <>
-            <TableExportButton
-              columns={UNIVERSITIES_TABLE_COLUMNS}
-              rows={exportRows}
-              filename={exportFilename}
-              sheetName="Universities"
-              extraSheets={exportExtraSheets}
-              iconOnly
-            />
-            <UniversityDialog
-              trigger={
-                <Button size="icon" title="New University">
-                  <Plus />
-                </Button>
-              }
-            />
-          </>
+      <div className="relative">
+        <PageHeader
+          title="Universities"
+          description="Manage partner universities, semester calendars, and degree programs."
+        />
+        <div className="absolute top-0 right-0">
+          <TableExportButton
+            columns={UNIVERSITIES_TABLE_COLUMNS}
+            rows={exportRows}
+            filename={exportFilename}
+            sheetName="Universities"
+            extraSheets={exportExtraSheets}
+            iconOnly
+          />
+        </div>
+      </div>
+
+      <UniversityDialog
+        trigger={
+          <button
+            className="fixed bottom-6 right-6 z-50 size-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            title="New University"
+          >
+            <Plus className="size-6" />
+          </button>
         }
       />
 
