@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import Image from "next/image";
+
 import { SearchField } from "@/components/admin/search-field";
 import { ClientPagination } from "@/components/client-pagination";
 import { TableExportButton } from "@/components/export-button";
@@ -18,7 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { NativeSelect } from "@/components/ui/native-select";
 import {
   Table,
   TableBody,
@@ -43,6 +44,8 @@ import {
   universitySemestersToExportRows,
 } from "@/lib/export/table-rows";
 import { useTableSort } from "@/hooks/use-table-sort";
+import { uploadPublicUrl } from "@/lib/upload-path";
+import { cn } from "@/lib/utils";
 
 export type UniversityRow = {
   id: string;
@@ -52,6 +55,7 @@ export type UniversityRow = {
   addressLine: string | null;
   websiteUrl: string | null;
   notes: string | null;
+  imageUrl: string | null;
   studentCount: number;
   hasSummerSemester: boolean;
   isActive: boolean;
@@ -226,7 +230,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <SearchField
               id="university-search"
               label="Search"
@@ -234,24 +238,28 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
               placeholder="Name or location"
               onChange={(q) => updateFilters({ q })}
             />
+          </div>
 
-            <div className="space-y-1 lg:w-40">
-              <label
-                htmlFor="university-status"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Status
-              </label>
-              <NativeSelect
-                id="university-status"
-                value={filters.status}
-                onChange={(e) => updateFilters({ status: e.target.value })}
-              >
-                <option value="">All</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </NativeSelect>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {(["", "active", "inactive"] as const).map((val) => {
+              const label = val === "" ? "All" : val === "active" ? "Active" : "Inactive";
+              const active = filters.status === val;
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => updateFilters({ status: val })}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {paginatedUniversities.length === 0 ? (
@@ -260,47 +268,43 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
             <>
               {/* Mobile: horizontal card strip */}
               <div className="flex gap-3 overflow-x-auto pb-2 md:hidden snap-x snap-mandatory -mx-1 px-1">
-                {paginatedUniversities.map((university) => (
-                  <button
-                    key={university.id}
-                    type="button"
-                    onClick={() => openUniversity(university.id)}
-                    className="snap-start shrink-0 w-56 rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm cursor-pointer transition-colors hover:bg-muted/30"
-                  >
-                    <p className="font-semibold text-sm text-foreground leading-snug">
-                      {university.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {[university.city, university.country].filter(Boolean).join(", ") || "—"}
-                    </p>
-                    <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-                      <div className="flex justify-between gap-2">
-                        <span className="font-medium">Students</span>
-                        <span>{university.studentCount}</span>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <span className="font-medium">Semesters</span>
-                        <span>{university.semesters.length}</span>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <span className="font-medium">Summer</span>
-                        <span>{university.hasSummerSemester ? "Yes" : "No"}</span>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      {university.isActive ? (
-                        <Badge
-                          variant="outline"
-                          className="border-success/30 bg-success-light text-success"
-                        >
-                          Active
-                        </Badge>
+                {paginatedUniversities.map((university) => {
+                  const imgSrc = university.imageUrl ? uploadPublicUrl(university.imageUrl) : null;
+                  const location = [university.city, university.country].filter(Boolean).join(", ");
+                  return (
+                    <button
+                      key={university.id}
+                      type="button"
+                      onClick={() => openUniversity(university.id)}
+                      className="snap-start shrink-0 w-40 rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm cursor-pointer transition-colors hover:bg-muted/30 flex flex-col items-center text-center gap-2"
+                    >
+                      {imgSrc ? (
+                        <Image
+                          src={imgSrc}
+                          alt={university.name}
+                          width={56}
+                          height={56}
+                          className="size-14 rounded-lg object-contain"
+                          unoptimized
+                        />
                       ) : (
-                        <Badge variant="outline">Inactive</Badge>
+                        <div className="size-14 rounded-lg bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground shrink-0">
+                          {university.name.charAt(0).toUpperCase()}
+                        </div>
                       )}
-                    </div>
-                  </button>
-                ))}
+                      <div>
+                        <p className="font-semibold text-sm text-foreground leading-snug line-clamp-2">
+                          {university.name}
+                        </p>
+                        {location && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {location}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Desktop: regular table */}

@@ -37,6 +37,7 @@ export default function AdminUniversitiesPage() {
         addressLine: university.addressLine,
         websiteUrl: university.websiteUrl,
         notes: university.notes,
+        imageUrl: university.imageUrl ?? null,
         studentCount: university._count.students,
         hasSummerSemester: university.hasSummerSemester,
         isActive: university.isActive,
