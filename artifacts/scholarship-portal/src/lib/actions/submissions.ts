@@ -243,7 +243,17 @@ export async function createSubmission(
 
   const createdRequestId = result.data?.requestId;
   if (createdRequestId) {
-    redirect(`/student/history/${createdRequestId}`);
+    try {
+      redirect(`/student/history/${createdRequestId}`);
+    } catch (e) {
+      // The redirect shim calls window.location.assign() then throws NEXT_REDIRECT
+      // to halt execution (Next.js convention). Catch it here so useActionState
+      // receives { success: true } instead of an unhandled error.
+      if (e instanceof Error && e.message.startsWith("NEXT_REDIRECT:")) {
+        return { success: true };
+      }
+      throw e;
+    }
   }
   return { success: true };
 }
