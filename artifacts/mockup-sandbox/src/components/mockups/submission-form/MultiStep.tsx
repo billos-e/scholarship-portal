@@ -275,7 +275,7 @@ function Step2() {
         </div>
         <div>
           <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-            Due date
+            Due date <span className="text-red-400">*</span>
           </Label>
           <Input type="date" />
         </div>
