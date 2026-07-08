@@ -53,6 +53,54 @@ const CHALLENGES = [
   "Other",
 ];
 
+function PassedCoursesToggle() {
+  const [val, setVal] = useState<boolean | null>(null);
+  const options = [
+    { value: true as boolean, label: "Yes", color: "emerald" },
+    { value: false as boolean, label: "No", color: "red" },
+  ];
+  return (
+    <div>
+      <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+        Passed all courses?
+      </Label>
+      <div className="flex gap-2">
+        {options.map((opt) => {
+          const active = val === opt.value;
+          return (
+            <button
+              key={String(opt.value)}
+              onClick={() => setVal(opt.value)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                active
+                  ? opt.color === "emerald"
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                    : "bg-red-50 border-red-300 text-red-700"
+                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+              )}
+            >
+              <span
+                className={cn(
+                  "w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold border transition-all",
+                  active
+                    ? opt.color === "emerald"
+                      ? "bg-emerald-500 border-emerald-500 text-white"
+                      : "bg-red-500 border-red-500 text-white"
+                    : "bg-white border-slate-300 text-transparent"
+                )}
+              >
+                {opt.value ? "\u2713" : "\u2717"}
+              </span>
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const ACTIVITIES = [
   "Community service",
   "Volunteering",
@@ -319,20 +367,7 @@ function Step3() {
           <Input type="number" min={0} placeholder="18" />
         </div>
       </div>
-      <div>
-        <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-          Passed all courses?
-        </Label>
-        <Select>
-          <SelectTrigger>
-            <SelectValue placeholder="Select…" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="yes">Yes</SelectItem>
-            <SelectItem value="no">No</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <PassedCoursesToggle />
       <FileUploadField
         label="Transcript"
         hint="PDF, JPG or PNG"
