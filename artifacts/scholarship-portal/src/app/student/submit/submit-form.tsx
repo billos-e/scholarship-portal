@@ -5,12 +5,14 @@ import { useFormStatus } from "react-dom";
 import {
   Calendar,
   Check,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   FileText,
   GraduationCap,
   Heart,
   MessageSquare,
+  Square,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -237,7 +239,7 @@ function ChoiceGrid({
         <label
           key={opt.value}
           className={cn(
-            "flex cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3.5 text-sm transition-colors",
+            "group flex cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3.5 text-sm transition-all",
             "hover:border-primary/25 hover:bg-primary/[0.03]",
             "has-[:checked]:border-primary has-[:checked]:bg-primary/5",
           )}
@@ -246,8 +248,12 @@ function ChoiceGrid({
             type="checkbox"
             name={name}
             value={opt.value}
-            className="size-4 shrink-0 accent-primary"
+            className="peer sr-only"
           />
+          <div className="relative flex size-4 shrink-0 items-center justify-center">
+            <Square className="size-4 text-muted-foreground transition-all peer-checked:opacity-0 peer-checked:scale-75" />
+            <CheckSquare className="absolute size-4 text-primary opacity-0 transition-all peer-checked:opacity-100" />
+          </div>
           <span className="leading-snug">{opt.label}</span>
         </label>
       ))}
