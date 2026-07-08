@@ -258,7 +258,53 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
             <EmptyState title="No universities match your filters" />
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile: horizontal card strip */}
+              <div className="flex gap-3 overflow-x-auto pb-2 md:hidden snap-x snap-mandatory -mx-1 px-1">
+                {paginatedUniversities.map((university) => (
+                  <button
+                    key={university.id}
+                    type="button"
+                    onClick={() => openUniversity(university.id)}
+                    className="snap-start shrink-0 w-56 rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm cursor-pointer transition-colors hover:bg-muted/30"
+                  >
+                    <p className="font-semibold text-sm text-foreground leading-snug">
+                      {university.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {[university.city, university.country].filter(Boolean).join(", ") || "—"}
+                    </p>
+                    <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                      <div className="flex justify-between gap-2">
+                        <span className="font-medium">Students</span>
+                        <span>{university.studentCount}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="font-medium">Semesters</span>
+                        <span>{university.semesters.length}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="font-medium">Summer</span>
+                        <span>{university.hasSummerSemester ? "Yes" : "No"}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      {university.isActive ? (
+                        <Badge
+                          variant="outline"
+                          className="border-success/30 bg-success-light text-success"
+                        >
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Inactive</Badge>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Desktop: regular table */}
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
