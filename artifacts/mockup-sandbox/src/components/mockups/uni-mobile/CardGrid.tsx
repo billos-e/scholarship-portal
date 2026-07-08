@@ -65,31 +65,31 @@ export function CardGrid() {
         <p className="text-xs text-gray-400 font-medium">{filtered.length} universities</p>
       </div>
 
-      {/* Grid */}
-      <div className="px-4 grid grid-cols-2 gap-3 pb-8">
+      {/* Carousel */}
+      <div className="flex gap-3 overflow-x-auto px-4 pb-8 snap-x snap-mandatory scrollbar-none">
         {filtered.map((u) => (
           <button
             key={u.id}
-            className="bg-white rounded-2xl p-4 text-left shadow-sm active:scale-95 transition-transform"
+            className="snap-start shrink-0 w-64 h-80 relative overflow-hidden rounded-tl-3xl"
+            style={{ backgroundColor: u.color }}
           >
-            {/* Logo placeholder */}
-            <div
-              className="size-12 rounded-xl flex items-center justify-center mb-3 text-white text-lg font-bold"
-              style={{ backgroundColor: u.color }}
-            >
-              {u.initial}
-            </div>
-            <p className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2">{u.name}</p>
-            <p className="text-xs text-gray-400 mt-1 truncate">{u.city}</p>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs text-gray-500">{u.students} students</span>
-              <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  u.active ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"
-                }`}
-              >
-                {u.active ? "Active" : "Inactive"}
+            {/* Initials fill the card */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-white/20 font-black select-none"
+                style={{ fontSize: "10rem", lineHeight: 1 }}>
+                {u.initial}
               </span>
+            </div>
+
+            {/* Status dot */}
+            <div className="absolute top-4 right-4">
+              <div className={`size-2.5 rounded-full border-2 border-white/60 ${u.active ? "bg-emerald-400" : "bg-gray-300"}`} />
+            </div>
+
+            {/* Bottom info overlay */}
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-4 pt-8 pb-4">
+              <p className="text-white font-bold text-base leading-tight">{u.name}</p>
+              <p className="text-white/70 text-xs mt-1">{u.city} · {u.students} students</p>
             </div>
           </button>
         ))}
