@@ -232,23 +232,26 @@ function ChoiceGrid({
   options: ReadonlyArray<{ readonly value: string; readonly label: string }>;
 }) {
   return (
-    <div className="grid gap-2.5 sm:grid-cols-2">
+    <div className="grid gap-2 sm:grid-cols-2">
       {options.map((opt) => (
         <label
           key={opt.value}
           className={cn(
-            "flex cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3.5 text-sm transition-colors",
-            "hover:border-primary/25 hover:bg-primary/[0.03]",
-            "has-[:checked]:border-primary has-[:checked]:bg-primary/5",
+            "group relative flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-4 py-3 text-sm transition-all",
+            "hover:border-primary/30 hover:bg-primary/[0.03]",
+            "has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary",
           )}
         >
           <input
             type="checkbox"
             name={name}
             value={opt.value}
-            className="size-4 shrink-0 accent-primary"
+            className="sr-only"
           />
           <span className="leading-snug">{opt.label}</span>
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border/60 text-transparent transition-all group-has-[:checked]:border-primary group-has-[:checked]:bg-primary group-has-[:checked]:text-white">
+            <Check className="size-3" />
+          </span>
         </label>
       ))}
     </div>
