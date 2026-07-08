@@ -50,17 +50,29 @@ export function StudentCreateDialog({
   const [universityId, setUniversityId] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [autoStudentId, setAutoStudentId] = useState("");
+
+  function generateStudentId() {
+    const year = new Date().getFullYear();
+    const num = Math.floor(1000 + Math.random() * 9000);
+    return `STU-${year}-${String(num).padStart(4, "0")}`;
+  }
 
   function resetState() {
     setError(undefined);
     setGeneratedPassword(null);
     setUniversityId("");
     setDetailsOpen(false);
+    setAutoStudentId("");
   }
 
   function onOpenChange(next: boolean) {
     setOpen(next);
-    if (!next) resetState();
+    if (next) {
+      setAutoStudentId(generateStudentId());
+    } else {
+      resetState();
+    }
   }
 
   function onUniversityChange(nextId: string) {
@@ -251,7 +263,9 @@ export function StudentCreateDialog({
                       <Input
                         id="studentId"
                         name="studentId"
-                        placeholder="e.g. STU-20481"
+                        value={autoStudentId}
+                        onChange={(e) => setAutoStudentId(e.target.value)}
+                        placeholder="e.g. STU-2026-1234"
                       />
                     </div>
                     <div className="min-w-0 space-y-2">
