@@ -5,6 +5,7 @@ import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Lock, Camera } from "lucide-react";
+import { useFormDraft } from "@/lib/use-form-draft";
 import Link from "next/link";
 
 import {
@@ -290,11 +291,13 @@ export function StudentProfileEditForm({
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(student.photoUrl);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const { get: getDraft, save: saveDraft, onFormChange, clearDraft } = useFormDraft("draft:profile-edit");
+
   // Academic controlled state (mirrors StudentAcademicFields logic)
-  const [universityId, setUniversityId] = useState(student.universityId ?? "");
-  const [degreeProgram, setDegreeProgram] = useState(student.degreeProgram ?? "");
-  const [semesterLabel, setSemesterLabel] = useState(student.currentSemesterLabel ?? "");
-  const [yearOfStudy, setYearOfStudy] = useState(student.yearOfStudy ?? "");
+  const [universityId, setUniversityId] = useState(getDraft("universityId", student.universityId ?? ""));
+  const [degreeProgram, setDegreeProgram] = useState(getDraft("degreeProgram", student.degreeProgram ?? ""));
+  const [semesterLabel, setSemesterLabel] = useState(getDraft("currentSemesterLabel", student.currentSemesterLabel ?? ""));
+  const [yearOfStudy, setYearOfStudy] = useState(getDraft("yearOfStudy", student.yearOfStudy ?? ""));
 
   const programs = useMemo(
     () =>
@@ -332,10 +335,15 @@ export function StudentProfileEditForm({
   useEffect(() => {
     if (state.success) {
       toast.success("Profile updated.");
+      clearDraft();
       onSuccess?.();
       router.push(profileHref);
     }
   }, [state]);
+
+  useEffect(() => {
+    saveDraft({ universityId, degreeProgram, currentSemesterLabel: semesterLabel, yearOfStudy });
+  }, [universityId, degreeProgram, semesterLabel, yearOfStudy]);
 
   return (
     <div className="space-y-6">
@@ -348,6 +356,7 @@ export function StudentProfileEditForm({
             variant="outline"
             size="sm"
             render={<Link href={profileHref} />}
+            onClick={clearDraft}
           >
             Cancel
           </Button>
@@ -386,6 +395,7 @@ export function StudentProfileEditForm({
           }
           formAction(new FormData(e.currentTarget));
         }}
+        onChange={onFormChange}
         className="space-y-5"
       >
         {/* Personal information */}
@@ -393,11 +403,11 @@ export function StudentProfileEditForm({
           <PairRow
             label1="First name"
             children1={
-              <FieldInput id="firstName" name="firstName" required defaultValue={student.firstName} />
+              <FieldInput id="firstName" name="firstName" required defaultValue={getDraft("firstName", student.firstName)} />
             }
             label2="Last name"
             children2={
-              <FieldInput id="lastName" name="lastName" required defaultValue={student.lastName} />
+              <FieldInput id="lastName" name="lastName" required defaultValue={getDraft("lastName", student.lastName)} />
             }
           />
           <Row label="Student ID" locked>
@@ -416,7 +426,7 @@ export function StudentProfileEditForm({
               name="phone"
               type="tel"
               inputMode="tel"
-              defaultValue={student.phone ?? ""}
+              defaultValue={getDraft("phone", student.phone ?? "")}
               pattern="[\d\s+()\-.]{7,20}"
               title="Enter a valid phone number (7–20 digits, spaces, +, -, ( ) allowed)"
               placeholder="e.g. 081 000 0000"
@@ -521,7 +531,7 @@ export function StudentProfileEditForm({
                 step="0.01"
                 min="0"
                 max="4"
-                defaultValue={student.gpa ?? ""}
+                defaultValue={getDraft("gpa", student.gpa ?? "")}
               />
             }
           />
@@ -532,11 +542,11 @@ export function StudentProfileEditForm({
           <PairRow
             label1="Bank name"
             children1={
-              <FieldInput id="bankName" name="bankName" defaultValue={student.bankName ?? ""} />
+              <FieldInput id="bankName" name="bankName" defaultValue={getDraft("bankName", student.bankName ?? "")} />
             }
             label2="Account holder"
             children2={
-              <FieldInput id="bankAccountName" name="bankAccountName" defaultValue={student.bankAccountName ?? ""} />
+              <FieldInput id="bankAccountName" name="bankAccountName" defaultValue={getDraft("bankAccountName", student.bankAccountName ?? "")} />
             }
           />
           <PairRow
@@ -548,12 +558,12 @@ export function StudentProfileEditForm({
                 inputMode="numeric"
                 pattern="[\d\s-]{5,25}"
                 title="Enter a valid account number (5–25 digits)"
-                defaultValue={student.bankAccountNumber ?? ""}
+                defaultValue={getDraft("bankAccountNumber", student.bankAccountNumber ?? "")}
               />
             }
             label2="PromptPay"
             children2={
-              <FieldInput id="promptpayNumber" name="promptpayNumber" defaultValue={student.promptpayNumber ?? ""} />
+              <FieldInput id="promptpayNumber" name="promptpayNumber" defaultValue={getDraft("promptpayNumber", student.promptpayNumber ?? "")} />
             }
           />
         </Group>

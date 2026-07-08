@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState, useCallback } from "react";
+import { useFormDraft } from "@/lib/use-form-draft";
 import { useFormStatus } from "react-dom";
 import {
   Calendar,
@@ -131,8 +132,14 @@ function RequiredMark() {
   );
 }
 
-function PassedCoursesToggle() {
-  const [val, setVal] = useState<string>("");
+function PassedCoursesToggle({
+  defaultValue = "",
+  onValueChange,
+}: {
+  defaultValue?: string;
+  onValueChange?: (v: string) => void;
+}) {
+  const [val, setVal] = useState(defaultValue);
   const options = [
     { value: "true", label: "Yes", tone: "success" as const },
     { value: "false", label: "No", tone: "destructive" as const },
@@ -149,7 +156,7 @@ function PassedCoursesToggle() {
             <button
               key={opt.value}
               type="button"
-              onClick={() => setVal(opt.value)}
+              onClick={() => { setVal(opt.value); onValueChange?.(opt.value); }}
               className={cn(
                 "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
                 active
@@ -227,18 +234,21 @@ function RatingRow({
 function ChoiceGrid({
   name,
   options,
+  defaultSelected,
+  onSelectionChange,
 }: {
   name: string;
   options: ReadonlyArray<{ readonly value: string; readonly label: string }>;
+  defaultSelected?: string[];
+  onSelectionChange?: (values: string[]) => void;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set(defaultSelected));
 
   function toggle(value: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(value) ? next.delete(value) : next.add(value);
-      return next;
-    });
+    const next = new Set(selected);
+    next.has(value) ? next.delete(value) : next.add(value);
+    setSelected(next);
+    onSelectionChange?.([...next]);
   }
 
   return (
@@ -271,7 +281,7 @@ function ChoiceGrid({
 
 /* ── Step contents ──────────────────────────────────────────── */
 
-function Step1({ semesters }: { semesters: SemesterOption[] }) {
+function Step1({ semesters, defaults = {} }: { semesters: SemesterOption[]; defaults?: Record<string, string> }) {
   return (
     <div className="space-y-5">
       <StepHeader
@@ -289,7 +299,7 @@ function Step1({ semesters }: { semesters: SemesterOption[] }) {
               id="semester"
               name="universitySemesterId"
               required
-              defaultValue=""
+              defaultValue={defaults.universitySemesterId ?? ""}
             >
               <option value="" disabled>
                 Select a semester
@@ -312,6 +322,7 @@ function Step1({ semesters }: { semesters: SemesterOption[] }) {
               required
               list="semester-suggestions"
               placeholder="Fall 2026"
+              defaultValue={defaults.semesterLabel ?? ""}
             />
             <datalist id="semester-suggestions">
               {SEMESTER_LABEL_SUGGESTIONS.map((label) => (
@@ -328,7 +339,7 @@ function Step1({ semesters }: { semesters: SemesterOption[] }) {
   );
 }
 
-function Step2() {
+function Step2({ defaults = {} }: { defaults?: Record<string, string> }) {
   return (
     <div className="space-y-5">
       <StepHeader
@@ -350,6 +361,7 @@ function Step2() {
             step="0.01"
             inputMode="decimal"
             placeholder="25000"
+            defaultValue={defaults.amountDue ?? ""}
           />
         </div>
         <div className="space-y-2">
@@ -357,7 +369,7 @@ function Step2() {
             Due date
             <RequiredMark />
           </Label>
-          <Input id="dueDate" name="dueDate" type="date" required />
+          <Input id="dueDate" name="dueDate" type="date" required defaultValue={defaults.dueDate ?? ""} />
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -383,7 +395,13 @@ function Step2() {
   );
 }
 
-function Step3() {
+function Step3({
+  defaults = {},
+  onPassedCoursesChange,
+}: {
+  defaults?: Record<string, string>;
+  onPassedCoursesChange?: (v: string) => void;
+}) {
   return (
     <div className="space-y-5">
       <StepHeader
@@ -402,6 +420,7 @@ function Step3() {
             step="0.01"
             inputMode="decimal"
             placeholder="3.50"
+            defaultValue={defaults.gpa ?? ""}
           />
         </div>
         <div className="space-y-2">
@@ -415,10 +434,14 @@ function Step3() {
             step="1"
             inputMode="numeric"
             placeholder="18"
+            defaultValue={defaults.creditsCompleted ?? ""}
           />
         </div>
       </div>
-      <PassedCoursesToggle />
+      <PassedCoursesToggle
+        defaultValue={defaults.passedAllCourses ?? ""}
+        onValueChange={onPassedCoursesChange}
+      />
       <FormFileField
         id="transcriptFile"
         name="transcriptFile"
@@ -431,7 +454,17 @@ function Step3() {
   );
 }
 
-function Step4() {
+function Step4({
+  defaultChallenges,
+  defaultActivities,
+  onChallengesChange,
+  onActivitiesChange,
+}: {
+  defaultChallenges?: string[];
+  defaultActivities?: string[];
+  onChallengesChange?: (v: string[]) => void;
+  onActivitiesChange?: (v: string[]) => void;
+}) {
   return (
     <div className="space-y-6">
       <StepHeader
@@ -450,17 +483,17 @@ function Step4() {
       </div>
       <div className="space-y-2">
         <Label className="text-sm font-medium">Current challenges</Label>
-        <ChoiceGrid name="challenges" options={CHALLENGE_OPTIONS} />
+        <ChoiceGrid name="challenges" options={CHALLENGE_OPTIONS} defaultSelected={defaultChallenges} onSelectionChange={onChallengesChange} />
       </div>
       <div className="space-y-2">
         <Label className="text-sm font-medium">Activities & involvement</Label>
-        <ChoiceGrid name="activities" options={ACTIVITY_OPTIONS} />
+        <ChoiceGrid name="activities" options={ACTIVITY_OPTIONS} defaultSelected={defaultActivities} onSelectionChange={onActivitiesChange} />
       </div>
     </div>
   );
 }
 
-function Step5() {
+function Step5({ defaults = {} }: { defaults?: Record<string, string> }) {
   return (
     <div className="space-y-5">
       <StepHeader
@@ -492,6 +525,7 @@ function Step5() {
             rows={3}
             className="resize-y"
             placeholder={field.placeholder}
+            defaultValue={defaults[field.key] ?? ""}
           />
         </div>
       ))}
@@ -524,7 +558,11 @@ export function SubmissionForm({
   defaults: Defaults;
   semesters?: SemesterOption[];
 }) {
-  const [step, setStep] = useState(1);
+  const { get, save, onFormChange, clearDraft } = useFormDraft("draft:submission");
+  const [step, setStep] = useState(() => {
+    const saved = Number(get("__step", "1"));
+    return Number.isInteger(saved) && saved >= 1 && saved <= STEPS.length ? saved : 1;
+  });
   const total = STEPS.length;
   const [stepError, setStepError] = useState<string | null>(null);
 
@@ -536,6 +574,10 @@ export function SubmissionForm({
   useEffect(() => {
     if (state.error) toast.error(state.error);
   }, [state.error]);
+
+  useEffect(() => {
+    if (state.success) clearDraft();
+  }, [state.success]);
 
   const validateStep = useCallback(
     (s: number, form: HTMLFormElement): boolean => {
@@ -572,18 +614,22 @@ export function SubmissionForm({
   const handleNext = useCallback(
     (form: HTMLFormElement) => {
       if (validateStep(step, form)) {
-        setStep((v) => Math.min(total, v + 1));
+        setStep((v) => {
+          const next = Math.min(total, v + 1);
+          save({ __step: String(next) });
+          return next;
+        });
       }
     },
-    [step, total, validateStep],
+    [step, total, validateStep, save],
   );
 
   const stepContent = [
-    <Step1 key={1} semesters={semesters} />,
-    <Step2 key={2} />,
-    <Step3 key={3} />,
-    <Step4 key={4} />,
-    <Step5 key={5} />,
+    <Step1 key={1} semesters={semesters} defaults={{ universitySemesterId: get("universitySemesterId"), semesterLabel: get("semesterLabel") }} />,
+    <Step2 key={2} defaults={{ amountDue: get("amountDue"), dueDate: get("dueDate") }} />,
+    <Step3 key={3} defaults={{ gpa: get("gpa"), creditsCompleted: get("creditsCompleted"), passedAllCourses: get("passedAllCourses") }} onPassedCoursesChange={(v) => save({ passedAllCourses: v })} />,
+    <Step4 key={4} defaultChallenges={JSON.parse(get("__chips_challenges", "[]"))} defaultActivities={JSON.parse(get("__chips_activities", "[]"))} onChallengesChange={(v) => save({ __chips_challenges: JSON.stringify(v) })} onActivitiesChange={(v) => save({ __chips_activities: JSON.stringify(v) })} />,
+    <Step5 key={5} defaults={{ reflectionAchievement: get("reflectionAchievement"), reflectionChallenge: get("reflectionChallenge"), reflectionAdditional: get("reflectionAdditional") }} />,
   ];
 
   return (
@@ -592,6 +638,7 @@ export function SubmissionForm({
       className="space-y-6"
       encType="multipart/form-data"
       id="submission-form"
+      onChange={onFormChange}
       onSubmit={(e) => {
         if (step < total) {
           e.preventDefault();
@@ -639,7 +686,11 @@ export function SubmissionForm({
               variant="outline"
               onClick={() => {
                 setStepError(null);
-                setStep((s) => Math.max(1, s - 1));
+                setStep((s) => {
+                  const prev = Math.max(1, s - 1);
+                  save({ __step: String(prev) });
+                  return prev;
+                });
               }}
               className="gap-1.5"
             >
