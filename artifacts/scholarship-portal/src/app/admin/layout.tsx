@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ClerkAdminGuard } from "@/components/clerk-admin-guard";
 import { requireAdmin } from "@/lib/auth/session";
 
 export default async function AdminLayout({
@@ -13,6 +14,7 @@ export default async function AdminLayout({
       variant="admin"
       email={user.email ?? ""}
     >
+      <ClerkAdminGuard />
       {children}
     </AppShell>
   );

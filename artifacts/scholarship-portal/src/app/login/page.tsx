@@ -12,8 +12,27 @@ import { AdminClerkLogin } from "./admin-clerk-login";
 
 type LoginMode = "student" | "admin";
 
+const MODE_KEY = "login_mode";
+
+function getInitialMode(): LoginMode {
+  try {
+    const stored = sessionStorage.getItem(MODE_KEY);
+    if (stored === "admin" || stored === "student") return stored;
+  } catch {
+  }
+  return "student";
+}
+
 export default function LoginPage() {
-  const [mode, setMode] = useState<LoginMode>("student");
+  const [mode, setMode] = useState<LoginMode>(getInitialMode);
+
+  function handleSetMode(next: LoginMode) {
+    try {
+      sessionStorage.setItem(MODE_KEY, next);
+    } catch {
+    }
+    setMode(next);
+  }
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -83,7 +102,7 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-border bg-muted/40 p-1">
             <button
               type="button"
-              onClick={() => setMode("student")}
+              onClick={() => handleSetMode("student")}
               className={cn(
                 "flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all",
                 mode === "student"
@@ -96,7 +115,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("admin")}
+              onClick={() => handleSetMode("admin")}
               className={cn(
                 "flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all",
                 mode === "admin"

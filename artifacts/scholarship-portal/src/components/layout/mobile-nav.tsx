@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { UserButton } from "@clerk/react";
+
 import {
   MOBILE_ADMIN_NAV,
   MOBILE_STUDENT_NAV,
@@ -13,8 +15,8 @@ import {
 import { BrandMark } from "@/components/layout/brand-mark";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import { Button } from "@/components/ui/button";
-import { getInitials } from "@/lib/initials";
 import { cn } from "@/lib/utils";
+import { clerkLightAppearance } from "@/lib/clerk-appearance";
 
 type MobileNavProps = {
   variant: "student" | "admin";
@@ -73,7 +75,6 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
   if (variant === "admin") {
     const pageTitle = getAdminPageTitle(pathname);
     const userLabel = displayName ?? email?.split("@")[0] ?? "Admin";
-    const initials = getInitials(userLabel);
 
     return (
       <>
@@ -168,9 +169,16 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
 
               <div className="border-t border-sidebar-admin-border p-4">
                 <div className="mb-3 flex items-center gap-3 rounded-xl border border-sidebar-admin-border bg-black/15 p-3">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-admin-accent text-xs font-semibold text-sidebar-admin-accent-foreground">
-                    {initials}
-                  </span>
+                  <UserButton
+                    userProfileMode="modal"
+                    userProfileProps={{ appearance: clerkLightAppearance }}
+                    appearance={{
+                      elements: {
+                        userButtonAvatarBox: "size-9",
+                        userButtonTrigger: "focus:shadow-none",
+                      },
+                    }}
+                  />
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold text-white">
                       {userLabel}
@@ -180,10 +188,6 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
                     </p>
                   </div>
                 </div>
-                <SignOutButton
-                  className="w-full justify-start gap-2 text-sidebar-admin-foreground hover:bg-sidebar-admin-accent/40 hover:text-white"
-                  showLabel
-                />
               </div>
             </aside>
           </div>

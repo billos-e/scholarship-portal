@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { SignIn, useUser, useClerk } from "@clerk/react";
-import { dark } from "@clerk/themes";
 import { apiClerkAdminSession, saveSession } from "@/lib/auth/api";
 
 export function AdminClerkLogin() {
@@ -50,15 +49,14 @@ export function AdminClerkLogin() {
         routing="hash"
         signUpUrl={undefined}
         appearance={{
-          baseTheme: dark,
           variables: {
             colorPrimary: "#851651",
-            colorBackground: "#140810",
-            colorForeground: "#f5d0e4",
-            colorMutedForeground: "#c08aaa",
+            colorBackground: "#ffffff",
+            colorForeground: "#0f0a0d",
+            colorMutedForeground: "#6b7280",
             colorDanger: "#b3402f",
-            colorInput: "#2d1020",
-            colorInputForeground: "#f5d0e4",
+            colorInput: "#ffffff",
+            colorInputForeground: "#0f0a0d",
             colorNeutral: "#6b1140",
             fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
             borderRadius: "0.75rem",
@@ -66,28 +64,28 @@ export function AdminClerkLogin() {
           elements: {
             rootBox: "w-full",
             cardBox: "w-full rounded-xl overflow-hidden shadow-none",
-            card: "!shadow-none !border-0 !bg-[#140810] !rounded-none",
-            footer: "!shadow-none !border-0 !bg-[#140810] !rounded-none",
-            headerTitle: "text-[#f5d0e4]",
-            headerSubtitle: "text-[#c08aaa]",
-            formFieldLabel: "text-[#f5d0e4]",
-            formFieldInput: "bg-[#2d1020] border-[#6b1140] text-[#f5d0e4]",
-            formButtonPrimary: "bg-[#851651] hover:bg-[#9d174d] text-white",
-            footerActionText: "text-[#c08aaa]",
-            footerActionLink: "text-[#f5d0e4] hover:text-white",
-            dividerText: "text-[#c08aaa]",
-            dividerLine: "bg-[#6b1140]",
-            socialButtonsBlockButtonText: "text-[#f5d0e4]",
-            identityPreviewEditButton: "text-[#f5d0e4]",
-            formFieldSuccessText: "text-green-400",
-            alertText: "text-[#f5d0e4]",
-            alert: "bg-[#2d1020] border-[#851651]",
-            otpCodeFieldInput: "bg-[#2d1020] border-[#6b1140] text-[#f5d0e4]",
-            footerAction: "bg-[#140810]",
+            card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+            footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
+            headerTitle: "hidden",
+            headerSubtitle: "hidden",
+            formFieldLabel: "text-foreground",
+            formFieldInput: "bg-white border-border text-foreground",
+            formButtonPrimary: "bg-[#851651] hover:bg-[#6b1140] text-white",
+            footerActionText: "text-muted-foreground",
+            footerActionLink: "text-[#851651] hover:text-[#6b1140]",
+            dividerText: "text-muted-foreground",
+            dividerLine: "bg-border",
+            socialButtonsBlockButtonText: "text-foreground",
+            identityPreviewEditButton: "text-[#851651]",
+            formFieldSuccessText: "text-green-600",
+            alertText: "text-foreground",
+            alert: "bg-destructive/10 border-destructive/30",
+            otpCodeFieldInput: "bg-white border-border text-foreground",
+            footerAction: "bg-transparent",
             logoBox: "hidden",
             main: "",
             formFieldRow: "",
-            socialButtonsBlockButton: "border-[#6b1140] bg-[#2d1020] hover:bg-[#3d1828]",
+            socialButtonsBlockButton: "border-border bg-white hover:bg-muted",
           },
         }}
       />

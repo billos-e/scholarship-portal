@@ -10,13 +10,13 @@ import {
   History,
   Home,
   LayoutDashboard,
-  Settings,
   User,
   FilePlus2,
   ClipboardList,
   FileUp,
   Users,
 } from "lucide-react";
+import { UserButton } from "@clerk/react";
 
 import { BrandMark } from "@/components/layout/brand-mark";
 import { SignOutButton } from "@/components/layout/sign-out-button";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getInitials } from "@/lib/initials";
 import { cn } from "@/lib/utils";
+import { clerkLightAppearance } from "@/lib/clerk-appearance";
 
 export type SidebarNavItem = {
   href: string;
@@ -48,7 +49,6 @@ const ADMIN_NAV: SidebarNavItem[] = [
   { href: "/admin/requests", label: "Payment Requests", icon: ClipboardList },
   { href: "/admin/universities", label: "Universities", icon: Building2 },
   { href: "/admin/import", label: "Import", icon: FileUp },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function getNavItems(variant: "student" | "admin"): SidebarNavItem[] {
@@ -220,29 +220,51 @@ export function AppSidebar({
         <div className="p-4">
           {!collapsed ? (
             <div className="flex items-center gap-3">
-              <span
-                className={cn(
-                  "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                  isAdmin
-                    ? "bg-sidebar-admin-accent text-sidebar-admin-accent-foreground"
-                    : "bg-brand-fuchsia-light text-primary",
-                )}
-              >
-                {initials}
-              </span>
+              {isAdmin ? (
+                <UserButton
+                  userProfileMode="modal"
+                  userProfileProps={{ appearance: clerkLightAppearance }}
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "size-9",
+                      userButtonTrigger: "focus:shadow-none",
+                    },
+                  }}
+                />
+              ) : (
+                <span
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-fuchsia-light text-xs font-semibold text-primary"
+                >
+                  {initials}
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold">{userLabel}</p>
                 <p className="truncate text-[11px] opacity-70">
                   {isAdmin ? "Administrator" : "Student"}
                 </p>
               </div>
-              <SignOutButton showLabel={false} />
             </div>
           ) : (
-            <SignOutButton
-              className="w-full justify-center px-2"
-              showLabel={false}
-            />
+            <div className={cn("flex flex-col items-center gap-2", !isAdmin && "gap-0")}>
+              {isAdmin ? (
+                <UserButton
+                  userProfileMode="modal"
+                  userProfileProps={{ appearance: clerkLightAppearance }}
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "size-9",
+                      userButtonTrigger: "focus:shadow-none",
+                    },
+                  }}
+                />
+              ) : (
+                <SignOutButton
+                  className="w-full justify-center px-2"
+                  showLabel={false}
+                />
+              )}
+            </div>
           )}
         </div>
       </aside>
