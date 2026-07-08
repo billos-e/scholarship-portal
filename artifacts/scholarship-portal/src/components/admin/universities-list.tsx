@@ -229,38 +229,38 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
       />
 
       <div className="space-y-4">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {(["", "active", "inactive"] as const).map((val) => {
-              const label = val === "" ? "All" : val === "active" ? "Active" : "Inactive";
-              const active = filters.status === val;
-              return (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => updateFilters({ status: val })}
-                  className={cn(
-                    "shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors",
-                    active
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {filtered.length} universit{filtered.length === 1 ? "y" : "ies"}
-            </span>
-            <div className="ml-auto shrink-0 w-36">
-              <SearchField
-                id="university-search"
-                label="Search"
-                value={filters.q}
-                placeholder="Search…"
-                onChange={(q) => updateFilters({ q })}
-              />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2 items-center">
+              {(["", "active", "inactive"] as const).map((val) => {
+                const label = val === "" ? "All" : val === "active" ? "Active" : "Inactive";
+                const active = filters.status === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => updateFilters({ status: val })}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} universit{filtered.length === 1 ? "y" : "ies"}
+              </span>
             </div>
+            <SearchField
+              id="university-search"
+              label="Search"
+              value={filters.q}
+              placeholder="Name or location"
+              onChange={(q) => updateFilters({ q })}
+            />
           </div>
 
           {paginatedUniversities.length === 0 ? (
