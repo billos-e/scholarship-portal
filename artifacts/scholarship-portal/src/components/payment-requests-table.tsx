@@ -48,10 +48,13 @@ export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
     <>
       <div className="space-y-2 md:hidden">
         {sortedItems.map((request) => (
-          <Link
+          <div
             key={request.id}
-            href={request.href}
-            className="block rounded-xl border border-border/80 bg-card p-4 shadow-sm transition-colors hover:border-primary/25 hover:bg-muted/30"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(request.href)}
+            onKeyDown={(e) => e.key === "Enter" && navigate(request.href)}
+            className="block cursor-pointer rounded-xl border border-border/80 bg-card p-4 shadow-sm transition-colors hover:border-primary/25 hover:bg-muted/30"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -67,7 +70,7 @@ export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
             <p className="mt-2 text-xs text-muted-foreground">
               Submitted {formatDate(new Date(request.submittedAt))}
             </p>
-          </Link>
+          </div>
         ))}
       </div>
 
