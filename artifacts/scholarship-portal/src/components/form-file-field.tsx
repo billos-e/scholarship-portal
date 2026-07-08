@@ -56,7 +56,7 @@ export function FormFileField({
       </label>
 
       {fileName ? (
-        <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/[0.04] px-4 py-3">
+        <div className="flex items-center justify-center gap-3 rounded-xl border border-primary/30 bg-primary/[0.04] px-4 py-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-fuchsia-light text-primary">
             <Icon className="size-5" />
           </div>
