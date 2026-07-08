@@ -211,42 +211,28 @@ function FileUploadField({
   );
 }
 
-function WellbeingEmoji({ label }: { label: string }) {
+function RatingRow({ label }: { label: string }) {
   const [val, setVal] = useState(0);
-  const faces = [
-    { emoji: "\uD83D\uDE22", label: "Poor", color: "text-red-400", bg: "bg-red-50", ring: "ring-red-200" },
-    { emoji: "\uD83D\uDE10", label: "Fair", color: "text-orange-400", bg: "bg-orange-50", ring: "ring-orange-200" },
-    { emoji: "\uD83D\uDE42", label: "Okay", color: "text-amber-400", bg: "bg-amber-50", ring: "ring-amber-200" },
-    { emoji: "\uD83D\uDE0A", label: "Good", color: "text-lime-500", bg: "bg-lime-50", ring: "ring-lime-200" },
-    { emoji: "\uD83D\uDE04", label: "Great", color: "text-emerald-500", bg: "bg-emerald-50", ring: "ring-emerald-200" },
-  ];
   return (
-    <div className="flex items-center gap-4">
-      <span className="text-sm text-slate-700 w-[160px] shrink-0">{label}</span>
-      <div className="flex-1 flex items-center gap-1">
-        {faces.map((f, i) => {
-          const n = i + 1;
-          const active = val === n;
-          return (
-            <button
-              key={n}
-              onClick={() => setVal(n)}
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-200",
-                active
-                  ? cn(f.bg, "ring-2", f.ring, "scale-110")
-                  : "hover:bg-slate-50"
-              )}
-            >
-              <span className={cn("text-xl leading-none", active ? f.color : "grayscale opacity-40")}>
-                {f.emoji}
-              </span>
-              <span className={cn("text-[10px] font-medium", active ? f.color : "text-slate-300")}>
-                {f.label}
-              </span>
-            </button>
-          );
-        })}
+    <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+      <span className="text-sm text-slate-700">{label}</span>
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            onClick={() => setVal(n)}
+            className={cn(
+              "w-8 h-8 rounded-lg text-xs font-semibold transition-all",
+              val === n
+                ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
+                : val >= n
+                  ? "bg-indigo-100 text-indigo-700"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            )}
+          >
+            {n}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -404,9 +390,9 @@ function Step4() {
         <Label className="text-sm font-medium text-slate-700 mb-2 block">
           Rate each area (1 = low, 5 = high)
         </Label>
-        <div className="space-y-3">
+        <div className="bg-slate-50 rounded-xl px-4 py-1 border border-slate-100">
           {WELLBEING_ITEMS.map((item) => (
-            <WellbeingEmoji key={item.key} label={item.label} />
+            <RatingRow key={item.key} label={item.label} />
           ))}
         </div>
       </div>
