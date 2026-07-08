@@ -10,7 +10,9 @@ import { ACTIVITY_VALUES, CHALLENGE_VALUES } from "@/lib/submissions/constants";
 import {
   getMissingProfileFields,
   profileIncompleteMessage,
+  type StudentForEligibility,
 } from "@/lib/submissions/eligibility";
+import { fetchStudent } from "@/lib/api/students";
 
 const apiBase = import.meta.env.BASE_URL
   ? import.meta.env.BASE_URL.replace(/\/$/, "")
@@ -126,12 +128,19 @@ export async function createSubmission(
   _prev: SubmissionState,
   formData: FormData,
 ): Promise<SubmissionState> {
-  const { student } = await requireStudent();
+  const { student: sessionStudent } = await requireStudent();
 
-  const missingProfileFields = getMissingProfileFields(student);
+  const fullStudent = await fetchStudent(sessionStudent.id);
+  if (!fullStudent) {
+    return { error: "Student profile not found. Please contact your administrator." };
+  }
+
+  const missingProfileFields = getMissingProfileFields(fullStudent as unknown as StudentForEligibility);
   if (missingProfileFields.length > 0) {
     return { error: profileIncompleteMessage(missingProfileFields) };
   }
+
+  const student = sessionStudent;
 
   const parsed = submissionSchema.safeParse({
     semesterLabel: trimmed(formData.get("semesterLabel")),

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
   ClipboardList,
   History,
@@ -27,6 +28,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentUser } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import {
+  getMissingProfileFields,
+  PROFILE_FIELD_LABELS,
+  BLOCKING_REQUEST_STATUSES,
+  type StudentForEligibility,
+  type ProfileField,
+} from "@/lib/submissions/eligibility";
 
 function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
@@ -81,10 +89,19 @@ export default function StudentDashboard() {
   }
 
   const hour = new Date().getHours();
+  const missingProfileFields = getMissingProfileFields(
+    student as unknown as StudentForEligibility,
+  );
+  const openRequest =
+    student.tuitionPaymentRequests.find((r) =>
+      BLOCKING_REQUEST_STATUSES.includes(r.status),
+    ) ?? null;
   const eligibility = {
-    canStart: true,
-    missingProfileFields: [] as string[],
-    openRequest: null as { id: string; semesterLabel: string } | null,
+    canStart: missingProfileFields.length === 0 && openRequest === null,
+    missingProfileFields: missingProfileFields as ProfileField[],
+    openRequest: openRequest
+      ? { id: openRequest.id, semesterLabel: openRequest.semesterLabel }
+      : null,
   };
 
   const requests = student.tuitionPaymentRequests;
@@ -99,6 +116,31 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {eligibility.missingProfileFields.length > 0 && (
+        <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <div className="min-w-0">
+              <p className="font-medium text-warning-foreground">Profile incomplete</p>
+              <p className="mt-0.5 text-muted-foreground">
+                Missing:{" "}
+                {eligibility.missingProfileFields
+                  .map((f) => PROFILE_FIELD_LABELS[f])
+                  .join(", ")}
+                .{" "}
+                <Link
+                  href="/student/profile/edit"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Complete your profile
+                </Link>{" "}
+                to enable semester submissions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         size="lg"
         title={`${greetingForHour(hour)}, ${student.firstName}`}

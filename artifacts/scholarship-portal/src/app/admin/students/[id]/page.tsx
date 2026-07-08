@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   Pencil,
   Receipt,
   Clock,
@@ -40,6 +41,11 @@ import { formatDate, formatCurrency } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 import { uploadPublicUrl } from "@/lib/upload-path";
+import {
+  getMissingProfileFields,
+  PROFILE_FIELD_LABELS,
+  type StudentForEligibility,
+} from "@/lib/submissions/eligibility";
 import NotFound from "@/pages/not-found";
 import { ArchiveStudentButton } from "./archive-student-button";
 import { ActivateStudentButton } from "./activate-student-button";
@@ -107,6 +113,7 @@ export default function StudentDetailPage() {
   const initials = getInitials(fullName);
   const editHref = `/admin/students/${id}/edit`;
   const bank = student.bankInformation;
+  const missingFields = getMissingProfileFields(student as unknown as StudentForEligibility);
 
   const requests = student.tuitionPaymentRequests;
 
@@ -118,6 +125,29 @@ export default function StudentDetailPage() {
           { label: fullName },
         ]}
       />
+
+      {missingFields.length > 0 && (
+        <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <div className="min-w-0">
+              <p className="font-medium text-warning-foreground">Profile incomplete</p>
+              <p className="mt-0.5 text-muted-foreground">
+                Missing:{" "}
+                {missingFields.map((f) => PROFILE_FIELD_LABELS[f]).join(", ")}
+                .{" "}
+                <Link
+                  href={editHref}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Complete profile
+                </Link>{" "}
+                so this student can submit requests.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

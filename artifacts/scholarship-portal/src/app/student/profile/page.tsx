@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Pencil, GraduationCap, BookOpen, Calendar, Mail, Phone } from "lucide-react";
+import { AlertTriangle, Pencil, GraduationCap, BookOpen, Calendar, Mail, Phone } from "lucide-react";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
 import {
@@ -14,10 +14,16 @@ import { StudentStatusBadge } from "@/components/student-status-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
+import { SignOutButton } from "@/components/layout/sign-out-button";
 import { formatDate } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import {
+  getMissingProfileFields,
+  PROFILE_FIELD_LABELS,
+  type StudentForEligibility,
+} from "@/lib/submissions/eligibility";
 import { cn } from "@/lib/utils";
 import NotFound from "@/pages/not-found";
 
@@ -52,9 +58,34 @@ export default function StudentProfilePage() {
   const fullName = `${student.firstName} ${student.lastName}`;
   const initials = getInitials(fullName);
   const hasPhoto = Boolean(student.photoUrl?.trim());
+  const missingFields = getMissingProfileFields(student as unknown as StudentForEligibility);
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+    <div className="flex flex-col gap-6">
+      {/* ── Incomplete-profile warning — always full width ── */}
+      {missingFields.length > 0 && (
+        <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <div className="min-w-0">
+              <p className="font-medium text-warning-foreground">Profile incomplete</p>
+              <p className="mt-0.5 text-muted-foreground">
+                Missing:{" "}
+                {missingFields.map((f) => PROFILE_FIELD_LABELS[f]).join(", ")}.{" "}
+                <Link
+                  href="/student/profile/edit"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Update your profile
+                </Link>{" "}
+                to enable new submissions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       {/* ── Left sidebar ── */}
       <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-56">
         {/* Identity card */}
@@ -150,6 +181,11 @@ export default function StudentProfilePage() {
             )}
           </div>
         )}
+
+        {/* Sign out — visible on mobile where the sidebar nav has no logout */}
+        <div className="lg:hidden">
+          <SignOutButton className="w-full justify-center rounded-xl border border-border/80 bg-card px-4 py-2 text-sm text-muted-foreground hover:text-destructive shadow-sm" showLabel />
+        </div>
       </aside>
 
       {/* ── Main content ── */}
@@ -232,6 +268,7 @@ export default function StudentProfilePage() {
             </p>
           )}
         </ProfileInfoCard>
+      </div>
       </div>
     </div>
   );

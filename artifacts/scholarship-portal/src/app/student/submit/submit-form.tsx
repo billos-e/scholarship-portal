@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, useCallback } from "react";
 import { useFormDraft } from "@/lib/use-form-draft";
 import { useFormStatus } from "react-dom";
 import {
+  AlertTriangle,
   Calendar,
   Check,
   ChevronLeft,
@@ -13,6 +14,7 @@ import {
   Heart,
   MessageSquare,
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { FormFileField } from "@/components/form-file-field";
@@ -581,9 +583,13 @@ export function SubmissionForm({
     {},
   );
 
+  const isProfileError = Boolean(
+    state.error?.startsWith("Complete your profile"),
+  );
+
   useEffect(() => {
-    if (state.error) toast.error(state.error);
-  }, [state.error]);
+    if (state.error && !isProfileError) toast.error(state.error);
+  }, [state.error, isProfileError]);
 
   useEffect(() => {
     if (state.success) clearDraft();
@@ -682,6 +688,23 @@ export function SubmissionForm({
         name="promptpayNumber"
         defaultValue={defaults.promptpayNumber}
       />
+
+      {isProfileError && state.error ? (
+        <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <p className="text-muted-foreground">
+              {state.error}{" "}
+              <Link
+                href="/student/profile/edit"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Edit profile
+              </Link>
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <StepIndicator current={step} />
 
