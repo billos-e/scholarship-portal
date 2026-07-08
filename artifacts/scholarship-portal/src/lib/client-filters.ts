@@ -21,6 +21,7 @@ export type StudentFilterState = {
   uni: string;
   program: string;
   status: string;
+  missingBank: boolean;
 };
 
 export type UniversityFilterState = {
@@ -145,6 +146,8 @@ export function filterStudents<
     universityId: string | null;
     degreeProgram: string | null;
     status: StudentStatus;
+    bankAccountNumber: string | null;
+    bankName: string | null;
   },
 >(students: T[], filters: StudentFilterState): T[] {
   return students.filter((student) => {
@@ -154,6 +157,9 @@ export function filterStudents<
     }
     if (filters.status && student.status !== filters.status) return false;
     if (!matchesStudentQuery(student, filters.q)) return false;
+    if (filters.missingBank && student.bankAccountNumber && student.bankName) {
+      return false;
+    }
     return true;
   });
 }

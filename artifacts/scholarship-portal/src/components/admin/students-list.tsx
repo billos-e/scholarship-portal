@@ -74,6 +74,7 @@ const EMPTY_FILTERS: StudentFilterState = {
   uni: "",
   program: "",
   status: "",
+  missingBank: false,
 };
 
 type StudentSortKey =
@@ -99,20 +100,25 @@ function SummaryStat({
   value,
   icon: Icon,
   tone,
+  onClick,
+  active,
 }: {
   label: string;
   value: number;
   icon: React.ComponentType<{ className?: string }>;
-  tone: "primary" | "success" | "muted";
+  tone: "primary" | "success" | "warning" | "muted";
+  onClick?: () => void;
+  active?: boolean;
 }) {
   const toneClass = {
     primary: "bg-brand-fuchsia-light text-primary",
     success: "bg-success-light text-success",
+    warning: "bg-warning-light text-warning",
     muted: "bg-muted text-muted-foreground",
   }[tone];
 
-  return (
-    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
+  const content = (
+    <>
       <div
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-lg",
@@ -129,6 +135,29 @@ function SummaryStat({
           {value}
         </p>
       </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "flex min-w-0 w-full items-center gap-3 rounded-xl border px-4 py-3 shadow-sm text-left transition-colors",
+          active
+            ? "border-warning bg-warning/5 ring-1 ring-warning/40"
+            : "border-border/70 bg-card hover:bg-muted/30 hover:border-border",
+        )}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
+      {content}
     </div>
   );
 }
@@ -210,7 +239,8 @@ export function StudentsList({
     Boolean(filters.q) ||
     Boolean(filters.uni) ||
     Boolean(filters.program) ||
-    Boolean(filters.status);
+    Boolean(filters.status) ||
+    filters.missingBank;
 
   return (
     <div className="space-y-6">
@@ -252,6 +282,8 @@ export function StudentsList({
           value={missingBankCount}
           icon={CreditCard}
           tone="warning"
+          onClick={() => updateFilters({ missingBank: !filters.missingBank })}
+          active={filters.missingBank}
         />
       </div>
 
