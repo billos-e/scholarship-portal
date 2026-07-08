@@ -404,24 +404,61 @@ export function ImportWizard() {
 
   return (
     <div className="space-y-6">
-      <ol className="flex flex-wrap gap-2">
-        {STEPS.map((label, index) => (
-          <li
-            key={label}
-            className={cn(
-              "flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
-              index === stepIndex
-                ? "border-primary bg-primary/10 text-primary"
-                : index < stepIndex
-                  ? "border-border text-muted-foreground"
-                  : "border-border/60 text-muted-foreground/70",
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <ol className="flex flex-wrap gap-2">
+          {STEPS.map((label, index) => (
+            <li
+              key={label}
+              className={cn(
+                "flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
+                index === stepIndex
+                  ? "border-primary bg-primary/10 text-primary"
+                  : index < stepIndex
+                    ? "border-border text-muted-foreground"
+                    : "border-border/60 text-muted-foreground/70",
+              )}
+            >
+              <span className="tabular-nums">{index + 1}</span>
+              {label}
+            </li>
+          ))}
+        </ol>
+
+        {entity && step === "Upload" ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pending}
+              onClick={() => downloadBlob(generateCsvBlob(entity), `${entity}-template.csv`)}
+            >
+              <Download className="size-3.5" />
+              CSV
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pending}
+              onClick={() => downloadBlob(generateExcelBlob(entity), `${entity}-template.xlsx`)}
+            >
+              <Download className="size-3.5" />
+              Excel
+            </Button>
+            {entity === "universities" && (
+              <UniversityZipInfo
+                disabled={pending}
+                onDownload={() => {
+                  generateUniversitiesZipBlob().then((blob) => {
+                    downloadBlob(blob, "universities-template.zip");
+                  });
+                }}
+              />
             )}
-          >
-            <span className="tabular-nums">{index + 1}</span>
-            {label}
-          </li>
-        ))}
-      </ol>
+          </div>
+        ) : null}
+      </div>
 
       {error ? (
         <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -458,43 +495,7 @@ export function ImportWizard() {
       ) : null}
 
       {step === "Upload" && entity ? (
-        <>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Download template</span>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={pending}
-                onClick={() => downloadBlob(generateCsvBlob(entity), `${entity}-template.csv`)}
-              >
-                <Download className="size-3.5" />
-                CSV
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={pending}
-                onClick={() => downloadBlob(generateExcelBlob(entity), `${entity}-template.xlsx`)}
-              >
-                <Download className="size-3.5" />
-                Excel
-              </Button>
-              {entity === "universities" && (
-                <UniversityZipInfo
-                  disabled={pending}
-                  onDownload={() => {
-                    generateUniversitiesZipBlob().then((blob) => {
-                      downloadBlob(blob, "universities-template.zip");
-                    });
-                  }}
-                />
-              )}
-            </div>
-          </div>
-          <Card>
+        <Card>
           <CardHeader>
             <CardTitle>Upload spreadsheet</CardTitle>
             <CardDescription>
@@ -581,8 +582,7 @@ export function ImportWizard() {
               </div>
             )}
           </CardContent>
-          </Card>
-        </>
+        </Card>
       ) : null}
 
       {step === "Map columns" && entity ? (
