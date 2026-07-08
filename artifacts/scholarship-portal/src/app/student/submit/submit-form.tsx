@@ -66,7 +66,7 @@ function StepIndicator({ current }: { current: number }) {
                 className={cn(
                   "flex size-10 items-center justify-center rounded-full border-2 transition-all duration-200",
                   done
-                    ? "border-success bg-success text-success-foreground"
+                    ? "border-success bg-success text-white"
                     : active
                       ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                       : "border-border bg-card text-muted-foreground",
