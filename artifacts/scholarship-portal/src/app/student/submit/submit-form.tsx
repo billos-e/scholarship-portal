@@ -651,7 +651,13 @@ export function SubmissionForm({
 
           {step < total ? (
             <Button
-              type="submit"
+              type="button"
+              onClick={(e) => {
+                const form = (e.currentTarget as HTMLElement).closest(
+                  "form",
+                ) as HTMLFormElement;
+                if (form) handleNext(form);
+              }}
               className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Next
