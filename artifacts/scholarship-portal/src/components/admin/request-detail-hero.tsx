@@ -21,6 +21,7 @@ type RequestDetailHeroProps = {
   semesterLabel: string;
   email: string;
   universityName: string | null;
+  universityId: string | null;
   submittedLabel: string;
   status: RequestStatus;
   amountDue: string;
@@ -38,6 +39,7 @@ export function RequestDetailHero({
   semesterLabel,
   email,
   universityName,
+  universityId,
   submittedLabel,
   status,
   amountDue,
@@ -98,10 +100,20 @@ export function RequestDetailHero({
                     {email}
                   </span>
                   {universityName ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Building2 className="size-3.5 shrink-0" />
-                      {universityName}
-                    </span>
+                    universityId ? (
+                      <Link
+                        href={`/admin/universities/${universityId}`}
+                        className="inline-flex items-center gap-1.5 transition-colors hover:text-primary"
+                      >
+                        <Building2 className="size-3.5 shrink-0" />
+                        {universityName}
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Building2 className="size-3.5 shrink-0" />
+                        {universityName}
+                      </span>
+                    )
                   ) : null}
                   <span className="inline-flex items-center gap-1.5">
                     <Calendar className="size-3.5 shrink-0" />

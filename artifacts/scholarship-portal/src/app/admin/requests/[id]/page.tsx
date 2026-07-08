@@ -84,6 +84,7 @@ export default function AdminRequestDetailPage() {
         semesterLabel={request.semesterLabel}
         email={student.user.email}
         universityName={student.university?.name ?? null}
+        universityId={student.universityId}
         submittedLabel={formatDate(request.submittedAt)}
         status={request.status}
         amountDue={formatCurrency(request.amountDue.toString())}
