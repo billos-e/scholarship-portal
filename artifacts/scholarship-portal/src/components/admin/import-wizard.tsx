@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   Download,
   FileSpreadsheet,
   Upload,
@@ -613,65 +614,17 @@ export function ImportWizard() {
               marked.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              {entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet) ? (
-                <h3 className="text-sm font-medium">Universities</h3>
-              ) : null}
-              <div className="grid gap-3 sm:grid-cols-2">
-                {fields.map((field) => (
-                  <div key={field.key} className="space-y-1.5">
-                    <Label>
-                      {field.label}
-                      {field.required ? (
-                        <span className="text-destructive"> *</span>
-                      ) : null}
-                    </Label>
-                    <Select
-                      value={mapping[field.key] ?? "__none__"}
-                      onValueChange={(value) =>
-                        handleMappingChange(field.key, value)
-                      }
-                      disabled={pending}
-                    >
-                      <SelectTrigger disabled={pending}>
-                        <SelectValue placeholder="Select column" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">— Not mapped —</SelectItem>
-                        {headers.map((header) => (
-                          <SelectItem key={header} value={header}>
-                            {header}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </div>
-              <SpreadsheetSampleTable
-                title={
-                  entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet)
-                    ? "University data preview"
-                    : "Data preview"
-                }
-                headers={headers}
-                rows={sampleRows}
-              />
-            </div>
-
-            {hasSemesterSheet ? (
-              <div className="space-y-4 border-t pt-6">
-                <div>
-                  <h3 className="text-sm font-medium">Semesters</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {semesterRows.length} row{semesterRows.length === 1 ? "" : "s"}{" "}
-                    detected. Match each field to the column headers shown in the
-                    preview below.
-                  </p>
-                </div>
+          <CardContent className="divide-y divide-border p-0">
+            <details open className="group/section">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors">
+                {entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet)
+                  ? "Universities"
+                  : "Column mapping"}
+                <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
+              </summary>
+              <div className="space-y-4 px-4 pb-5 pt-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {semesterFields.map((field) => (
+                  {fields.map((field) => (
                     <div key={field.key} className="space-y-1.5">
                       <Label>
                         {field.label}
@@ -680,9 +633,9 @@ export function ImportWizard() {
                         ) : null}
                       </Label>
                       <Select
-                        value={semesterMapping[field.key] ?? "__none__"}
+                        value={mapping[field.key] ?? "__none__"}
                         onValueChange={(value) =>
-                          handleSemesterMappingChange(field.key, value)
+                          handleMappingChange(field.key, value)
                         }
                         disabled={pending}
                       >
@@ -691,7 +644,7 @@ export function ImportWizard() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">— Not mapped —</SelectItem>
-                          {semesterHeaders.map((header) => (
+                          {headers.map((header) => (
                             <SelectItem key={header} value={header}>
                               {header}
                             </SelectItem>
@@ -702,78 +655,139 @@ export function ImportWizard() {
                   ))}
                 </div>
                 <SpreadsheetSampleTable
-                  title="Semester data preview"
-                  headers={semesterHeaders}
-                  rows={semesterSampleRows}
+                  title={
+                    entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet)
+                      ? "University data preview"
+                      : "Data preview"
+                  }
+                  headers={headers}
+                  rows={sampleRows}
                 />
               </div>
+            </details>
+
+            {hasSemesterSheet ? (
+              <details open className="group/section">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors">
+                  <span>
+                    Semesters
+                    <span className="ml-2 font-normal text-muted-foreground">
+                      {semesterRows.length} row{semesterRows.length === 1 ? "" : "s"}
+                    </span>
+                  </span>
+                  <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
+                </summary>
+                <div className="space-y-4 px-4 pb-5 pt-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {semesterFields.map((field) => (
+                      <div key={field.key} className="space-y-1.5">
+                        <Label>
+                          {field.label}
+                          {field.required ? (
+                            <span className="text-destructive"> *</span>
+                          ) : null}
+                        </Label>
+                        <Select
+                          value={semesterMapping[field.key] ?? "__none__"}
+                          onValueChange={(value) =>
+                            handleSemesterMappingChange(field.key, value)
+                          }
+                          disabled={pending}
+                        >
+                          <SelectTrigger disabled={pending}>
+                            <SelectValue placeholder="Select column" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— Not mapped —</SelectItem>
+                            {semesterHeaders.map((header) => (
+                              <SelectItem key={header} value={header}>
+                                {header}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                  <SpreadsheetSampleTable
+                    title="Semester data preview"
+                    headers={semesterHeaders}
+                    rows={semesterSampleRows}
+                  />
+                </div>
+              </details>
             ) : null}
 
             {hasDegreeProgramSheet ? (
-              <div className="space-y-4 border-t pt-6">
-                <div>
-                  <h3 className="text-sm font-medium">Degree programs</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {degreeProgramRows.length} row
-                    {degreeProgramRows.length === 1 ? "" : "s"} detected. Match each
-                    field to the column headers shown in the preview below.
-                  </p>
+              <details open className="group/section">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors">
+                  <span>
+                    Degree programs
+                    <span className="ml-2 font-normal text-muted-foreground">
+                      {degreeProgramRows.length} row{degreeProgramRows.length === 1 ? "" : "s"}
+                    </span>
+                  </span>
+                  <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
+                </summary>
+                <div className="space-y-4 px-4 pb-5 pt-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {degreeProgramFields.map((field) => (
+                      <div key={field.key} className="space-y-1.5">
+                        <Label>
+                          {field.label}
+                          {field.required ? (
+                            <span className="text-destructive"> *</span>
+                          ) : null}
+                        </Label>
+                        <Select
+                          value={degreeProgramMapping[field.key] ?? "__none__"}
+                          onValueChange={(value) =>
+                            handleDegreeProgramMappingChange(field.key, value)
+                          }
+                          disabled={pending}
+                        >
+                          <SelectTrigger disabled={pending}>
+                            <SelectValue placeholder="Select column" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— Not mapped —</SelectItem>
+                            {degreeProgramHeaders.map((header) => (
+                              <SelectItem key={header} value={header}>
+                                {header}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                  <SpreadsheetSampleTable
+                    title="Degree program data preview"
+                    headers={degreeProgramHeaders}
+                    rows={degreeProgramSampleRows}
+                  />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {degreeProgramFields.map((field) => (
-                    <div key={field.key} className="space-y-1.5">
-                      <Label>
-                        {field.label}
-                        {field.required ? (
-                          <span className="text-destructive"> *</span>
-                        ) : null}
-                      </Label>
-                      <Select
-                        value={degreeProgramMapping[field.key] ?? "__none__"}
-                        onValueChange={(value) =>
-                          handleDegreeProgramMappingChange(field.key, value)
-                        }
-                        disabled={pending}
-                      >
-                        <SelectTrigger disabled={pending}>
-                          <SelectValue placeholder="Select column" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">— Not mapped —</SelectItem>
-                          {degreeProgramHeaders.map((header) => (
-                            <SelectItem key={header} value={header}>
-                              {header}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
-                </div>
-                <SpreadsheetSampleTable
-                  title="Degree program data preview"
-                  headers={degreeProgramHeaders}
-                  rows={degreeProgramSampleRows}
-                />
-              </div>
+              </details>
             ) : null}
 
             {entity === "students" ? (
-              <div className="max-w-md space-y-1.5">
-                <Label htmlFor="import-password">
-                  Temporary password (optional)
-                </Label>
-                <Input
-                  id="import-password"
-                  type="text"
-                  placeholder="Auto-generated if empty"
-                  value={studentPassword}
-                  disabled={pending}
-                  onChange={(e) => setStudentPassword(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used for all new student accounts in this import.
-                </p>
+              <div className="px-4 py-4">
+                <div className="max-w-md space-y-1.5">
+                  <Label htmlFor="import-password">
+                    Temporary password (optional)
+                  </Label>
+                  <Input
+                    id="import-password"
+                    type="text"
+                    placeholder="Auto-generated if empty"
+                    value={studentPassword}
+                    disabled={pending}
+                    onChange={(e) => setStudentPassword(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used for all new student accounts in this import.
+                  </p>
+                </div>
               </div>
             ) : null}
           </CardContent>
