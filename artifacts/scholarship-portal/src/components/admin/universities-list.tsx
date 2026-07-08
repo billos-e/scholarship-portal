@@ -280,7 +280,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
                       key={university.id}
                       type="button"
                       onClick={() => openUniversity(university.id)}
-                      className="snap-start shrink-0 w-[75vw] h-72 relative overflow-hidden rounded-tl-3xl cursor-pointer"
+                      className="snap-start shrink-0 w-[75vw] aspect-[2/3] relative overflow-hidden rounded-tl-3xl cursor-pointer"
                       style={{ backgroundColor: imgSrc ? undefined : cardColor }}
                     >
                       {/* Background: full-bleed image, or colored bg with giant initial */}
