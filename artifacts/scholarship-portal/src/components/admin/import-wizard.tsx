@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Download,
   FileSpreadsheet,
   Upload,
   X,
@@ -26,6 +27,12 @@ import type {
   ImportPreviewResult,
   UniversitiesImportPreview,
 } from "@/lib/import/types";
+import {
+  downloadBlob,
+  generateCsvBlob,
+  generateExcelBlob,
+  generateUniversitiesZipBlob,
+} from "@/lib/import/templates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +44,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -75,6 +87,56 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function UniversityZipInfo({ disabled, onDownload }: { disabled: boolean; onDownload: () => void }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled}
+          title="ZIP must contain three CSV files"
+        >
+          <Download className="size-3.5" />
+          ZIP
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80" align="start">
+        <div className="space-y-3">
+          <p className="text-sm font-medium">ZIP structure</p>
+          <p className="text-xs text-muted-foreground">
+            The ZIP file must contain three CSV files:
+          </p>
+          <ul className="space-y-2 text-xs">
+            <li>
+              <span className="font-mono font-medium">universities.csv</span>
+              <span className="text-muted-foreground"> — ID, Name, City, Country, Address, Website, Summer semester, Active status, Notes</span>
+            </li>
+            <li>
+              <span className="font-mono font-medium">semesters.csv</span>
+              <span className="text-muted-foreground"> — University ID, University, Academic year, Term, Label, Start date, End date, Status</span>
+            </li>
+            <li>
+              <span className="font-mono font-medium">degree-programs.csv</span>
+              <span className="text-muted-foreground"> — University ID, University, Name, Status</span>
+            </li>
+          </ul>
+          <Button
+            type="button"
+            size="sm"
+            className="w-full"
+            onClick={onDownload}
+          >
+            <Download className="size-3.5" />
+            Download sample ZIP
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 function isAcceptedImportFile(file: File, entity: ImportEntity | null): boolean {
@@ -420,6 +482,46 @@ export function ImportWizard() {
               disabled={pending}
               onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
             />
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Download template:</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={() => {
+                  const blob = generateCsvBlob(entity);
+                  downloadBlob(blob, `${entity}-template.csv`);
+                }}
+              >
+                <Download className="size-3.5" />
+                CSV
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={() => {
+                  const blob = generateExcelBlob(entity);
+                  downloadBlob(blob, `${entity}-template.xlsx`);
+                }}
+              >
+                <Download className="size-3.5" />
+                Excel
+              </Button>
+              {entity === "universities" && (
+                <UniversityZipInfo
+                  disabled={pending}
+                  onDownload={() => {
+                    generateUniversitiesZipBlob().then((blob) => {
+                      downloadBlob(blob, "universities-template.zip");
+                    });
+                  }}
+                />
+              )}
+            </div>
 
             {file ? (
               <div

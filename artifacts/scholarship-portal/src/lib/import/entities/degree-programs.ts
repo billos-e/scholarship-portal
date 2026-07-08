@@ -54,7 +54,28 @@ function parseProgramRow(row: MappedRow) {
   } as const;
 }
 
-async function resolveUniversityId(data: ProgramData): Promise<string | null> {
+type PendingUniversity = { id?: string; name?: string };
+
+async function resolveUniversityId(
+  data: ProgramData,
+  pendingUniversities?: PendingUniversity[],
+): Promise<string | null> {
+  if (pendingUniversities?.length) {
+    if (data.universityId) {
+      const match = pendingUniversities.find(
+        (u) => u.id && u.id === data.universityId,
+      );
+      if (match) return match.id ?? "__pending__";
+    }
+    if (data.universityName) {
+      const nameLower = data.universityName.toLowerCase();
+      const match = pendingUniversities.find(
+        (u) => u.name && u.name.toLowerCase() === nameLower,
+      );
+      if (match) return match.id ?? "__pending__";
+    }
+  }
+
   if (data.universityId) {
     const byId = await prisma.university.findUnique({
       where: { id: data.universityId },
@@ -77,6 +98,7 @@ async function resolveUniversityId(data: ProgramData): Promise<string | null> {
 export async function previewDegreeProgramsImport(
   rows: Record<string, string>[],
   mapping: ColumnMapping,
+  pendingUniversities?: PendingUniversity[],
 ): Promise<ImportPreviewResult> {
   const fields = getUniversityDegreeProgramImportFields();
   const mapped = applyColumnMapping(rows, mapping, fields);
@@ -91,7 +113,7 @@ export async function previewDegreeProgramsImport(
 
     const data = parsed.data;
     const messages: string[] = [];
-    const universityId = await resolveUniversityId(data);
+    const universityId = await resolveUniversityId(data, pendingUniversities);
 
     if (!universityId) {
       previews.push({

@@ -6,6 +6,7 @@ import studentsRouter from "./students";
 import requestsRouter from "./requests";
 import submissionsRouter from "./submissions";
 import academicRouter from "./academic";
+import importRouter from "./import";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(studentsRouter);
 router.use(requestsRouter);
 router.use(submissionsRouter);
 router.use(academicRouter);
+router.use(importRouter);
 
 export default router;

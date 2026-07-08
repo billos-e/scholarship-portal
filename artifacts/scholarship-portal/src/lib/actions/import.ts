@@ -6,7 +6,6 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { suggestColumnMapping, getMissingRequiredFields, getPaymentIdentityError, getSemesterIdentityError, getDegreeProgramIdentityError } from "@/lib/import/auto-map";
 import { getImportFields, getUniversityDegreeProgramImportFields, getUniversitySemesterImportFields } from "@/lib/import/fields";
-import { commitImport, previewImport } from "@/lib/import/index";
 import {
   parseSpreadsheetBuffer,
   parseUniversitiesImportBuffer,
@@ -22,6 +21,7 @@ import type {
   UniversitiesImportPreview,
   ImportFieldDef,
 } from "@/lib/import/types";
+import { apiBase } from "@/lib/api/shared";
 
 const entitySchema = z.enum(["students", "universities", "payments"]);
 
@@ -90,7 +90,7 @@ export async function parseImportFile(
     };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = new Uint8Array(await file.arrayBuffer());
   let parsed: ParsedSpreadsheet;
   let semesterParsed: ParsedSpreadsheet | undefined;
   let degreeProgramParsed: ParsedSpreadsheet | undefined;
@@ -248,17 +248,27 @@ export async function validateImportData(
     }
   }
 
-  return previewImport(
-    entityParsed.data,
-    rowsParsed.data,
-    mappingParsed.data,
-    {
-      semesterRows: options?.semesterRows,
-      semesterMapping: options?.semesterMapping,
-      degreeProgramRows: options?.degreeProgramRows,
-      degreeProgramMapping: options?.degreeProgramMapping,
-    },
-  );
+  try {
+    const resp = await fetch(`${apiBase}/api/import/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        entity: entityParsed.data,
+        rows: rowsParsed.data,
+        mapping: mappingParsed.data,
+        options,
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      return { error: (body as { error?: string }).error ?? "Import preview failed." };
+    }
+
+    return resp.json() as Promise<ImportPreviewResult | UniversitiesImportPreview>;
+  } catch {
+    return { error: "Could not connect to the server. Please try again." };
+  }
 }
 
 export async function commitImportData(
@@ -366,23 +376,32 @@ export async function commitImportData(
     }
   }
 
-  const result = await commitImport(
-    entityParsed.data,
-    rowsParsed.data,
-    mappingParsed.data,
-    {
-      password: options?.password,
-      semesterRows: options?.semesterRows,
-      semesterMapping: options?.semesterMapping,
-      degreeProgramRows: options?.degreeProgramRows,
-      degreeProgramMapping: options?.degreeProgramMapping,
-    },
-  );
+  try {
+    const resp = await fetch(`${apiBase}/api/import/commit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        entity: entityParsed.data,
+        rows: rowsParsed.data,
+        mapping: mappingParsed.data,
+        options,
+      }),
+    });
 
-  revalidatePath("/admin/students");
-  revalidatePath("/admin/universities");
-  revalidatePath("/admin/requests");
-  revalidatePath("/student/profile/edit");
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      return { error: (body as { error?: string }).error ?? "Import commit failed." };
+    }
 
-  return result;
+    const result = (await resp.json()) as ImportCommitResult;
+
+    revalidatePath("/admin/students");
+    revalidatePath("/admin/universities");
+    revalidatePath("/admin/requests");
+    revalidatePath("/student/profile/edit");
+
+    return result;
+  } catch {
+    return { error: "Could not connect to the server. Please try again." };
+  }
 }

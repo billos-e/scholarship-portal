@@ -46,17 +46,24 @@ export async function previewImport(
         return universities;
       }
 
+      const pendingUniversities = rows.map((row) => ({
+        id: (mapping["id"] ? row[mapping["id"]]?.trim() : undefined) || undefined,
+        name: (mapping["name"] ? row[mapping["name"]]?.trim() : undefined) || undefined,
+      })).filter((u) => u.name || u.id);
+
       const [semesters, degreePrograms] = await Promise.all([
         hasSemesters
           ? previewUniversitySemestersImport(
               options!.semesterRows!,
               options!.semesterMapping!,
+              pendingUniversities,
             )
           : undefined,
         hasPrograms
           ? previewDegreeProgramsImport(
               options!.degreeProgramRows!,
               options!.degreeProgramMapping!,
+              pendingUniversities,
             )
           : undefined,
       ]);

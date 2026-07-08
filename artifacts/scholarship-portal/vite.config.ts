@@ -64,8 +64,6 @@ export default defineConfig({
       "next-auth": path.resolve(import.meta.dirname, "src/shims/next-auth.ts"),
       "@prisma/client": path.resolve(import.meta.dirname, "src/shims/prisma-client.ts"),
       bcryptjs: path.resolve(import.meta.dirname, "src/shims/empty.ts"),
-      xlsx: path.resolve(import.meta.dirname, "src/shims/xlsx.ts"),
-      jszip: path.resolve(import.meta.dirname, "src/shims/empty.ts"),
       "@netlify/blobs": path.resolve(import.meta.dirname, "src/shims/netlify-blobs.ts"),
       "node:fs/promises": path.resolve(import.meta.dirname, "src/shims/node-stub.ts"),
       "node:fs": path.resolve(import.meta.dirname, "src/shims/node-stub.ts"),

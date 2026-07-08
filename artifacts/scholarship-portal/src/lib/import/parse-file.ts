@@ -78,8 +78,8 @@ export type ParsedUniversitiesWorkbook = {
   degreePrograms?: ParsedSpreadsheet;
 };
 
-export function parseSpreadsheetBuffer(buffer: Buffer): ParsedSpreadsheet {
-  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+export function parseSpreadsheetBuffer(buffer: Uint8Array): ParsedSpreadsheet {
+  const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
   const sheetName = workbook.SheetNames[0];
   if (!sheetName) {
     return { headers: [], rows: [], sampleRows: [] };
@@ -89,9 +89,9 @@ export function parseSpreadsheetBuffer(buffer: Buffer): ParsedSpreadsheet {
 }
 
 export function parseUniversitiesImportBuffer(
-  buffer: Buffer,
+  buffer: Uint8Array,
 ): ParsedUniversitiesWorkbook {
-  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+  const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
   const sheetNames = workbook.SheetNames;
 
   if (sheetNames.length === 0) {
@@ -175,7 +175,7 @@ async function parseOptionalZipCsv(
 }
 
 export async function parseUniversitiesZipBuffer(
-  buffer: Buffer,
+  buffer: Uint8Array,
 ): Promise<ParsedUniversitiesWorkbook> {
   const zip = await JSZip.loadAsync(buffer);
   const universitiesEntry = findZipEntry(zip, [
