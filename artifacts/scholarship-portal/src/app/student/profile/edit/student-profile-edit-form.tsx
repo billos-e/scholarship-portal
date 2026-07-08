@@ -16,6 +16,7 @@ import { getInitials } from "@/lib/initials";
 import type { StudentAcademicOptions } from "@/lib/student-academic-options";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
+import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -196,23 +197,24 @@ export function StudentProfileEditForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input
-                id="studentId"
-                name="studentId"
-                defaultValue={student.studentId ?? ""}
-                placeholder="e.g. STU-20481"
-              />
+              <Label className="flex items-center gap-1.5">
+                Student ID
+                <Lock className="size-3 text-muted-foreground/60" />
+              </Label>
+              <div className="flex h-9 items-center rounded-lg border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground">
+                {student.studentId ?? <span className="italic opacity-60">Not set</span>}
+              </div>
+              <input type="hidden" name="studentId" value={student.studentId ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                defaultValue={student.email}
-              />
+              <Label className="flex items-center gap-1.5">
+                Email address
+                <Lock className="size-3 text-muted-foreground/60" />
+              </Label>
+              <div className="flex h-9 items-center rounded-lg border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground">
+                {student.email}
+              </div>
+              <input type="hidden" name="email" value={student.email} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone number</Label>
