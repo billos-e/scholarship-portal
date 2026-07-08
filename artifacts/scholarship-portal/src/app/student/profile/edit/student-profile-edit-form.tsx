@@ -358,7 +358,7 @@ export function StudentProfileEditForm({
             className="bg-accent text-accent-foreground hover:bg-accent/90"
             onClick={() => {
               if (formRef.current) {
-                formAction(new FormData(formRef.current));
+                formRef.current.requestSubmit();
               }
             }}
           >
@@ -380,6 +380,10 @@ export function StudentProfileEditForm({
         ref={formRef}
         onSubmit={(e) => {
           e.preventDefault();
+          if (!e.currentTarget.checkValidity()) {
+            e.currentTarget.reportValidity();
+            return;
+          }
           formAction(new FormData(e.currentTarget));
         }}
         className="space-y-5"
