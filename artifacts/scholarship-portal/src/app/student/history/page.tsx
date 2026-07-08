@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { fetchStudent } from "@/lib/api/students";
 
 export default function StudentHistoryIndexPage() {
+  const router = useRouter();
   const user = getCurrentUser();
   const studentProfileId = user?.studentProfileId ?? null;
   const [loading, setLoading] = useState(!!studentProfileId);
@@ -29,7 +30,7 @@ export default function StudentHistoryIndexPage() {
         if (!active) return;
         const first = student?.tuitionPaymentRequests[0] ?? null;
         if (first) {
-          redirect(`/student/history/${first.id}`);
+          router.replace(`/student/history/${first.id}`);
           return;
         }
         setLoading(false);

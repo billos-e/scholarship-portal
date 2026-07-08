@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, ImageIcon } from "lucide-react";
+import { FileText, ImageIcon } from "lucide-react";
 
 import NotFound from "@/pages/not-found";
 import { StatusBadge } from "@/components/status-badge";
@@ -153,14 +153,6 @@ export default function StudentSubmissionDetailPage() {
             Submitted {formatDate(request.submittedAt)}
           </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full shrink-0 sm:w-auto"
-          render={<Link href="/student/history" />}
-        >
-          <ArrowLeft className="size-4" /> Back
-        </Button>
       </div>
 
       <Card>
