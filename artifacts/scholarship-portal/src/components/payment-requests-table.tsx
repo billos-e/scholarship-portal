@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useLocation } from "wouter";
 import type { RequestStatus } from "@prisma/client";
 
 import { SortableTableHead } from "@/components/sortable-table-head";
@@ -38,6 +38,7 @@ const SORT_ACCESSORS: Record<SortKey, (row: PaymentRequestRow) => unknown> = {
 };
 
 export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
+  const [, navigate] = useLocation();
   const { sortedItems, sortKey, sortDirection, onSort } = useTableSort<
     PaymentRequestRow,
     SortKey
@@ -106,15 +107,12 @@ export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
           </TableHeader>
           <TableBody>
             {sortedItems.map((request) => (
-              <TableRow key={request.id}>
-                <TableCell>
-                  <Link
-                    href={request.href}
-                    className="font-medium hover:text-primary hover:underline"
-                  >
-                    {request.semesterLabel}
-                  </Link>
-                </TableCell>
+              <TableRow
+                key={request.id}
+                className="cursor-pointer"
+                onClick={() => navigate(request.href)}
+              >
+                <TableCell className="font-medium">{request.semesterLabel}</TableCell>
                 <TableCell>{formatCurrency(request.amountDue)}</TableCell>
                 <TableCell>
                   {formatDate(new Date(request.submittedAt))}
