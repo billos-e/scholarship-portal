@@ -1,8 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState, useCallback } from "react";
+import { useActionState, useEffect, useState, useCallback, useTransition } from "react";
 import { useFormDraft } from "@/lib/use-form-draft";
-import { useFormStatus } from "react-dom";
 import {
   AlertTriangle,
   Calendar,
@@ -547,8 +546,7 @@ function Step5({ defaults = {} }: { defaults?: Record<string, string> }) {
 
 /* ── Submit button ──────────────────────────────────────────── */
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+function SubmitButton({ pending }: { pending: boolean }) {
   return (
     <Button
       type="submit"
@@ -577,6 +575,7 @@ export function SubmissionForm({
   });
   const total = STEPS.length;
   const [stepError, setStepError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const [state, formAction] = useActionState<SubmissionState, FormData>(
     createSubmission,
@@ -659,15 +658,28 @@ export function SubmissionForm({
 
   return (
     <form
-      action={formAction}
       className="space-y-6"
       encType="multipart/form-data"
       id="submission-form"
       onChange={onFormChange}
       onSubmit={(e) => {
+        e.preventDefault();
         if (step < total) {
-          e.preventDefault();
           handleNext(e.currentTarget);
+        } else {
+          // Snapshot all string fields to localStorage before the action runs,
+          // so the draft is fully up-to-date if the submission fails.
+          const fd = new FormData(e.currentTarget);
+          const snapshot: Record<string, string> = {};
+          for (const [k, v] of fd.entries()) {
+            if (typeof v === "string") snapshot[k] = v;
+          }
+          save(snapshot);
+          // Call the action manually so React never resets the form DOM.
+          // This keeps all text fields and file previews intact on failure.
+          // clearDraft() is still called only on success (see useEffect above).
+          const payload = new FormData(e.currentTarget);
+          startTransition(() => formAction(payload));
         }
       }}
     >
@@ -774,7 +786,7 @@ export function SubmissionForm({
               <ChevronRight className="size-4" />
             </Button>
           ) : (
-            <SubmitButton />
+            <SubmitButton pending={isPending} />
           )}
         </div>
       </div>

@@ -21,11 +21,14 @@ function patchDraft(key: string, patch: Draft) {
 }
 
 export function useFormDraft(storageKey: string) {
-  const initial = useMemo(() => readDraft(storageKey), [storageKey]);
+  // Keep initial for backward-compat (step restore on first mount).
+  // get() reads fresh from storage so remounted steps always see latest values.
+  const _initial = useMemo(() => readDraft(storageKey), [storageKey]);
+  void _initial;
 
   const get = useCallback(
-    (name: string, fallback = "") => initial[name] ?? fallback,
-    [initial],
+    (name: string, fallback = "") => readDraft(storageKey)[name] ?? fallback,
+    [storageKey],
   );
 
   const save = useCallback(
