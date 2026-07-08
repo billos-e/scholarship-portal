@@ -231,29 +231,40 @@ function ChoiceGrid({
   name: string;
   options: ReadonlyArray<{ readonly value: string; readonly label: string }>;
 }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggle(value: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(value) ? next.delete(value) : next.add(value);
+      return next;
+    });
+  }
+
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {options.map((opt) => (
-        <label
-          key={opt.value}
-          className={cn(
-            "group relative flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-4 py-3 text-sm transition-all",
-            "hover:border-primary/30 hover:bg-primary/[0.03]",
-            "has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary",
-          )}
-        >
-          <input
-            type="checkbox"
-            name={name}
-            value={opt.value}
-            className="sr-only"
-          />
-          <span className="leading-snug">{opt.label}</span>
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border/60 text-transparent transition-all group-has-[:checked]:border-primary group-has-[:checked]:bg-primary group-has-[:checked]:text-white">
-            <Check className="size-3" />
-          </span>
-        </label>
-      ))}
+    <div className="flex flex-wrap gap-2">
+      {selected.size > 0 &&
+        [...selected].map((v) => (
+          <input key={v} type="hidden" name={name} value={v} />
+        ))}
+      {options.map((opt) => {
+        const active = selected.has(opt.value);
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => toggle(opt.value)}
+            className={cn(
+              "rounded-full border px-4 py-1.5 text-sm font-medium transition-all",
+              active
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border/70 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
