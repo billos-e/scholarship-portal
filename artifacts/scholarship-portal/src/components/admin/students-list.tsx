@@ -146,7 +146,7 @@ function SummaryStat({
         className={cn(
           "flex min-w-0 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.97]",
           active
-            ? "border-warning bg-warning/10 ring-2 ring-warning/50 shadow-inner scale-[0.97] translate-y-px"
+            ? "border-border/70 bg-muted/40 shadow-inner scale-[0.97] translate-y-px"
             : "border-border/70 bg-card shadow-sm hover:bg-muted/30 hover:border-border",
         )}
       >
