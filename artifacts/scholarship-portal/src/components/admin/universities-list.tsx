@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import Image from "next/image";
 
+import { Plus } from "lucide-react";
+
 import { SearchField } from "@/components/admin/search-field";
 import { ClientPagination } from "@/components/client-pagination";
 import { TableExportButton } from "@/components/export-button";
@@ -13,6 +15,7 @@ import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -215,8 +218,15 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
               filename={exportFilename}
               sheetName="Universities"
               extraSheets={exportExtraSheets}
+              iconOnly
             />
-            <UniversityDialog />
+            <UniversityDialog
+              trigger={
+                <Button size="icon" title="New University">
+                  <Plus />
+                </Button>
+              }
+            />
           </>
         }
       />
