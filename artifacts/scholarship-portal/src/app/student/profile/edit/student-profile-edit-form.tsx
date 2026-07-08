@@ -253,7 +253,7 @@ function StudentPhotoSection({
             }}
           />
           <p className="shrink-0 text-xs text-muted-foreground">
-            JPG, PNG, WebP · Max 10 MB
+            Max 10 MB
           </p>
           <Button
             type="submit"
