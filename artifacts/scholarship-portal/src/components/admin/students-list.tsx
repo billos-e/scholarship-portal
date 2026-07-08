@@ -2,15 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronRight,
-  Filter,
-  GraduationCap,
-  Plus,
-  UserX,
-  Users,
-  X,
-} from "lucide-react";
+import { ChevronRight, GraduationCap, UserX, Users } from "lucide-react";
 import type { StudentStatus } from "@prisma/client";
 
 import { SearchField } from "@/components/admin/search-field";
@@ -19,8 +11,23 @@ import { TableExportButton } from "@/components/export-button";
 import { EmptyState } from "@/components/empty-state";
 import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
+import { SortableTableHead } from "@/components/sortable-table-head";
 import { StudentStatusBadge } from "@/components/student-status-badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   filterStudents,
   paginateItems,
@@ -28,24 +35,12 @@ import {
 } from "@/lib/client-filters";
 import { STUDENTS_TABLE_COLUMNS } from "@/lib/export/table-columns";
 import { studentsToExportRows } from "@/lib/export/table-rows";
+import { useTableSort } from "@/hooks/use-table-sort";
 import { cn } from "@/lib/utils";
 import { StudentCreateDialog } from "@/app/admin/students/student-create-dialog";
 import type { StudentAcademicOptions } from "@/lib/student-academic-options";
 
 const STATUS_VALUES: StudentStatus[] = ["ACTIVE", "GRADUATED", "INACTIVE"];
-
-const CARD_COLORS = [
-  "#6366f1",
-  "#0ea5e9",
-  "#f59e0b",
-  "#10b981",
-  "#ec4899",
-  "#8b5cf6",
-  "#ef4444",
-  "#14b8a6",
-  "#f97316",
-  "#3b82f6",
-];
 
 export type StudentRow = {
   id: string;
@@ -82,6 +77,24 @@ const EMPTY_FILTERS: StudentFilterState = {
   incompleteProfile: false,
 };
 
+type StudentSortKey =
+  | "name"
+  | "studentId"
+  | "university"
+  | "program"
+  | "status";
+
+const STUDENT_SORT_ACCESSORS: Record<
+  StudentSortKey,
+  (row: StudentRow) => unknown
+> = {
+  name: (row) => `${row.firstName} ${row.lastName}`,
+  studentId: (row) => row.studentId,
+  university: (row) => row.universityName,
+  program: (row) => row.degreeProgram,
+  status: (row) => row.status,
+};
+
 function SummaryStat({
   label,
   value,
@@ -108,17 +121,17 @@ function SummaryStat({
     <>
       <div
         className={cn(
-          "flex size-11 shrink-0 items-center justify-center rounded-xl",
+          "flex size-10 shrink-0 items-center justify-center rounded-lg",
           toneClass,
         )}
       >
-        <Icon className="size-5" />
+        <Icon className="size-[18px]" />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0">
         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </p>
-        <p className="font-heading text-2xl font-bold leading-none tracking-tight">
+        <p className="font-heading text-xl font-bold leading-none tracking-tight">
           {value}
         </p>
       </div>
@@ -131,7 +144,7 @@ function SummaryStat({
         type="button"
         onClick={onClick}
         className={cn(
-          "flex snap-start shrink-0 min-w-[176px] items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-150 cursor-pointer active:scale-[0.97]",
+          "flex shrink-0 snap-start w-36 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 cursor-pointer active:scale-[0.97]",
           active
             ? "border-border/70 bg-card [box-shadow:inset_0_2px_4px_0_rgb(0_0_0/0.08),inset_0_1px_2px_0_rgb(0_0_0/0.06)] scale-[0.97] translate-y-px"
             : "border-border/70 bg-card shadow-sm hover:bg-muted/30 hover:border-border",
@@ -143,7 +156,7 @@ function SummaryStat({
   }
 
   return (
-    <div className="flex snap-start shrink-0 min-w-[176px] items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3.5 shadow-sm">
+    <div className="flex shrink-0 snap-start w-36 items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
       {content}
     </div>
   );
@@ -158,7 +171,6 @@ export function StudentsList({
   const { startLoading } = useNavigationLoading();
   const [filters, setFilters] = useState<StudentFilterState>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const programs = useMemo(() => {
     const names = new Set<string>();
@@ -195,21 +207,19 @@ export function StudentsList({
     [students, filters],
   );
 
-  const sortedItems = useMemo(
-    () =>
-      [...filtered].sort((a, b) =>
-        `${a.firstName} ${a.lastName}`.localeCompare(
-          `${b.firstName} ${b.lastName}`,
-        ),
-      ),
-    [filtered],
+  const { sortedItems, sortKey, sortDirection, onSort } = useTableSort<
+    StudentRow,
+    StudentSortKey
+  >(
+    filtered,
+    STUDENT_SORT_ACCESSORS,
+    { key: "name", direction: "asc" },
   );
 
-  const {
-    items: paginatedStudents,
-    currentPage,
-    totalPages,
-  } = useMemo(() => paginateItems(sortedItems, page), [sortedItems, page]);
+  const { items: paginatedStudents, currentPage, totalPages } = useMemo(
+    () => paginateItems(sortedItems, page),
+    [sortedItems, page],
+  );
 
   const exportRows = useMemo(
     () => studentsToExportRows(paginatedStudents),
@@ -223,13 +233,7 @@ export function StudentsList({
 
   useEffect(() => {
     setPage(1);
-  }, [
-    filters.q,
-    filters.uni,
-    filters.program,
-    filters.status,
-    filters.incompleteProfile,
-  ]);
+  }, [filters.q, filters.uni, filters.program, filters.status, sortKey, sortDirection]);
 
   function updateFilters(patch: Partial<StudentFilterState>) {
     setFilters((current) => ({ ...current, ...patch }));
@@ -240,13 +244,6 @@ export function StudentsList({
     router.push(`/admin/students/${id}`);
   }
 
-  const activeFilterCount = [
-    filters.uni,
-    filters.program,
-    filters.status,
-    filters.incompleteProfile ? "1" : "",
-  ].filter(Boolean).length;
-
   const hasActiveFilters =
     Boolean(filters.q) ||
     Boolean(filters.uni) ||
@@ -256,25 +253,26 @@ export function StudentsList({
 
   return (
     <div className="space-y-6">
-      {/* Header: title + icon-only export like universities */}
-      <div className="relative">
-        <PageHeader
-          variant="admin"
-          title="Students"
-          description="Search, create, and manage scholarship student accounts."
-        />
-        <div className="absolute top-0 right-0">
-          <TableExportButton
-            columns={STUDENTS_TABLE_COLUMNS}
-            rows={exportRows}
-            filename={exportFilename}
-            sheetName="Students"
-            iconOnly
-          />
-        </div>
-      </div>
+      <PageHeader
+        variant="admin"
+        title="Students"
+        description="Search, create, and manage scholarship student accounts."
+        actions={
+          <>
+            <TableExportButton
+              columns={STUDENTS_TABLE_COLUMNS}
+              rows={exportRows}
+              filename={exportFilename}
+              sheetName="Students"
+            />
+            <StudentCreateDialog
+              universities={universities}
+              academicOptions={academicOptions}
+            />
+          </>
+        }
+      />
 
-      {/* KPI strip — scrollable */}
       <div className="flex gap-3 overflow-x-auto pb-0.5 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <SummaryStat
           label="Total enrolled"
@@ -293,225 +291,211 @@ export function StudentsList({
           value={profileIncompleteCount}
           icon={UserX}
           tone="warning"
-          onClick={() =>
-            updateFilters({ incompleteProfile: !filters.incompleteProfile })
-          }
+          onClick={() => updateFilters({ incompleteProfile: !filters.incompleteProfile })}
           active={filters.incompleteProfile}
         />
       </div>
 
-      {/* Search + filter toggle row */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFiltersOpen((v) => !v)}
-            className={cn(
-              "relative flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-              filtersOpen || activeFilterCount > 0
-                ? "border-primary/40 bg-primary/8 text-primary"
-                : "border-border bg-card text-muted-foreground hover:bg-muted/50",
-            )}
-          >
-            <Filter className="size-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={() => setFilters(EMPTY_FILTERS)}
-              className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-2 text-xs text-muted-foreground hover:bg-muted/50 transition-colors"
-            >
-              <X className="size-3.5" />
-              Clear
-            </button>
-          )}
-          <span className="text-xs text-muted-foreground">
+      <Card className="overflow-hidden border-border/80 shadow-sm">
+        <CardHeader className="border-b border-border/60 bg-muted/20">
+          <CardTitle>Directory</CardTitle>
+          <CardDescription>
             {filtered.length} student{filtered.length === 1 ? "" : "s"}
-            {hasActiveFilters ? " match" : ""}
-          </span>
-        </div>
-        <SearchField
-          id="student-search"
-          label="Search"
-          value={filters.q}
-          placeholder="Name or student ID"
-          onChange={(q) => updateFilters({ q })}
-        />
-      </div>
+            {hasActiveFilters ? " match your filters" : " in the roster"}.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5 p-4 sm:p-6">
+          <div className="rounded-xl border border-border/70 bg-background/80 p-4 shadow-xs">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Refine results
+            </p>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+              <SearchField
+                id="student-search"
+                label="Search"
+                value={filters.q}
+                placeholder="Name or student ID"
+                onChange={(q) => updateFilters({ q })}
+              />
 
-      {/* Collapsible filter panel */}
-      {filtersOpen && (
-        <div className="rounded-xl border border-border/70 bg-background/80 p-4 shadow-xs">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Refine results
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="space-y-1 sm:w-52">
-              <label
-                htmlFor="student-university"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                University
-              </label>
-              <NativeSelect
-                id="student-university"
-                value={filters.uni}
-                onChange={(e) => updateFilters({ uni: e.target.value })}
-              >
-                <option value="">All universities</option>
-                {universities.map((university) => (
-                  <option key={university.id} value={university.id}>
-                    {university.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
+              <div className="space-y-1 lg:w-52">
+                <label
+                  htmlFor="student-university"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  University
+                </label>
+                <NativeSelect
+                  id="student-university"
+                  value={filters.uni}
+                  onChange={(e) => updateFilters({ uni: e.target.value })}
+                >
+                  <option value="">All universities</option>
+                  {universities.map((university) => (
+                    <option key={university.id} value={university.id}>
+                      {university.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
 
-            <div className="space-y-1 sm:w-52">
-              <label
-                htmlFor="student-program"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Program
-              </label>
-              <NativeSelect
-                id="student-program"
-                value={filters.program}
-                onChange={(e) => updateFilters({ program: e.target.value })}
-              >
-                <option value="">All programs</option>
-                {programs.map((program) => (
-                  <option key={program} value={program}>
-                    {program}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
+              <div className="space-y-1 lg:w-52">
+                <label
+                  htmlFor="student-program"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  Program
+                </label>
+                <NativeSelect
+                  id="student-program"
+                  value={filters.program}
+                  onChange={(e) => updateFilters({ program: e.target.value })}
+                >
+                  <option value="">All programs</option>
+                  {programs.map((program) => (
+                    <option key={program} value={program}>
+                      {program}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
 
-            <div className="space-y-1 sm:w-40">
-              <label
-                htmlFor="student-status"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Status
-              </label>
-              <NativeSelect
-                id="student-status"
-                value={filters.status}
-                onChange={(e) => updateFilters({ status: e.target.value })}
-              >
-                <option value="">All statuses</option>
-                {STATUS_VALUES.map((status) => (
-                  <option key={status} value={status}>
-                    {status.charAt(0) + status.slice(1).toLowerCase()}
-                  </option>
-                ))}
-              </NativeSelect>
+              <div className="space-y-1 lg:w-40">
+                <label
+                  htmlFor="student-status"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  Status
+                </label>
+                <NativeSelect
+                  id="student-status"
+                  value={filters.status}
+                  onChange={(e) => updateFilters({ status: e.target.value })}
+                >
+                  <option value="">All statuses</option>
+                  {STATUS_VALUES.map((status) => (
+                    <option key={status} value={status}>
+                      {status.charAt(0) + status.slice(1).toLowerCase()}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Card carousel — replaces both mobile cards and desktop table */}
-      {paginatedStudents.length === 0 ? (
-        <EmptyState title="No students match your filters" />
-      ) : (
-        <>
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {paginatedStudents.map((student, idx) => {
-              const cardColor = CARD_COLORS[idx % CARD_COLORS.length];
-              const initials = `${student.firstName.charAt(0)}${student.lastName.charAt(0)}`.toUpperCase();
-              return (
-                <button
-                  key={student.id}
-                  type="button"
-                  onClick={() => openStudent(student.id)}
-                  className="snap-start shrink-0 w-[220px] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm text-left transition-all hover:shadow-md hover:border-border active:scale-[0.98] cursor-pointer"
-                >
-                  {/* Colored header with initials */}
-                  <div
-                    className="relative flex h-24 items-center justify-center overflow-hidden"
-                    style={{ backgroundColor: cardColor }}
+          {paginatedStudents.length === 0 ? (
+            <EmptyState title="No students match your filters" />
+          ) : (
+            <>
+              <div className="space-y-2 md:hidden">
+                {paginatedStudents.map((student) => (
+                  <button
+                    key={student.id}
+                    type="button"
+                    onClick={() => openStudent(student.id)}
+                    className="group w-full rounded-xl border border-border/80 bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/25 hover:bg-muted/30"
                   >
-                    <span
-                      className="font-black text-white/20 select-none pointer-events-none"
-                      style={{ fontSize: "5rem", lineHeight: 1 }}
-                    >
-                      {initials}
-                    </span>
-                    {/* Status dot */}
-                    <div className="absolute top-3 right-3">
-                      <div
-                        className={cn(
-                          "size-3 rounded-full ring-1 ring-inset ring-black/20",
-                          student.status === "ACTIVE"
-                            ? "bg-emerald-400"
-                            : student.status === "GRADUATED"
-                              ? "bg-sky-400"
-                              : "bg-gray-400",
-                        )}
-                        style={{
-                          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-                        }}
-                      />
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground">
+                          {student.firstName} {student.lastName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {student.studentId ?? "No student ID"}
+                        </p>
+                      </div>
+                      <StudentStatusBadge status={student.status} />
                     </div>
-                  </div>
-
-                  {/* Card body */}
-                  <div className="px-3.5 pb-3.5 pt-2.5 space-y-2">
-                    <div>
-                      <p className="font-semibold text-sm text-foreground leading-tight truncate">
-                        {student.firstName} {student.lastName}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {student.studentId ?? "No student ID"}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground truncate">
+                    <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                      <p className="truncate">
                         {student.universityName ?? "No university"}
                       </p>
-                      <p className="text-[11px] text-muted-foreground/70 truncate">
+                      <p className="truncate text-xs">
                         {student.degreeProgram ?? "No program"}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between pt-0.5">
-                      <StudentStatusBadge status={student.status} />
-                      <ChevronRight className="size-3.5 text-muted-foreground/50" />
+                    <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                      View profile
+                      <ChevronRight className="size-3.5" />
                     </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                  </button>
+                ))}
+              </div>
 
-          <ClientPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        </>
-      )}
+              <div className="hidden overflow-hidden rounded-xl border border-border/70 md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <SortableTableHead
+                        label="Name"
+                        sortKey="name"
+                        activeKey={sortKey}
+                        direction={sortDirection}
+                        onSort={onSort}
+                      />
+                      <SortableTableHead
+                        label="Student ID"
+                        sortKey="studentId"
+                        activeKey={sortKey}
+                        direction={sortDirection}
+                        onSort={onSort}
+                      />
+                      <SortableTableHead
+                        label="University"
+                        sortKey="university"
+                        activeKey={sortKey}
+                        direction={sortDirection}
+                        onSort={onSort}
+                      />
+                      <SortableTableHead
+                        label="Program"
+                        sortKey="program"
+                        activeKey={sortKey}
+                        direction={sortDirection}
+                        onSort={onSort}
+                      />
+                      <SortableTableHead
+                        label="Status"
+                        sortKey="status"
+                        activeKey={sortKey}
+                        direction={sortDirection}
+                        onSort={onSort}
+                      />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedStudents.map((student) => (
+                      <TableRow
+                        key={student.id}
+                        className="cursor-pointer transition-colors hover:bg-muted/40"
+                        onClick={() => openStudent(student.id)}
+                      >
+                        <TableCell className="font-medium">
+                          {student.firstName} {student.lastName}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {student.studentId ?? "—"}
+                        </TableCell>
+                        <TableCell>{student.universityName ?? "—"}</TableCell>
+                        <TableCell>{student.degreeProgram ?? "—"}</TableCell>
+                        <TableCell>
+                          <StudentStatusBadge status={student.status} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-      {/* FAB — New Student */}
-      <StudentCreateDialog
-        universities={universities}
-        academicOptions={academicOptions}
-        trigger={
-          <button
-            className="fixed bottom-16 right-6 z-50 size-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-            title="New Student"
-          >
-            <Plus className="size-6" />
-          </button>
-        }
-      />
+              <ClientPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

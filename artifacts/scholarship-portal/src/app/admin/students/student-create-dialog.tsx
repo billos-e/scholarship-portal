@@ -38,11 +38,9 @@ type UniversityOption = { id: string; name: string };
 export function StudentCreateDialog({
   universities,
   academicOptions,
-  trigger,
 }: {
   universities: UniversityOption[];
   academicOptions: StudentAcademicOptions;
-  trigger?: React.ReactElement;
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string>();
@@ -106,13 +104,9 @@ export function StudentCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger ? (
-        <DialogTrigger render={trigger} />
-      ) : (
-        <DialogTrigger render={<Button />}>
-          <Plus /> New Student
-        </DialogTrigger>
-      )}
+      <DialogTrigger render={<Button />}>
+        <Plus /> New Student
+      </DialogTrigger>
       <DialogContent className="flex max-h-[min(92vh,900px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl lg:max-w-4xl">
         {generatedPassword ? (
           <div className="p-6">
