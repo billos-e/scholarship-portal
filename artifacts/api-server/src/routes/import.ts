@@ -627,6 +627,15 @@ function parseUniversityRow(row: { line: number; values: Record<string, string> 
   } as const;
 }
 
+async function findExistingUniversity(id: string | undefined, name: string): Promise<{ id: string } | undefined> {
+  if (id) {
+    const [byId] = await db.select({ id: universities.id }).from(universities).where(eq(universities.id, id)).limit(1);
+    if (byId) return byId;
+  }
+  const [byName] = await db.select({ id: universities.id }).from(universities).where(ilike(universities.name, name.trim())).limit(1);
+  return byName;
+}
+
 async function previewUniversities(
   rows: Record<string, string>[],
   mapping: ColumnMapping,
@@ -655,9 +664,7 @@ async function previewUniversities(
     const messages: string[] = [];
     if (dupLines.length > 0) messages.push(`Duplicate name in file (lines ${dupLines.join(", ")}) — only the last row is applied.`);
 
-    const [existing] = data.id
-      ? await db.select({ id: universities.id }).from(universities).where(eq(universities.id, data.id)).limit(1)
-      : await db.select({ id: universities.id }).from(universities).where(ilike(universities.name, data.name)).limit(1);
+    const existing = await findExistingUniversity(data.id, data.name);
 
     if (existing) messages.push("University already exists — will be updated on import.");
     final.push({ ...preview, status: messages.length > 0 ? "warning" : "valid", message: messages.join(" ") || undefined });
@@ -687,9 +694,7 @@ async function commitUniversities(
 
   for (const row of validRows) {
     const data = row.data as UniversityData;
-    const [existing] = data.id
-      ? await db.select({ id: universities.id }).from(universities).where(eq(universities.id, data.id)).limit(1)
-      : await db.select({ id: universities.id }).from(universities).where(ilike(universities.name, data.name)).limit(1);
+    const existing = await findExistingUniversity(data.id, data.name);
 
     if (existing) {
       await db.update(universities).set({ name: data.name, city: data.city, country: data.country, addressLine: data.addressLine, websiteUrl: data.websiteUrl, hasSummerSemester: data.hasSummerSemester, isActive: data.isActive, notes: data.notes, updatedAt: new Date() }).where(eq(universities.id, existing.id));
