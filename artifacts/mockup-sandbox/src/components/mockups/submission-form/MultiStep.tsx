@@ -12,6 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import {
   BookOpen,
   Upload,
@@ -20,14 +23,14 @@ import {
   Check,
   ChevronRight,
   ChevronLeft,
-  Calendar,
+  Calendar as CalendarIcon,
   GraduationCap,
   Smile,
   MessageSquare,
 } from "lucide-react";
 
 const STEPS = [
-  { id: 1, label: "Semester", icon: Calendar },
+  { id: 1, label: "Semester", icon: CalendarIcon },
   { id: 2, label: "Tuition", icon: FileText },
   { id: 3, label: "Academic", icon: GraduationCap },
   { id: 4, label: "Wellbeing", icon: Heart },
@@ -52,6 +55,40 @@ const CHALLENGES = [
   "Health",
   "Other",
 ];
+
+function DatePicker() {
+  const [date, setDate] = useState<Date>();
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-all",
+            "hover:border-indigo-300 hover:shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100",
+            !date && "text-slate-400"
+          )}
+        >
+          <span className={cn("flex items-center gap-2", date ? "text-slate-800" : "text-slate-400")}>
+            <CalendarIcon className="w-4 h-4 text-slate-400" />
+            {date ? format(date, "PPP") : "Pick a date"}
+          </span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <CalendarComponent
+          mode="single"
+          selected={date}
+          onSelect={(d) => {
+            setDate(d);
+            setOpen(false);
+          }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const ACTIVITIES = [
   "Community service",
@@ -277,7 +314,7 @@ function Step2() {
           <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
             Due date <span className="text-red-400">*</span>
           </Label>
-          <Input type="date" />
+          <DatePicker />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
