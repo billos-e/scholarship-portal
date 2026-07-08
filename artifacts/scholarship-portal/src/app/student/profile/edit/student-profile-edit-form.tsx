@@ -407,7 +407,16 @@ export function StudentProfileEditForm({
             <input type="hidden" name="email" value={student.email} />
           </Row>
           <Row label="Phone number">
-            <FieldInput id="phone" name="phone" type="tel" defaultValue={student.phone ?? ""} />
+            <FieldInput
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              defaultValue={student.phone ?? ""}
+              pattern="[\d\s+()\-.]{7,20}"
+              title="Enter a valid phone number (7–20 digits, spaces, +, -, ( ) allowed)"
+              placeholder="e.g. 081 000 0000"
+            />
           </Row>
         </Group>
 
@@ -463,6 +472,11 @@ export function StudentProfileEditForm({
             children2={
               <FieldInput
                 id="edit-yearOfStudy"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="10"
+                step="1"
                 value={yearOfStudy}
                 onChange={(e) => setYearOfStudy(e.target.value)}
                 placeholder="e.g. 2"
