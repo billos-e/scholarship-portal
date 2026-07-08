@@ -424,7 +424,7 @@ export function ImportWizard() {
             {file ? (
               <div
                 className={cn(
-                  "flex items-center justify-center gap-4 rounded-xl border border-primary/30 bg-primary/[0.04] px-5 py-4 transition-opacity",
+                  "flex items-center gap-4 rounded-xl border border-primary/30 bg-primary/[0.04] px-5 py-4 transition-opacity",
                   pending && "pointer-events-none opacity-50",
                 )}
               >
