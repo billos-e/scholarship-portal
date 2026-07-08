@@ -98,8 +98,10 @@ export default function AdminRequestDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
-          <InvoiceDocument url={request.invoiceFileUrl} />
-          <ScreenshotDocument url={request.qrPaymentImageUrl} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <InvoiceDocument url={request.invoiceFileUrl} />
+            <ScreenshotDocument url={request.qrPaymentImageUrl} />
+          </div>
 
           <BankCard
             accountName={request.bankAccountName}
