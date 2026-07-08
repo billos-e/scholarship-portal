@@ -16,7 +16,6 @@ type TableExportButtonProps = {
   extraSheets?: ExportSheet[];
   label?: string;
   disabled?: boolean;
-  iconOnly?: boolean;
 };
 
 export function TableExportButton({
@@ -27,7 +26,6 @@ export function TableExportButton({
   extraSheets,
   label = "Export",
   disabled = false,
-  iconOnly = false,
 }: TableExportButtonProps) {
   const [open, setOpen] = useState(false);
   const exportRows = useMemo(() => rows, [rows]);
@@ -36,13 +34,12 @@ export function TableExportButton({
     <>
       <Button
         variant="outline"
-        size={iconOnly ? "icon" : "sm"}
+        size="sm"
         onClick={() => setOpen(true)}
         disabled={disabled || exportRows.length === 0}
-        title={iconOnly ? label : undefined}
       >
         <Download />
-        {!iconOnly && label}
+        {label}
       </Button>
       <ExportDialog
         open={open}

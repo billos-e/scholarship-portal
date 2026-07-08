@@ -144,7 +144,7 @@ function SummaryStat({
         type="button"
         onClick={onClick}
         className={cn(
-          "flex shrink-0 snap-start w-36 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 cursor-pointer active:scale-[0.97]",
+          "flex min-w-0 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 cursor-pointer active:scale-[0.97]",
           active
             ? "border-border/70 bg-card [box-shadow:inset_0_2px_4px_0_rgb(0_0_0/0.08),inset_0_1px_2px_0_rgb(0_0_0/0.06)] scale-[0.97] translate-y-px"
             : "border-border/70 bg-card shadow-sm hover:bg-muted/30 hover:border-border",
@@ -156,7 +156,7 @@ function SummaryStat({
   }
 
   return (
-    <div className="flex shrink-0 snap-start w-36 items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
       {content}
     </div>
   );
@@ -273,7 +273,7 @@ export function StudentsList({
         }
       />
 
-      <div className="flex gap-3 overflow-x-auto pb-0.5 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="grid gap-3 sm:grid-cols-3">
         <SummaryStat
           label="Total enrolled"
           value={students.length}

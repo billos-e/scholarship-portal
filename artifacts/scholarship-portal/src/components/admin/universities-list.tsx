@@ -3,10 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Image from "next/image";
-
-import { Plus } from "lucide-react";
-
 import { SearchField } from "@/components/admin/search-field";
 import { ClientPagination } from "@/components/client-pagination";
 import { TableExportButton } from "@/components/export-button";
@@ -15,7 +11,14 @@ import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Table,
   TableBody,
@@ -40,8 +43,6 @@ import {
   universitySemestersToExportRows,
 } from "@/lib/export/table-rows";
 import { useTableSort } from "@/hooks/use-table-sort";
-import { uploadPublicUrl } from "@/lib/upload-path";
-import { cn } from "@/lib/utils";
 
 export type UniversityRow = {
   id: string;
@@ -51,7 +52,6 @@ export type UniversityRow = {
   addressLine: string | null;
   websiteUrl: string | null;
   notes: string | null;
-  imageUrl: string | null;
   studentCount: number;
   hasSummerSemester: boolean;
   isActive: boolean;
@@ -200,60 +200,33 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
 
   return (
     <div className="space-y-6">
-      <div className="relative">
-        <PageHeader
-          title="Universities"
-          description="Manage partner universities, semester calendars, and degree programs."
-        />
-        <div className="absolute top-0 right-0">
-          <TableExportButton
-            columns={UNIVERSITIES_TABLE_COLUMNS}
-            rows={exportRows}
-            filename={exportFilename}
-            sheetName="Universities"
-            extraSheets={exportExtraSheets}
-            iconOnly
-          />
-        </div>
-      </div>
-
-      <UniversityDialog
-        trigger={
-          <button
-            className="fixed bottom-16 right-6 z-50 size-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-            title="New University"
-          >
-            <Plus className="size-6" />
-          </button>
+      <PageHeader
+        title="Universities"
+        description="Manage partner universities, semester calendars, and degree programs."
+        actions={
+          <>
+            <TableExportButton
+              columns={UNIVERSITIES_TABLE_COLUMNS}
+              rows={exportRows}
+              filename={exportFilename}
+              sheetName="Universities"
+              extraSheets={exportExtraSheets}
+            />
+            <UniversityDialog />
+          </>
         }
       />
 
-      <div className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap gap-2 items-center">
-              {(["", "active", "inactive"] as const).map((val) => {
-                const label = val === "" ? "All" : val === "active" ? "Active" : "Inactive";
-                const active = filters.status === val;
-                return (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => updateFilters({ status: val })}
-                    className={cn(
-                      "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
-                      active
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-              <span className="text-xs text-muted-foreground">
-                {filtered.length} universit{filtered.length === 1 ? "y" : "ies"}
-              </span>
-            </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>All universities</CardTitle>
+          <CardDescription>
+            {filtered.length} universit{filtered.length === 1 ? "y" : "ies"} on
+            record.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
             <SearchField
               id="university-search"
               label="Search"
@@ -261,64 +234,31 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
               placeholder="Name or location"
               onChange={(q) => updateFilters({ q })}
             />
+
+            <div className="space-y-1 lg:w-40">
+              <label
+                htmlFor="university-status"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Status
+              </label>
+              <NativeSelect
+                id="university-status"
+                value={filters.status}
+                onChange={(e) => updateFilters({ status: e.target.value })}
+              >
+                <option value="">All</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </NativeSelect>
+            </div>
           </div>
 
           {paginatedUniversities.length === 0 ? (
             <EmptyState title="No universities match your filters" />
           ) : (
             <>
-              {/* Mobile: carousel */}
-              <div className="flex gap-3 overflow-x-auto pb-2 md:hidden snap-x snap-mandatory -mx-1 px-1">
-                {paginatedUniversities.map((university, idx) => {
-                  const imgSrc = university.imageUrl ? uploadPublicUrl(university.imageUrl) : null;
-                  const location = [university.city, university.country].filter(Boolean).join(", ");
-                  const CARD_COLORS = ["#6366f1","#0ea5e9","#f59e0b","#10b981","#ec4899","#8b5cf6","#ef4444","#14b8a6"];
-                  const cardColor = CARD_COLORS[idx % CARD_COLORS.length];
-                  const initial = university.name.charAt(0).toUpperCase();
-                  return (
-                    <button
-                      key={university.id}
-                      type="button"
-                      onClick={() => openUniversity(university.id)}
-                      className="snap-start shrink-0 w-[75vw] aspect-[2/3] relative overflow-hidden rounded-tl-3xl cursor-pointer"
-                      style={{ backgroundColor: imgSrc ? undefined : cardColor }}
-                    >
-                      {/* Background: full-bleed image, or colored bg with giant initial */}
-                      {imgSrc ? (
-                        <Image
-                          src={imgSrc}
-                          alt={university.name}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                          <span className="text-white/20 font-black" style={{ fontSize: "9rem", lineHeight: 1 }}>
-                            {initial}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Status dot */}
-                      <div className="absolute top-4 right-4">
-                        <div className={cn("size-3 rounded-full ring-1 ring-inset ring-black/20", university.isActive ? "bg-emerald-400" : "bg-gray-500")} style={{ boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)" }} />
-                      </div>
-
-                      {/* Bottom overlay */}
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-4 pt-12 pb-4">
-                        <p className="text-white font-bold text-sm leading-tight line-clamp-2">{university.name}</p>
-                        <p className="text-white/70 text-xs mt-1">
-                          {[location, university.studentCount > 0 ? `${university.studentCount} students` : null].filter(Boolean).join(" · ")}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Desktop: regular table */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -410,7 +350,8 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
               />
             </>
           )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
