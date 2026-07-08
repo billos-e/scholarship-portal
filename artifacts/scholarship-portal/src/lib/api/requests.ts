@@ -70,7 +70,6 @@ export type RequestRecord = {
   approvedAt: Date | null;
   paidAt: Date | null;
   rejectedAt: Date | null;
-  createdAt: Date;
   updatedAt: Date;
   student: RequestStudent;
   universitySemester: RequestUniversitySemester;
@@ -88,7 +87,6 @@ const requestDateKeys: (keyof RequestRecord)[] = [
   "approvedAt",
   "paidAt",
   "rejectedAt",
-  "createdAt",
   "updatedAt",
 ];
 
