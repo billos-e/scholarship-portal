@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -69,6 +70,12 @@ const ENTITY_DESCRIPTIONS: Record<ImportEntity, string> = {
 
 const ACCEPTED_EXTENSIONS = [".csv", ".xlsx", ".xls"];
 const UNIVERSITY_ZIP_EXTENSION = ".zip";
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function isAcceptedImportFile(file: File, entity: ImportEntity | null): boolean {
   const name = file.name.toLowerCase();
@@ -401,56 +408,80 @@ export function ImportWizard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div
-              role="button"
-              tabIndex={pending ? -1 : 0}
-              onClick={() => {
-                if (!pending) {
-                  fileInputRef.current?.click();
-                }
-              }}
-              onKeyDown={(event) => {
-                if (pending) return;
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  fileInputRef.current?.click();
-                }
-              }}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={cn(
-                "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-10 outline-none transition-colors",
-                pending
-                  ? "cursor-not-allowed opacity-50"
-                  : "cursor-pointer hover:bg-muted/30",
-                isDragging
-                  ? "border-primary bg-primary/5"
-                  : "border-border",
-              )}
-            >
-              <Upload className="size-8 text-muted-foreground" />
-              <div className="text-center">
-                <p className="font-medium">
-                  {file ? file.name : "Choose a file or drag it here"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Max 5 MB, up to 2,000 rows
-                </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={
+                entity === "universities"
+                  ? ".csv,.xlsx,.xls,.zip"
+                  : ".csv,.xlsx,.xls"
+              }
+              className="sr-only"
+              disabled={pending}
+              onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+            />
+
+            {file ? (
+              <div
+                className={cn(
+                  "flex items-center gap-4 rounded-xl border border-primary/30 bg-primary/[0.04] px-5 py-4 transition-opacity",
+                  pending && "pointer-events-none opacity-50",
+                )}
+              >
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-fuchsia-light text-primary">
+                  <FileSpreadsheet className="size-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <CheckCircle2 className="size-4 text-primary" />
+                  <button
+                    type="button"
+                    disabled={pending}
+                    className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => selectFile(null)}
+                    aria-label="Remove file"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={
-                  entity === "universities"
-                    ? ".csv,.xlsx,.xls,.zip"
-                    : ".csv,.xlsx,.xls"
-                }
-                className="sr-only"
-                disabled={pending}
-                onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
-              />
-            </div>
+            ) : (
+              <div
+                role="button"
+                tabIndex={pending ? -1 : 0}
+                onClick={() => {
+                  if (!pending) fileInputRef.current?.click();
+                }}
+                onKeyDown={(event) => {
+                  if (pending) return;
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-10 outline-none transition-colors",
+                  pending
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer hover:bg-muted/30",
+                  isDragging ? "border-primary bg-primary/5" : "border-border",
+                )}
+              >
+                <Upload className="size-8 text-muted-foreground" />
+                <div className="text-center">
+                  <p className="font-medium">Choose a file or drag it here</p>
+                  <p className="text-sm text-muted-foreground">
+                    Max 5 MB, up to 2,000 rows
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : null}
