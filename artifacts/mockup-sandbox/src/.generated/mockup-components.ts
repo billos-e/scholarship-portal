@@ -8,5 +8,6 @@ export const modules: ModuleMap = {
   "./components/mockups/student-profile/Current.tsx": () => import("../components/mockups/student-profile/Current.tsx"),
   "./components/mockups/student-profile/SidebarDense.tsx": () => import("../components/mockups/student-profile/SidebarDense.tsx"),
   "./components/mockups/student-profile/Tabbed.tsx": () => import("../components/mockups/student-profile/Tabbed.tsx"),
-  "./components/mockups/student-profile/Timeline.tsx": () => import("../components/mockups/student-profile/Timeline.tsx")
+  "./components/mockups/student-profile/Timeline.tsx": () => import("../components/mockups/student-profile/Timeline.tsx"),
+  "./components/mockups/submission-form/MultiStep.tsx": () => import("../components/mockups/submission-form/MultiStep.tsx")
 };
