@@ -230,7 +230,6 @@ function CheckGrid({
 }
 
 function Step1() {
-  const [mode, setMode] = useState<"select" | "manual">("select");
   return (
     <div className="space-y-5">
       <div>
@@ -239,49 +238,21 @@ function Step1() {
           Choose the semester this submission covers.
         </p>
       </div>
-      <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit">
-        {(["select", "manual"] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
-              mode === m
-                ? "bg-white text-slate-800 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            {m === "select" ? "Choose semester" : "Enter manually"}
-          </button>
-        ))}
+      <div>
+        <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+          Semester
+        </Label>
+        <Select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a semester…" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="fall-2026">Fall 2026</SelectItem>
+            <SelectItem value="spring-2026">Spring 2026</SelectItem>
+            <SelectItem value="fall-2025">Fall 2025</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      {mode === "select" ? (
-        <div>
-          <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-            Semester
-          </Label>
-          <Select>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a semester…" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fall-2026">Fall 2026</SelectItem>
-              <SelectItem value="spring-2026">Spring 2026</SelectItem>
-              <SelectItem value="fall-2025">Fall 2025</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      ) : (
-        <div>
-          <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-            Semester label
-          </Label>
-          <Input placeholder="e.g. Fall 2026" />
-          <p className="text-xs text-slate-400 mt-1">
-            Suggestions: Fall 2026, Spring 2026, Summer 2026
-          </p>
-        </div>
-      )}
     </div>
   );
 }
