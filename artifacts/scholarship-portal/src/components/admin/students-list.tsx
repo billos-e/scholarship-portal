@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, CreditCard, GraduationCap, Users } from "lucide-react";
+import { ChevronRight, GraduationCap, UserX, Users } from "lucide-react";
 import type { StudentStatus } from "@prisma/client";
 
 import { SearchField } from "@/components/admin/search-field";
@@ -74,7 +74,7 @@ const EMPTY_FILTERS: StudentFilterState = {
   uni: "",
   program: "",
   status: "",
-  missingBank: false,
+  incompleteProfile: false,
 };
 
 type StudentSortKey =
@@ -185,10 +185,19 @@ export function StudentsList({
     [students],
   );
 
-  const missingBankCount = useMemo(
+  const profileIncompleteCount = useMemo(
     () =>
       students.filter(
-        (student) => !student.bankAccountNumber || !student.bankName,
+        (student) =>
+          !student.studentId?.trim() ||
+          !student.universityId ||
+          !student.degreeProgram?.trim() ||
+          !student.yearOfStudy?.trim() ||
+          !student.currentSemesterLabel?.trim() ||
+          student.gpa === null ||
+          !student.bankAccountName?.trim() ||
+          !student.bankAccountNumber?.trim() ||
+          !student.bankName?.trim(),
       ).length,
     [students],
   );
@@ -240,7 +249,7 @@ export function StudentsList({
     Boolean(filters.uni) ||
     Boolean(filters.program) ||
     Boolean(filters.status) ||
-    filters.missingBank;
+    filters.incompleteProfile;
 
   return (
     <div className="space-y-6">
@@ -278,12 +287,12 @@ export function StudentsList({
           tone="success"
         />
         <SummaryStat
-          label="Bank details missing"
-          value={missingBankCount}
-          icon={CreditCard}
+          label="Profile incomplete"
+          value={profileIncompleteCount}
+          icon={UserX}
           tone="warning"
-          onClick={() => updateFilters({ missingBank: !filters.missingBank })}
-          active={filters.missingBank}
+          onClick={() => updateFilters({ incompleteProfile: !filters.incompleteProfile })}
+          active={filters.incompleteProfile}
         />
       </div>
 

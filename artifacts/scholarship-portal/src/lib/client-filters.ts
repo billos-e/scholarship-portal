@@ -21,7 +21,7 @@ export type StudentFilterState = {
   uni: string;
   program: string;
   status: string;
-  missingBank: boolean;
+  incompleteProfile: boolean;
 };
 
 export type UniversityFilterState = {
@@ -138,6 +138,30 @@ export function filterRequests<
   });
 }
 
+function isStudentProfileIncomplete(student: {
+  studentId: string | null;
+  universityId: string | null;
+  degreeProgram: string | null;
+  yearOfStudy: string | null;
+  currentSemesterLabel: string | null;
+  gpa: string | null;
+  bankAccountName: string | null;
+  bankAccountNumber: string | null;
+  bankName: string | null;
+}): boolean {
+  return (
+    !student.studentId?.trim() ||
+    !student.universityId ||
+    !student.degreeProgram?.trim() ||
+    !student.yearOfStudy?.trim() ||
+    !student.currentSemesterLabel?.trim() ||
+    student.gpa === null ||
+    !student.bankAccountName?.trim() ||
+    !student.bankAccountNumber?.trim() ||
+    !student.bankName?.trim()
+  );
+}
+
 export function filterStudents<
   T extends {
     firstName: string;
@@ -145,7 +169,11 @@ export function filterStudents<
     studentId: string | null;
     universityId: string | null;
     degreeProgram: string | null;
+    yearOfStudy: string | null;
+    currentSemesterLabel: string | null;
+    gpa: string | null;
     status: StudentStatus;
+    bankAccountName: string | null;
     bankAccountNumber: string | null;
     bankName: string | null;
   },
@@ -157,7 +185,7 @@ export function filterStudents<
     }
     if (filters.status && student.status !== filters.status) return false;
     if (!matchesStudentQuery(student, filters.q)) return false;
-    if (filters.missingBank && student.bankAccountNumber && student.bankName) {
+    if (filters.incompleteProfile && !isStudentProfileIncomplete(student)) {
       return false;
     }
     return true;
