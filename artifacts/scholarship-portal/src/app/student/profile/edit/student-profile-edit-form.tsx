@@ -538,7 +538,14 @@ export function StudentProfileEditForm({
           <PairRow
             label1="Account number"
             children1={
-              <FieldInput id="bankAccountNumber" name="bankAccountNumber" defaultValue={student.bankAccountNumber ?? ""} />
+              <FieldInput
+                id="bankAccountNumber"
+                name="bankAccountNumber"
+                inputMode="numeric"
+                pattern="[\d\s-]{5,25}"
+                title="Enter a valid account number (5–25 digits)"
+                defaultValue={student.bankAccountNumber ?? ""}
+              />
             }
             label2="PromptPay"
             children2={
