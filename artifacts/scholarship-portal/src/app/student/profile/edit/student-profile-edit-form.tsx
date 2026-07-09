@@ -299,15 +299,21 @@ export function StudentProfileEditForm({
   const [semesterLabel, setSemesterLabel] = useState(getDraft("currentSemesterLabel", student.currentSemesterLabel ?? ""));
   const [yearOfStudy, setYearOfStudy] = useState(getDraft("yearOfStudy", student.yearOfStudy ?? ""));
 
+  // Only keep the student's original program/semester selectable while the
+  // originally-assigned university is still selected. Switching to a
+  // different university must not carry over a value that doesn't belong
+  // to that university's own catalog.
+  const isOriginalUniversity = universityId === (student.universityId ?? "");
+
   const programs = useMemo(
     () =>
       universityId
         ? mergeProgramOptions(
             academicOptions.programsByUniversity[universityId] ?? [],
-            student.degreeProgram,
+            isOriginalUniversity ? student.degreeProgram : null,
           )
         : [],
-    [universityId, academicOptions.programsByUniversity, student.degreeProgram],
+    [universityId, academicOptions.programsByUniversity, student.degreeProgram, isOriginalUniversity],
   );
 
   const semesters = useMemo(
@@ -315,10 +321,10 @@ export function StudentProfileEditForm({
       universityId
         ? mergeSemesterOptions(
             academicOptions.semestersByUniversity[universityId] ?? [],
-            student.currentSemesterLabel,
+            isOriginalUniversity ? student.currentSemesterLabel : null,
           )
         : [],
-    [universityId, academicOptions.semestersByUniversity, student.currentSemesterLabel],
+    [universityId, academicOptions.semestersByUniversity, student.currentSemesterLabel, isOriginalUniversity],
   );
 
   function handleUniversityChange(nextId: string) {

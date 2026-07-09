@@ -112,18 +112,25 @@ export function StudentAcademicFields({
     }
   }, [universityId, controlledUniversityId]);
 
+  // Only keep the originally-assigned program/semester selectable while
+  // that same university is still selected. Switching to a different
+  // university must not carry over a value that doesn't belong to that
+  // university's own catalog.
+  const isOriginalUniversity = universityId === (defaultUniversityId ?? "");
+
   const programs = useMemo(
     () =>
       universityId
         ? mergeProgramOptions(
             academicOptions.programsByUniversity[universityId] ?? [],
-            defaultDegreeProgram,
+            isOriginalUniversity ? defaultDegreeProgram : null,
           )
         : [],
     [
       universityId,
       academicOptions.programsByUniversity,
       defaultDegreeProgram,
+      isOriginalUniversity,
     ],
   );
 
@@ -132,13 +139,14 @@ export function StudentAcademicFields({
       universityId
         ? mergeSemesterOptions(
             academicOptions.semestersByUniversity[universityId] ?? [],
-            defaultSemesterLabel,
+            isOriginalUniversity ? defaultSemesterLabel : null,
           )
         : [],
     [
       universityId,
       academicOptions.semestersByUniversity,
       defaultSemesterLabel,
+      isOriginalUniversity,
     ],
   );
 
