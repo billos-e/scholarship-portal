@@ -3,18 +3,24 @@
 import { startTransition, useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { RequestStatus } from "@prisma/client";
-import { Check, ChevronDown, Wallet, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Ban,
+  Check,
+  FileText,
+  RotateCcw,
+  Search,
+  ThumbsUp,
+  Wallet,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency } from "@/lib/format";
 import {
   transitionRequestStatus,
@@ -23,9 +29,17 @@ import {
 import {
   CLIENT_REQUEST_STATUSES,
   REQUEST_STATUS_LABELS,
+  canTransitionRequest,
   requestStatusIndex,
 } from "@/lib/request-status";
 import { cn } from "@/lib/utils";
+
+const STAGE_ICONS: Record<(typeof CLIENT_REQUEST_STATUSES)[number], typeof FileText> = {
+  SUBMITTED: FileText,
+  UNDER_REVIEW: Search,
+  APPROVED: ThumbsUp,
+  PAID: Wallet,
+};
 
 type StepVisual = "done" | "current" | "upcoming" | "rejected";
 
@@ -38,133 +52,31 @@ function getStepVisuals(status: RequestStatus): StepVisual[] {
   return CLIENT_REQUEST_STATUSES.map((_, stepIndex) => {
     if (index < 0) return "upcoming";
     if (stepIndex < index) return "done";
-    if (stepIndex === index) return index === CLIENT_REQUEST_STATUSES.length - 1 ? "done" : "current";
+    if (stepIndex === index)
+      return index === CLIENT_REQUEST_STATUSES.length - 1 ? "done" : "current";
     return "upcoming";
   });
 }
 
-function connectorFilled(left: StepVisual): boolean {
-  return left === "done";
-}
-
-function RequestWorkflowStepper({ status }: { status: RequestStatus }) {
-  const visuals = getStepVisuals(status);
-
-  return (
-    <ol
-      className="flex min-w-0 flex-1 items-center"
-      aria-label="Request workflow progress"
-    >
-      {CLIENT_REQUEST_STATUSES.map((stepStatus, index) => {
-        const visual = visuals[index]!;
-        const prevVisual = index > 0 ? visuals[index - 1]! : null;
-        const label = REQUEST_STATUS_LABELS[stepStatus];
-
-        return (
-          <li
-            key={stepStatus}
-            className="flex flex-1 flex-col items-center gap-1.5"
-            aria-current={visual === "current" ? "step" : undefined}
-          >
-            <div className="flex w-full items-center">
-              {index > 0 ? (
-                <div
-                  className={cn(
-                    "h-0.5 flex-1 transition-colors",
-                    prevVisual && connectorFilled(prevVisual)
-                      ? visual === "rejected"
-                        ? "bg-destructive/40"
-                        : "bg-primary"
-                      : "bg-border",
-                  )}
-                  aria-hidden
-                />
-              ) : (
-                <div className="h-0.5 flex-1 invisible" aria-hidden />
-              )}
-
-              <StepCircle visual={visual} index={index} />
-
-              {index < CLIENT_REQUEST_STATUSES.length - 1 ? (
-                <div
-                  className={cn(
-                    "h-0.5 flex-1 transition-colors",
-                    connectorFilled(visual) ? "bg-primary" : "bg-border",
-                  )}
-                  aria-hidden
-                />
-              ) : (
-                <div className="h-0.5 flex-1 invisible" aria-hidden />
-              )}
-            </div>
-
-            <span
-              className={cn(
-                "text-center text-xs font-medium",
-                visual === "current" && "text-primary",
-                visual === "rejected" && "text-destructive",
-                visual === "done" && "text-muted-foreground",
-                visual === "upcoming" && "text-muted-foreground",
-              )}
-            >
-              {label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function StepCircle({
-  visual,
-  index,
-}: {
-  visual: StepVisual;
-  index: number;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold leading-none transition-colors",
-        visual === "done" &&
-          "border-primary bg-primary text-primary-foreground",
-        visual === "rejected" &&
-          "border-destructive bg-destructive text-destructive-foreground",
-        visual === "current" &&
-          "border-primary bg-primary/10 text-primary ring-2 ring-primary/20",
-        visual === "upcoming" &&
-          "border-border bg-muted text-muted-foreground",
-      )}
-    >
-      {visual === "done" ? (
-        <Check className="size-4" />
-      ) : visual === "rejected" ? (
-        <X className="size-4" />
-      ) : (
-        index + 1
-      )}
-    </div>
-  );
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function PendingButton({
   children,
   className,
+  size = "sm",
 }: {
   children: React.ReactNode;
   className?: string;
+  size?: "sm" | "default";
 }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className={className}>
+    <Button type="submit" size={size} disabled={pending} className={className}>
       {pending ? "Updating..." : children}
     </Button>
   );
-}
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 type RequestStatusBarProps = {
@@ -186,12 +98,14 @@ export function RequestStatusBar({
     transitionRequestStatus,
     {},
   );
-  const [showPaidForm, setShowPaidForm] = useState(false);
+  const [openStage, setOpenStage] = useState<RequestStatus | null>(null);
+  const [rejectOpen, setRejectOpen] = useState(false);
 
   useEffect(() => {
     if (state.success && state.nextStatus) {
       toast.success("Status updated.");
-      setShowPaidForm(false);
+      setOpenStage(null);
+      setRejectOpen(false);
       const patch: { status: RequestStatus; paidAt?: Date | null } = {
         status: state.nextStatus,
       };
@@ -214,54 +128,224 @@ export function RequestStatusBar({
     });
   }
 
+  const visuals = getStepVisuals(status);
+  const canReject = canTransitionRequest(status, "REJECTED");
+  const canReopen = status === "REJECTED";
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <RequestWorkflowStepper status={status} />
-        <WorkflowActions
-          status={status}
-          onMarkUnderReview={() => changeStatus("UNDER_REVIEW")}
-          onApprove={() => changeStatus("APPROVED")}
-          onReject={() => changeStatus("REJECTED")}
-          onReopen={() => changeStatus("SUBMITTED")}
-          onMarkPaid={() => setShowPaidForm(true)}
-        />
-      </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex w-full min-w-0 flex-1 items-stretch overflow-hidden rounded-lg">
+          {CLIENT_REQUEST_STATUSES.map((stageStatus, index) => {
+            const visual = visuals[index]!;
+            const Icon = STAGE_ICONS[stageStatus];
+            const label = REQUEST_STATUS_LABELS[stageStatus];
+            const isClickable =
+              status !== "REJECTED" &&
+              visual !== "current" &&
+              canTransitionRequest(status, stageStatus);
+            const isPaidStage = stageStatus === "PAID";
+            const isFirst = index === 0;
+            const isLast = index === CLIENT_REQUEST_STATUSES.length - 1;
 
-      {showPaidForm && status === "APPROVED" ? (
-        <form
-          action={formAction}
-          className="rounded-xl border border-border/60 bg-background/80 p-4 backdrop-blur-sm"
-        >
-          <input type="hidden" name="requestId" value={requestId} />
-          <input type="hidden" name="nextStatus" value="PAID" />
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="paymentDate">Payment date</Label>
-              <Input
-                id="paymentDate"
-                name="paymentDate"
-                type="date"
-                defaultValue={todayIso()}
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Records {formatCurrency(amountDue)} as paid.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <PendingButton>Mark as paid</PendingButton>
-              <Button
+            let stateClass =
+              "bg-muted text-muted-foreground/50 cursor-not-allowed";
+            if (visual === "current") {
+              stateClass =
+                "bg-primary text-primary-foreground shadow-sm cursor-default";
+            } else if (visual === "rejected") {
+              stateClass = isClickable
+                ? "bg-destructive/80 text-destructive-foreground hover:bg-destructive cursor-pointer"
+                : "bg-destructive/80 text-destructive-foreground cursor-default";
+            } else if (visual === "done") {
+              stateClass = isClickable
+                ? "bg-primary/50 text-primary-foreground hover:bg-primary/70 cursor-pointer"
+                : "bg-primary/50 text-primary-foreground cursor-default";
+            } else if (isClickable) {
+              stateClass =
+                "bg-muted text-muted-foreground hover:bg-muted-foreground/20 cursor-pointer";
+            }
+
+            const chevronClip = isFirst
+              ? "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)"
+              : isLast
+                ? "polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%)"
+                : "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%)";
+
+            const button = (
+              <button
                 type="button"
-                variant="ghost"
-                onClick={() => setShowPaidForm(false)}
+                disabled={!isClickable}
+                aria-current={visual === "current" ? "step" : undefined}
+                style={{ clipPath: chevronClip, marginLeft: isFirst ? 0 : -14 }}
+                className={cn(
+                  "group relative flex h-10 flex-1 items-center justify-center gap-2 px-4 text-xs font-semibold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-5 sm:text-sm",
+                  stateClass,
+                )}
               >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </form>
-      ) : null}
+                <Icon className="size-3.5 shrink-0 sm:size-4" />
+                <span className="truncate">{label}</span>
+                {visual === "done" ? (
+                  <Check className="size-3.5 shrink-0 sm:size-4" />
+                ) : null}
+                {visual === "rejected" ? (
+                  <X className="size-3.5 shrink-0 sm:size-4" />
+                ) : null}
+              </button>
+            );
+
+            if (!isClickable) {
+              return (
+                <div
+                  key={stageStatus}
+                  className="flex flex-1"
+                  style={{ marginLeft: isFirst ? 0 : -14 }}
+                >
+                  {button}
+                </div>
+              );
+            }
+
+            return (
+              <Popover
+                key={stageStatus}
+                open={openStage === stageStatus}
+                onOpenChange={(open) => setOpenStage(open ? stageStatus : null)}
+              >
+                <PopoverTrigger asChild>{button}</PopoverTrigger>
+                <PopoverContent className="w-72 p-0" align="center" sideOffset={12}>
+                  {isPaidStage ? (
+                    <form action={formAction} className="space-y-3 p-4">
+                      <input type="hidden" name="requestId" value={requestId} />
+                      <input type="hidden" name="nextStatus" value="PAID" />
+                      <div className="flex items-start gap-3">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Wallet className="size-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground">
+                            Move to {label}?
+                          </h4>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Records {formatCurrency(amountDue)} as paid.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="paymentDate" className="text-xs">
+                          Payment date
+                        </Label>
+                        <Input
+                          id="paymentDate"
+                          name="paymentDate"
+                          type="date"
+                          defaultValue={todayIso()}
+                          required
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setOpenStage(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <PendingButton>Confirm move</PendingButton>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-3 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <AlertTriangle className="size-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground">
+                            Move to {label}?
+                          </h4>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            This will update the request status.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setOpenStage(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button size="sm" onClick={() => changeStatus(stageStatus)}>
+                          Confirm move
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            );
+          })}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {status === "REJECTED" ? (
+            <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
+              <X className="mr-1 size-3" />
+              Rejected
+            </Badge>
+          ) : null}
+
+          {canReopen ? (
+            <Button type="button" size="sm" variant="outline" onClick={() => changeStatus("UNDER_REVIEW")}>
+              <RotateCcw className="size-3.5" />
+              Reopen
+            </Button>
+          ) : null}
+
+          {canReject ? (
+            <Popover open={rejectOpen} onOpenChange={setRejectOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                  <Ban className="size-3.5" />
+                  Reject
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-0" align="end" sideOffset={12}>
+                <div className="space-y-3 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                      <Ban className="size-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">Reject this request?</h4>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        The request will be marked as rejected.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setRejectOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => changeStatus("REJECTED")}
+                    >
+                      Confirm reject
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : null}
+        </div>
+      </div>
 
       {status === "PAID" ? (
         <p className="text-center text-xs text-muted-foreground">
@@ -271,120 +355,6 @@ export function RequestStatusBar({
           </span>
         </p>
       ) : null}
-    </div>
-  );
-}
-
-function WorkflowActions({
-  status,
-  onMarkUnderReview,
-  onApprove,
-  onReject,
-  onReopen,
-  onMarkPaid,
-}: {
-  status: RequestStatus;
-  onMarkUnderReview: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-  onReopen: () => void;
-  onMarkPaid: () => void;
-}) {
-  if (status === "SUBMITTED") {
-    return (
-      <SplitActionButton
-        label="Mark under review"
-        onPrimary={onMarkUnderReview}
-        menuItems={[{ label: "Reject", onClick: onReject, destructive: true }]}
-      />
-    );
-  }
-
-  if (status === "UNDER_REVIEW") {
-    return (
-      <SplitActionButton
-        label="Approve"
-        onPrimary={onApprove}
-        menuItems={[
-          { label: "Back to submitted", onClick: onReopen },
-          { label: "Reject", onClick: onReject, destructive: true },
-        ]}
-      />
-    );
-  }
-
-  if (status === "APPROVED") {
-    return (
-      <SplitActionButton
-        label="Mark as paid"
-        onPrimary={onMarkPaid}
-        menuItems={[
-          { label: "Back to under review", onClick: onMarkUnderReview },
-          { label: "Reject", onClick: onReject, destructive: true },
-        ]}
-        icon={Wallet}
-      />
-    );
-  }
-
-  if (status === "REJECTED") {
-    return (
-      <Button
-        type="button"
-        size="sm"
-        onClick={onReopen}
-      >
-        Reopen
-      </Button>
-    );
-  }
-
-  return null;
-}
-
-function SplitActionButton({
-  label,
-  onPrimary,
-  menuItems,
-  icon: Icon,
-}: {
-  label: string;
-  onPrimary: () => void;
-  menuItems: { label: string; onClick: () => void; destructive?: boolean }[];
-  icon?: typeof Wallet;
-}) {
-  return (
-    <div className="inline-flex shrink-0 items-stretch overflow-hidden rounded-lg shadow-xs">
-      <Button
-        type="button"
-        size="sm"
-        className="rounded-r-none border-r-0 pr-2.5 shadow-none active:translate-y-0"
-        onClick={onPrimary}
-      >
-        {Icon ? <Icon className="size-3.5" /> : null}
-        {label}
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className={cn(
-            "inline-flex h-7 min-w-7 -ml-px items-center justify-center rounded-l-none rounded-r-lg border border-transparent border-l border-primary-foreground/20 bg-primary px-1.5 text-primary-foreground transition-colors",
-            "hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-          )}
-        >
-          <ChevronDown className="size-3.5" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          {menuItems.map((item) => (
-            <DropdownMenuItem
-              key={item.label}
-              variant={item.destructive ? "destructive" : "default"}
-              onClick={item.onClick}
-            >
-              {item.label}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   );
 }

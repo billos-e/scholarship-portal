@@ -11,13 +11,7 @@ import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   Table,
@@ -283,7 +277,7 @@ export function UniversitiesList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Universities"
+        title={`Universities (${total})`}
         description="Manage partner universities, semester calendars, and degree programs."
         actions={
           <>
@@ -300,13 +294,7 @@ export function UniversitiesList() {
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle>All universities</CardTitle>
-          <CardDescription>
-            {total} universit{total === 1 ? "y" : "ies"} on record.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
             <SearchField
               id="university-search"

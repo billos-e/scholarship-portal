@@ -123,7 +123,20 @@ export function RequestDetailHero({
               </div>
             </div>
 
-            <div className="grid w-full shrink-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[320px]">
+            <div
+              className={cn(
+                "grid w-full shrink-0 grid-cols-2 gap-3 lg:w-auto lg:min-w-[320px]",
+                gpa ? "sm:grid-cols-3" : "sm:grid-cols-2",
+              )}
+            >
+              {gpa ? (
+                <HeroMetric
+                  label="Report GPA"
+                  value={gpa}
+                  icon={GraduationCap}
+                  tone="info"
+                />
+              ) : null}
               <HeroMetric
                 label="Amount due"
                 value={amountDue}
@@ -136,15 +149,6 @@ export function RequestDetailHero({
                 icon={Calendar}
                 tone="accent"
               />
-              {gpa ? (
-                <HeroMetric
-                  label="Report GPA"
-                  value={gpa}
-                  icon={GraduationCap}
-                  tone="info"
-                  className="col-span-2 sm:col-span-1"
-                />
-              ) : null}
             </div>
           </div>
 
