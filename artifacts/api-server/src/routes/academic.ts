@@ -1,10 +1,9 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import {
   db,
   universitySemesters,
   degreePrograms,
-  students,
 } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -30,7 +29,7 @@ router.get("/semesters/active", async (_req, res) => {
 
 router.get("/academic-options", async (_req, res) => {
   try {
-    const [semesters, catalogPrograms, programRows] = await Promise.all([
+    const [semesters, catalogPrograms] = await Promise.all([
       db
         .select({
           id: universitySemesters.id,
@@ -51,15 +50,6 @@ router.get("/academic-options", async (_req, res) => {
         .from(degreePrograms)
         .where(eq(degreePrograms.isActive, true))
         .orderBy(asc(degreePrograms.name)),
-      db
-        .select({
-          universityId: students.universityId,
-          degreeProgram: students.degreeProgram,
-        })
-        .from(students)
-        .where(
-          and(isNotNull(students.universityId), isNotNull(students.degreeProgram)),
-        ),
     ]);
 
     const toDay = (d: Date) => new Date(d).toISOString().slice(0, 10);
@@ -80,12 +70,15 @@ router.get("/academic-options", async (_req, res) => {
       semestersByUniversity[s.universityId] = list;
     }
 
+    // Programs are scoped strictly to each university's own active catalog
+    // entries. Student-held free-text values are intentionally excluded here
+    // so a typo/legacy value on one student never becomes a selectable
+    // option for every other student at that university.
     const programSets: Record<string, Set<string>> = {};
-    for (const row of [...catalogPrograms, ...programRows]) {
-      const name = "name" in row ? row.name : row.degreeProgram;
-      if (!row.universityId || !name) continue;
+    for (const row of catalogPrograms) {
+      if (!row.universityId || !row.name) continue;
       const set = programSets[row.universityId] ?? new Set<string>();
-      set.add(name);
+      set.add(row.name);
       programSets[row.universityId] = set;
     }
 

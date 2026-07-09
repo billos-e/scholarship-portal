@@ -499,7 +499,7 @@ export function StudentProfileEditForm({
                 id="edit-currentSemesterLabel"
                 value={semesterLabel}
                 onChange={(e) => setSemesterLabel(e.target.value)}
-                disabled={!universityId}
+                disabled={!universityId || semesters.length === 0}
               >
                 <option value="">
                   {!universityId
