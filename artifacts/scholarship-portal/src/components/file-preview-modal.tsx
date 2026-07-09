@@ -28,7 +28,28 @@ export function isFileImage(url: string): boolean {
   return IMAGE_EXTENSIONS.has(getExtension(url)) || isDataImage(url);
 }
 
-export function openFileInNewTab(url: string): void {
+// Types the browser can actually render inline in a tab. Anything else
+// (docx, xlsx, zip, octet-stream, ...) will just get silently downloaded by
+// the browser if we try to navigate a tab to it, leaving that tab blank —
+// so those need to go through a real download instead.
+function isBrowserRenderable(contentType: string): boolean {
+  return (
+    contentType.startsWith("image/") ||
+    contentType.startsWith("text/") ||
+    contentType === "application/pdf"
+  );
+}
+
+function triggerDownload(blobUrl: string, filename: string): void {
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+export function openFileInNewTab(url: string, filename = "download"): void {
   if (!url.startsWith("data:")) {
     window.open(url, "_blank", "noopener,noreferrer");
     return;
@@ -37,15 +58,23 @@ export function openFileInNewTab(url: string): void {
   // treat it as a blocked popup, then point it at a blob: URL once ready —
   // most browsers refuse to top-level-navigate to a `data:` URL directly,
   // which otherwise results in a blank tab.
-  const tab = window.open("", "_blank", "noopener,noreferrer");
+  const contentType = url.slice(5, url.indexOf(";")) || "";
+  const tab = isBrowserRenderable(contentType)
+    ? window.open("", "_blank", "noopener,noreferrer")
+    : null;
   fetch(url)
     .then((res) => res.blob())
     .then((blob) => {
       const blobUrl = URL.createObjectURL(blob);
-      if (tab) {
-        tab.location.href = blobUrl;
+      if (isBrowserRenderable(blob.type)) {
+        if (tab) {
+          tab.location.href = blobUrl;
+        } else {
+          window.open(blobUrl, "_blank", "noopener,noreferrer");
+        }
       } else {
-        window.open(blobUrl, "_blank", "noopener,noreferrer");
+        tab?.close();
+        triggerDownload(blobUrl, filename);
       }
       setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
     })

@@ -41,7 +41,9 @@ export function ScreenshotDocument({ url, className }: ScreenshotDocumentProps) 
       <button
         type="button"
         onClick={() =>
-          isFileImage(resolvedUrl) ? setOpen(true) : openFileInNewTab(resolvedUrl)
+          isFileImage(resolvedUrl)
+            ? setOpen(true)
+            : openFileInNewTab(resolvedUrl, "Screenshot upload")
         }
         className={cn(
           "group flex w-full flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md",

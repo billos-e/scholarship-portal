@@ -76,7 +76,9 @@ function FileLink({
         <button
           type="button"
           onClick={() =>
-            isFileImage(resolvedUrl) ? setOpen(true) : openFileInNewTab(resolvedUrl)
+            isFileImage(resolvedUrl)
+              ? setOpen(true)
+              : openFileInNewTab(resolvedUrl, label)
           }
           className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
         >

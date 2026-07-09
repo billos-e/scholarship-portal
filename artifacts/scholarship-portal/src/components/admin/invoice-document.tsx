@@ -42,7 +42,9 @@ export function InvoiceDocument({ url, className }: InvoiceDocumentProps) {
       <button
         type="button"
         onClick={() =>
-          isFileImage(resolvedUrl) ? setOpen(true) : openFileInNewTab(resolvedUrl)
+          isFileImage(resolvedUrl)
+            ? setOpen(true)
+            : openFileInNewTab(resolvedUrl, "Invoice upload")
         }
         className={cn(
           "group flex w-full flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md",
