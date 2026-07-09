@@ -7,3 +7,4 @@
 - [Prisma-free upload-critical paths](prisma-free-uploads.md) — All upload actions (student photo, university image, submission files, profile edit, bank update) must avoid Prisma entirely for browser builds; remaining Prisma calls in non-upload paths are acceptable scope boundary.
 - [Import validators need server-side execution](import-server-route.md) — Prisma shim returns null for all lookups; import preview/commit must go through /api/import/* on the Express server (Drizzle-based).
 - [Admin action latency/race](admin-action-latency.md) — write-then-refetch pattern caused slow double round-trips and stale-response races; fixed via mutations echoing back new value, merged directly into state.
+- [Upload URL double-wrap bug](upload-url-double-wrap.md) — uploadPublicUrl() must recognize already-complete /api/storage/ URLs or it double-wraps/mangles them; in-memory cache masked this in the uploading tab only.
