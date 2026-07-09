@@ -734,6 +734,21 @@ export function SubmissionForm({
         </div>
       ) : null}
 
+      <div className="flex items-center justify-end">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground"
+          onClick={() => {
+            clearDraft();
+            navigate("/student");
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+
       <StepIndicator current={step} />
 
       <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
