@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
 import { syncStudentSession } from "@/lib/auth/sync-session";
-import { validateUpload } from "@/lib/uploads";
+import { uploadFileToStorage, validateUpload } from "@/lib/uploads";
 import {
   readStudentSelfProfileFromFormData,
   validateStudentProfileSelfEdit,
@@ -126,10 +126,7 @@ export async function saveOwnProfileEdit(
     if (!check.ok) return { error: check.error };
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
-      photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+      photoUrl = await uploadFileToStorage(file);
     } catch {
       return { error: "Failed to process photo." };
     }
@@ -203,10 +200,7 @@ export async function uploadOwnPhoto(
   if (!check.ok) return { error: check.error };
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
-    const photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+    const photoUrl = await uploadFileToStorage(file);
 
     const result = await apiFetch(`/students/${student.id}`, "PUT", { photoUrl });
     if (!result.ok) return { error: result.error };

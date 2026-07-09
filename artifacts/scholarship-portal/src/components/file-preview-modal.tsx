@@ -14,18 +14,33 @@ function isDataImage(url: string): boolean {
   return url.startsWith("data:image/");
 }
 
-function getExtension(url: string): string {
+function parseUrl(url: string): URL | null {
   try {
-    const pathname = new URL(url, "http://x").pathname;
-    const ext = pathname.split(".").pop() ?? "";
-    return ext.toLowerCase();
+    return new URL(url, "http://x");
   } catch {
-    return "";
+    return null;
   }
 }
 
+// Object storage URLs have no filename/extension in their path (they're
+// content-addressed), so the original filename and content type are carried
+// as query params (`name`, `ct`) instead — fall back to those when present.
+function getExtension(url: string): string {
+  const parsed = parseUrl(url);
+  if (!parsed) return "";
+  const name = parsed.searchParams.get("name");
+  const source = name ?? parsed.pathname;
+  const ext = source.split(".").pop() ?? "";
+  return ext.toLowerCase();
+}
+
+function isQueryImage(url: string): boolean {
+  const parsed = parseUrl(url);
+  return parsed?.searchParams.get("ct")?.startsWith("image/") ?? false;
+}
+
 export function isFileImage(url: string): boolean {
-  return IMAGE_EXTENSIONS.has(getExtension(url)) || isDataImage(url);
+  return IMAGE_EXTENSIONS.has(getExtension(url)) || isDataImage(url) || isQueryImage(url);
 }
 
 // Types the browser can actually render inline in a tab. Anything else
@@ -96,8 +111,7 @@ export function FilePreviewModal({
   url,
   label,
 }: FilePreviewModalProps) {
-  const ext = getExtension(url);
-  const isImage = IMAGE_EXTENSIONS.has(ext) || isDataImage(url);
+  const isImage = isFileImage(url);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>

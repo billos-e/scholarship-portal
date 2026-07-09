@@ -160,4 +160,46 @@ export async function readUpload(relativePath: string) {
   return storageRead(relativePath);
 }
 
+const apiBase = import.meta.env.BASE_URL
+  ? import.meta.env.BASE_URL.replace(/\/$/, "")
+  : "";
+
+/**
+ * Uploads a file to object storage using the presigned-URL flow and returns
+ * a real, shareable URL that can be embedded in an <iframe>, opened in a new
+ * tab, or downloaded directly — unlike base64 data URLs, which browsers
+ * refuse to top-level-navigate to and which iframes render unreliably.
+ */
+export async function uploadFileToStorage(file: File): Promise<string> {
+  const requestRes = await fetch(`${apiBase}/api/storage/uploads/request-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: file.name,
+      size: file.size,
+      contentType: file.type || "application/octet-stream",
+    }),
+  });
+  if (!requestRes.ok) {
+    throw new Error("Failed to get an upload URL. Please try again.");
+  }
+  const { uploadURL, objectPath } = (await requestRes.json()) as {
+    uploadURL: string;
+    objectPath: string;
+  };
+
+  const putRes = await fetch(uploadURL, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+  });
+  if (!putRes.ok) {
+    throw new Error("Failed to upload file to storage. Please try again.");
+  }
+
+  const contentType = file.type || "application/octet-stream";
+  const params = new URLSearchParams({ ct: contentType, name: file.name });
+  return `${apiBase}/api/storage${objectPath}?${params.toString()}`;
+}
+
 export { getUploadRoot, mimeForFilename } from "@/lib/upload-meta";

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { validateUpload } from "@/lib/uploads";
+import { uploadFileToStorage, validateUpload } from "@/lib/uploads";
 
 const apiBase = import.meta.env.BASE_URL
   ? import.meta.env.BASE_URL.replace(/\/$/, "")
@@ -105,10 +105,7 @@ export async function updateUniversity(
     if (!check.ok) return { error: check.error };
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
-      imageUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+      imageUrl = await uploadFileToStorage(file);
     } catch {
       return { error: "Failed to process image." };
     }
@@ -143,10 +140,7 @@ export async function uploadUniversityImage(
   if (!check.ok) return { error: check.error };
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
-    const imageDataUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+    const imageDataUrl = await uploadFileToStorage(file);
 
     const result = await apiFetch(`/universities/${id}/image`, "POST", { imageDataUrl });
     if (!result.ok) return { error: result.error };

@@ -7,6 +7,7 @@ import requestsRouter from "./requests";
 import submissionsRouter from "./submissions";
 import academicRouter from "./academic";
 import importRouter from "./import";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(requestsRouter);
 router.use(submissionsRouter);
 router.use(academicRouter);
 router.use(importRouter);
+router.use(storageRouter);
 
 export default router;

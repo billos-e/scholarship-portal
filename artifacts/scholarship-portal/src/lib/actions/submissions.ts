@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
-import { validateUpload, type UploadKind } from "@/lib/uploads";
+import { validateUpload, uploadFileToStorage, type UploadKind } from "@/lib/uploads";
 import { ACTIVITY_VALUES, CHALLENGE_VALUES } from "@/lib/submissions/constants";
 import {
   getMissingProfileFields,
@@ -116,13 +116,6 @@ function fileIfProvided(value: FormDataEntryValue | null): File | undefined {
   return value;
 }
 
-async function fileToDataUrl(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
-  const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
-  return `data:${file.type || "application/octet-stream"};base64,${b64}`;
-}
-
 export async function createSubmission(
   _prev: SubmissionState,
   formData: FormData,
@@ -197,9 +190,9 @@ export async function createSubmission(
   let qrPaymentImageUrl: string | undefined;
 
   try {
-    if (invoiceFile) invoiceFileUrl = await fileToDataUrl(invoiceFile);
-    if (transcriptFile) transcriptFileUrl = await fileToDataUrl(transcriptFile);
-    if (screenshotFile) qrPaymentImageUrl = await fileToDataUrl(screenshotFile);
+    if (invoiceFile) invoiceFileUrl = await uploadFileToStorage(invoiceFile);
+    if (transcriptFile) transcriptFileUrl = await uploadFileToStorage(transcriptFile);
+    if (screenshotFile) qrPaymentImageUrl = await uploadFileToStorage(screenshotFile);
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to process uploaded files." };
   }
