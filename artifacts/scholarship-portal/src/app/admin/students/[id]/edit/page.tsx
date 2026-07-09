@@ -7,8 +7,9 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdmin } from "@/lib/auth/session";
 import {
-  fetchUniversities,
-  type UniversityListItem,
+  fetchActiveUniversities,
+  fetchUniversity,
+  type ActiveUniversity,
 } from "@/lib/api/universities";
 import { fetchAcademicOptions } from "@/lib/api/academic";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
@@ -23,7 +24,7 @@ export default function StudentEditPage() {
   const [student, setStudent] = useState<StudentDetail | null | undefined>(
     undefined,
   );
-  const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
+  const [universities, setUniversities] = useState<ActiveUniversity[]>([]);
   const [academicOptions, setAcademicOptions] =
     useState<StudentAcademicOptions>({
       semestersByUniversity: {},
@@ -35,12 +36,28 @@ export default function StudentEditPage() {
   useEffect(() => {
     Promise.all([
       fetchStudent(id),
-      fetchUniversities(),
+      fetchActiveUniversities(),
       fetchAcademicOptions(),
     ])
-      .then(([loadedStudent, loadedUniversities, options]) => {
+      .then(async ([loadedStudent, loadedUniversities, options]) => {
+        let universityOptions = loadedUniversities;
+        // If the student's currently assigned university has since been
+        // deactivated, keep it selectable so the edit form doesn't silently
+        // drop the existing assignment.
+        if (
+          loadedStudent?.universityId &&
+          !loadedUniversities.some((u) => u.id === loadedStudent.universityId)
+        ) {
+          const currentUniversity = await fetchUniversity(loadedStudent.universityId);
+          if (currentUniversity) {
+            universityOptions = [
+              ...loadedUniversities,
+              { id: currentUniversity.id, name: `${currentUniversity.name} (inactive)` },
+            ];
+          }
+        }
         setStudent(loadedStudent);
-        setUniversities(loadedUniversities.map((u) => ({ id: u.id, name: u.name })));
+        setUniversities(universityOptions);
         setAcademicOptions(options);
       })
       .catch(() => setStudent(null));
