@@ -108,11 +108,11 @@
   --sidebar-accent-foreground: #9d174d;
   --sidebar-border: color-mix(in srgb, #e8ddd4 60%, transparent);
   --sidebar-ring: #c0269a;
-  /* Admin sidebar — deep fuchsia */
-  --sidebar-admin: #6b1140;
-  --sidebar-admin-foreground: #f5d0e4;
-  --sidebar-admin-accent: #851651;
-  --sidebar-admin-accent-foreground: #ffffff;
+  /* Admin sidebar — warm cream */
+  --sidebar-admin: #fdfbf7;
+  --sidebar-admin-foreground: #6b1140;
+  --sidebar-admin-accent: #fce8f3;
+  --sidebar-admin-accent-foreground: #6b1140;
   --sidebar-admin-border: color-mix(in srgb, #9d174d 25%, transparent);
 }
 
@@ -228,18 +228,8 @@
   }
 
   .admin-mobile-header {
-    background:
-      radial-gradient(
-        ellipse 120% 80% at 100% -20%,
-        color-mix(in srgb, var(--brand-fuchsia) 35%, transparent),
-        transparent 55%
-      ),
-      linear-gradient(
-        135deg,
-        var(--sidebar-admin) 0%,
-        color-mix(in srgb, var(--sidebar-admin-accent) 88%, black) 100%
-      );
-    box-shadow: 0 1px 0 color-mix(in srgb, white 8%, transparent);
+    background: var(--sidebar-admin);
+    box-shadow: 0 1px 0 color-mix(in srgb, black 8%, transparent);
   }
 
   .admin-mobile-tabbar {

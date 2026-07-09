@@ -78,7 +78,7 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
 
     return (
       <>
-        <header className="admin-mobile-header sticky top-0 z-30 border-b border-white/10 md:hidden">
+        <header className="admin-mobile-header sticky top-0 z-30 border-b border-sidebar-admin-border md:hidden">
           <div className="flex h-14 items-center justify-between gap-3 px-4">
             <Link
               href="/admin"
@@ -87,10 +87,10 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
             >
               <BrandMark variant="admin" size="sm" surface="on-admin" />
               <div className="min-w-0">
-                <p className="truncate font-heading text-sm font-semibold text-white">
+                <p className="truncate font-heading text-sm font-semibold text-sidebar-admin-foreground">
                   {pageTitle}
                 </p>
-                <p className="truncate text-[11px] text-white/65">
+                <p className="truncate text-[11px] text-sidebar-admin-foreground/65">
                   Scholarship admin
                 </p>
               </div>
@@ -101,7 +101,7 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
               onClick={() => setDrawerOpen(true)}
               aria-label="Open menu"
               aria-expanded={drawerOpen}
-              className="shrink-0 border border-white/15 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              className="shrink-0 border border-sidebar-admin-foreground/15 bg-sidebar-admin-foreground/5 text-sidebar-admin-foreground hover:bg-sidebar-admin-foreground/10 hover:text-sidebar-admin-foreground"
             >
               <Menu className="size-5" />
             </Button>
@@ -124,7 +124,7 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
                 <div className="flex min-w-0 items-center gap-3">
                   <BrandMark variant="admin" size="sm" surface="on-admin" />
                   <div className="min-w-0">
-                    <p className="truncate font-heading text-base font-bold text-white">
+                    <p className="truncate font-heading text-base font-bold text-sidebar-admin-foreground">
                       Admin panel
                     </p>
                     <p className="truncate text-[11px] text-sidebar-admin-foreground/70">
@@ -137,7 +137,7 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
                   variant="ghost"
                   onClick={closeDrawer}
                   aria-label="Close menu"
-                  className="shrink-0 text-sidebar-admin-foreground hover:bg-sidebar-admin-accent/50 hover:text-white"
+                  className="shrink-0 text-sidebar-admin-foreground hover:bg-sidebar-admin-accent/50 hover:text-sidebar-admin-accent-foreground"
                 >
                   <X className="size-5" />
                 </Button>
@@ -156,7 +156,7 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
                         "flex h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors",
                         active
                           ? "bg-sidebar-admin-accent text-sidebar-admin-accent-foreground shadow-sm"
-                          : "text-sidebar-admin-foreground/80 hover:bg-sidebar-admin-accent/40 hover:text-white",
+                          : "text-sidebar-admin-foreground/80 hover:bg-sidebar-admin-accent/40 hover:text-sidebar-admin-accent-foreground",
                       )}
                       aria-current={active ? "page" : undefined}
                     >
@@ -168,7 +168,7 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
               </nav>
 
               <div className="border-t border-sidebar-admin-border p-4">
-                <div className="mb-3 flex items-center gap-3 rounded-xl border border-sidebar-admin-border bg-black/15 p-3">
+                <div className="mb-3 flex items-center gap-3 rounded-xl border border-sidebar-admin-border bg-sidebar-admin-foreground/5 p-3">
                   <UserButton
                     userProfileMode="modal"
                     userProfileProps={{ appearance: clerkLightAppearance }}
@@ -180,7 +180,7 @@ export function MobileNav({ variant, email, displayName }: MobileNavProps) {
                     }}
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-white">
+                    <p className="truncate text-[13px] font-semibold text-sidebar-admin-foreground">
                       {userLabel}
                     </p>
                     <p className="truncate text-[11px] text-sidebar-admin-foreground/70">

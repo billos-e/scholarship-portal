@@ -23,7 +23,7 @@ export function BrandMark({
         "flex shrink-0 items-center justify-center rounded-xl",
         size === "sm" ? "size-8" : "size-9",
         surface === "on-admin"
-          ? "bg-white/15 text-white ring-1 ring-white/20 backdrop-blur-sm"
+          ? "bg-sidebar-admin-foreground/10 text-sidebar-admin-foreground ring-1 ring-sidebar-admin-foreground/20 backdrop-blur-sm"
           : "bg-primary text-primary-foreground",
         className,
       )}
