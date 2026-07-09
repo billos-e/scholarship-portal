@@ -70,6 +70,7 @@ router.post("/auth/logout", (_req, res) => {
 router.post("/auth/clerk-admin-session", async (req, res) => {
   try {
     const auth = getAuth(req);
+    console.log("[clerk-admin-session] auth.userId:", auth.userId, "hasSessionClaims:", !!auth.sessionClaims);
     if (!auth.userId) {
       res.status(401).json({ error: "Not authenticated with Clerk." });
       return;
