@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, ImageIcon } from "lucide-react";
 
-import { FilePreviewModal, isFileImage } from "@/components/file-preview-modal";
+import { FilePreviewModal, isFileImage, openFileInNewTab } from "@/components/file-preview-modal";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
 
@@ -41,9 +41,7 @@ export function ScreenshotDocument({ url, className }: ScreenshotDocumentProps) 
       <button
         type="button"
         onClick={() =>
-          isFileImage(resolvedUrl)
-            ? setOpen(true)
-            : window.open(resolvedUrl, "_blank", "noopener,noreferrer")
+          isFileImage(resolvedUrl) ? setOpen(true) : openFileInNewTab(resolvedUrl)
         }
         className={cn(
           "group flex w-full flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md",

@@ -28,6 +28,32 @@ export function isFileImage(url: string): boolean {
   return IMAGE_EXTENSIONS.has(getExtension(url)) || isDataImage(url);
 }
 
+export function openFileInNewTab(url: string): void {
+  if (!url.startsWith("data:")) {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
+  // Open the tab synchronously (within the click handler) so browsers don't
+  // treat it as a blocked popup, then point it at a blob: URL once ready —
+  // most browsers refuse to top-level-navigate to a `data:` URL directly,
+  // which otherwise results in a blank tab.
+  const tab = window.open("", "_blank", "noopener,noreferrer");
+  fetch(url)
+    .then((res) => res.blob())
+    .then((blob) => {
+      const blobUrl = URL.createObjectURL(blob);
+      if (tab) {
+        tab.location.href = blobUrl;
+      } else {
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    })
+    .catch(() => {
+      if (tab) tab.location.href = url;
+    });
+}
+
 type FilePreviewModalProps = {
   open: boolean;
   onClose: () => void;
