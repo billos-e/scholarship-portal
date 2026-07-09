@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { Download } from "lucide-react";
 
 import {
   Dialog,
@@ -52,15 +52,14 @@ export function FilePreviewModal({
           </DialogTitle>
           <a
             href={url}
-            target="_blank"
-            rel="noreferrer noopener"
+            download={label}
             className={cn(
               "shrink-0 inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors",
               "hover:bg-accent hover:text-accent-foreground",
             )}
           >
-            <ExternalLink className="mr-1.5 size-3.5" />
-            Open in new tab
+            <Download className="mr-1.5 size-3.5" />
+            Download
           </a>
         </DialogHeader>
 
