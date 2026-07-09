@@ -458,29 +458,23 @@ export function StudentProfileEditForm({
           <PairRow
             label1="Degree program"
             children1={
-              <div className="relative">
-                <FieldInput
-                  id="edit-degreeProgram"
-                  value={degreeProgram}
-                  onChange={(e) => setDegreeProgram(e.target.value)}
-                  disabled={!universityId}
-                  list={universityId ? "edit-degree-program-options" : undefined}
-                  placeholder={
-                    !universityId
-                      ? "Select a university first"
-                      : programs.length === 0
-                        ? "Enter degree program"
-                        : "Select or type a program"
-                  }
-                />
-                {universityId && (
-                  <datalist id="edit-degree-program-options">
-                    {programs.map((p) => (
-                      <option key={p} value={p} />
-                    ))}
-                  </datalist>
-                )}
-              </div>
+              <FieldSelect
+                id="edit-degreeProgram"
+                value={degreeProgram}
+                onChange={(e) => setDegreeProgram(e.target.value)}
+                disabled={!universityId || programs.length === 0}
+              >
+                <option value="">
+                  {!universityId
+                    ? "Select a university first"
+                    : programs.length === 0
+                      ? "No programs configured"
+                      : "Select a program…"}
+                </option>
+                {programs.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </FieldSelect>
             }
             label2="Year of study"
             children2={
