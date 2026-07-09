@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, ImageIcon } from "lucide-react";
 
-import { FilePreviewModal } from "@/components/file-preview-modal";
+import { FilePreviewModal, isFileImage } from "@/components/file-preview-modal";
 
 import NotFound from "@/pages/not-found";
 import { StatusBadge } from "@/components/status-badge";
@@ -75,7 +75,11 @@ function FileLink({
       <dd>
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() =>
+            isFileImage(resolvedUrl)
+              ? setOpen(true)
+              : window.open(resolvedUrl, "_blank", "noopener,noreferrer")
+          }
           className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
           <Icon className="size-4" />

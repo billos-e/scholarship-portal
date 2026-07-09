@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, FileText } from "lucide-react";
 
-import { FilePreviewModal } from "@/components/file-preview-modal";
+import { FilePreviewModal, isFileImage } from "@/components/file-preview-modal";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,11 @@ export function InvoiceDocument({ url, className }: InvoiceDocumentProps) {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() =>
+          isFileImage(resolvedUrl)
+            ? setOpen(true)
+            : window.open(resolvedUrl, "_blank", "noopener,noreferrer")
+        }
         className={cn(
           "group flex w-full flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md",
           className,

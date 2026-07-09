@@ -24,6 +24,10 @@ function getExtension(url: string): string {
   }
 }
 
+export function isFileImage(url: string): boolean {
+  return IMAGE_EXTENSIONS.has(getExtension(url)) || isDataImage(url);
+}
+
 type FilePreviewModalProps = {
   open: boolean;
   onClose: () => void;

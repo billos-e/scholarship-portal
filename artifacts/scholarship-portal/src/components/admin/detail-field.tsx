@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { FileText } from "lucide-react";
 
-import { FilePreviewModal } from "@/components/file-preview-modal";
+import { FilePreviewModal, isFileImage } from "@/components/file-preview-modal";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +61,11 @@ export function DetailFileLink({
       <dd className="mt-1">
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() =>
+            isFileImage(resolvedUrl)
+              ? setOpen(true)
+              : window.open(resolvedUrl, "_blank", "noopener,noreferrer")
+          }
           className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
         >
           <Icon className="size-4 shrink-0" />
