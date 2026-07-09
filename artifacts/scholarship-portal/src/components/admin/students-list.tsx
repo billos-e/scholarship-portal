@@ -13,13 +13,7 @@ import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { StudentStatusBadge } from "@/components/student-status-badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   Table,
@@ -278,13 +272,6 @@ export function StudentsList({ universities, academicOptions }: StudentsListProp
     router.push(`/admin/students/${id}`);
   }
 
-  const hasActiveFilters =
-    Boolean(filters.q) ||
-    Boolean(filters.uni) ||
-    Boolean(filters.program) ||
-    Boolean(filters.status) ||
-    filters.incompleteProfile;
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -331,13 +318,6 @@ export function StudentsList({ universities, academicOptions }: StudentsListProp
       </div>
 
       <Card className="overflow-hidden border-border/80 shadow-sm">
-        <CardHeader className="border-b border-border/60 bg-muted/20">
-          <CardTitle>Directory</CardTitle>
-          <CardDescription>
-            {total} student{total === 1 ? "" : "s"}
-            {hasActiveFilters ? " match your filters" : " in the roster"}.
-          </CardDescription>
-        </CardHeader>
         <CardContent className="space-y-5 p-4 sm:p-6">
           <div className="rounded-xl border border-border/70 bg-background/80 p-4 shadow-xs">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
