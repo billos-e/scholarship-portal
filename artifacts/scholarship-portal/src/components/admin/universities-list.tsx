@@ -27,11 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UniversityDialog } from "@/app/admin/universities/university-dialog";
-import {
-  filterUniversities,
-  paginateItems,
-  type UniversityFilterState,
-} from "@/lib/client-filters";
+import { PAGE_SIZE } from "@/lib/pagination";
 import {
   UNIVERSITIES_TABLE_COLUMNS,
   DEGREE_PROGRAMS_TABLE_COLUMNS,
@@ -42,7 +38,8 @@ import {
   universitiesToExportRows,
   universitySemestersToExportRows,
 } from "@/lib/export/table-rows";
-import { useTableSort } from "@/hooks/use-table-sort";
+import type { SortDirection } from "@/lib/table-sort";
+import { fetchUniversities, type UniversityListItem } from "@/lib/api/universities";
 
 export type UniversityRow = {
   id: string;
@@ -71,6 +68,11 @@ export type UniversityRow = {
   }[];
 };
 
+type UniversityFilterState = {
+  q: string;
+  status: string;
+};
+
 const EMPTY_FILTERS: UniversityFilterState = {
   q: "",
   status: "",
@@ -84,52 +86,124 @@ type UniversitySortKey =
   | "summer"
   | "status";
 
-const UNIVERSITY_SORT_ACCESSORS: Record<
-  UniversitySortKey,
-  (row: UniversityRow) => unknown
-> = {
-  name: (row) => row.name,
-  location: (row) => [row.city, row.country].filter(Boolean).join(", "),
-  students: (row) => row.studentCount,
-  semesters: (row) => row.semesters.length,
-  summer: (row) => row.hasSummerSemester,
-  status: (row) => row.isActive,
+const SERVER_SORT_KEYS: Partial<Record<UniversitySortKey, string>> = {
+  name: "name",
+  summer: "summer",
+  status: "status",
 };
 
-export function UniversitiesList({ universities }: { universities: UniversityRow[] }) {
+function toRow(university: UniversityListItem): UniversityRow {
+  return {
+    id: university.id,
+    name: university.name,
+    city: university.city,
+    country: university.country,
+    addressLine: university.addressLine,
+    websiteUrl: university.websiteUrl,
+    notes: university.notes,
+    studentCount: university._count.students,
+    hasSummerSemester: university.hasSummerSemester,
+    isActive: university.isActive,
+    semesters: university.semesters.map((semester) => ({
+      id: semester.id,
+      academicYear: semester.academicYear,
+      termCode: semester.termCode,
+      label: semester.label,
+      startDate: semester.startDate,
+      endDate: semester.endDate,
+      isActive: semester.isActive,
+    })),
+    degreePrograms: university.degreePrograms.map((program) => ({
+      id: program.id,
+      name: program.name,
+      isActive: program.isActive,
+    })),
+  };
+}
+
+export function UniversitiesList() {
   const router = useRouter();
   const { startLoading } = useNavigationLoading();
   const [filters, setFilters] = useState<UniversityFilterState>(EMPTY_FILTERS);
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<UniversitySortKey>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const filtered = useMemo(
-    () => filterUniversities(universities, filters),
-    [universities, filters],
-  );
+  const [universities, setUniversities] = useState<UniversityRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  const { sortedItems, sortKey, sortDirection, onSort } = useTableSort<
-    UniversityRow,
-    UniversitySortKey
-  >(
-    filtered,
-    UNIVERSITY_SORT_ACCESSORS,
-    { key: "name", direction: "asc" },
-  );
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setFilters((current) => ({ ...current, q: searchInput }));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchInput]);
 
-  const { items: paginatedUniversities, currentPage, totalPages } = useMemo(
-    () => paginateItems(sortedItems, page),
-    [sortedItems, page],
-  );
+  useEffect(() => {
+    setPage(1);
+  }, [filters.q, filters.status]);
 
-  const exportRows = useMemo(
-    () => universitiesToExportRows(paginatedUniversities),
-    [paginatedUniversities],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    const serverSortKey = SERVER_SORT_KEYS[sortKey];
+    fetchUniversities({
+      page,
+      limit: PAGE_SIZE,
+      search: filters.q || undefined,
+      status: filters.status || undefined,
+      sortKey: serverSortKey,
+      sortDir: sortDirection,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        let items = result.items.map(toRow);
+        if (!serverSortKey) {
+          const multiplier = sortDirection === "asc" ? 1 : -1;
+          items = [...items].sort((a, b) => {
+            const av = sortKey === "location"
+              ? [a.city, a.country].filter(Boolean).join(", ")
+              : a.semesters.length;
+            const bv = sortKey === "location"
+              ? [b.city, b.country].filter(Boolean).join(", ")
+              : b.semesters.length;
+            if (sortKey === "students") {
+              return (a.studentCount - b.studentCount) * multiplier;
+            }
+            if (typeof av === "number" && typeof bv === "number") {
+              return (av - bv) * multiplier;
+            }
+            return String(av).localeCompare(String(bv)) * multiplier;
+          });
+        }
+        setUniversities(items);
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUniversities([]);
+          setTotal(0);
+          setTotalPages(1);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, filters, sortKey, sortDirection]);
+
+  const exportRows = useMemo(() => universitiesToExportRows(universities), [universities]);
 
   const semesterExportRows = useMemo(
     () =>
       universitySemestersToExportRows(
-        paginatedUniversities.flatMap((university) =>
+        universities.flatMap((university) =>
           university.semesters.map((semester) => ({
             id: semester.id,
             universityId: university.id,
@@ -143,13 +217,13 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
           })),
         ),
       ),
-    [paginatedUniversities],
+    [universities],
   );
 
   const degreeProgramExportRows = useMemo(
     () =>
       degreeProgramsToExportRows(
-        paginatedUniversities.flatMap((university) =>
+        universities.flatMap((university) =>
           university.degreePrograms.map((program) => ({
             id: program.id,
             universityId: university.id,
@@ -159,7 +233,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
           })),
         ),
       ),
-    [paginatedUniversities],
+    [universities],
   );
 
   const exportExtraSheets = useMemo(
@@ -182,15 +256,23 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
 
   const exportFilename = useMemo(() => {
     const stamp = new Date().toISOString().slice(0, 10);
-    return `universities-page-${currentPage}-${stamp}`;
-  }, [currentPage]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filters.q, filters.status, sortKey, sortDirection]);
+    return `universities-page-${page}-${stamp}`;
+  }, [page]);
 
   function updateFilters(patch: Partial<UniversityFilterState>) {
     setFilters((current) => ({ ...current, ...patch }));
+  }
+
+  function handleSort(key: UniversitySortKey) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDirection("asc");
+    } else if (sortDirection === "asc") {
+      setSortDirection("desc");
+    } else {
+      setSortKey("name");
+      setSortDirection("asc");
+    }
   }
 
   function openUniversity(id: string) {
@@ -221,8 +303,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
         <CardHeader>
           <CardTitle>All universities</CardTitle>
           <CardDescription>
-            {filtered.length} universit{filtered.length === 1 ? "y" : "ies"} on
-            record.
+            {total} universit{total === 1 ? "y" : "ies"} on record.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -230,9 +311,9 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
             <SearchField
               id="university-search"
               label="Search"
-              value={filters.q}
+              value={searchInput}
               placeholder="Name or location"
-              onChange={(q) => updateFilters({ q })}
+              onChange={setSearchInput}
             />
 
             <div className="space-y-1 lg:w-40">
@@ -254,11 +335,11 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
             </div>
           </div>
 
-          {paginatedUniversities.length === 0 ? (
+          {!loading && universities.length === 0 ? (
             <EmptyState title="No universities match your filters" />
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className={"overflow-x-auto" + (loading ? " opacity-60" : "")}>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -267,47 +348,47 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
                         sortKey="name"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Location"
                         sortKey="location"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Students"
                         sortKey="students"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Semesters"
                         sortKey="semesters"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Summer"
                         sortKey="summer"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Status"
                         sortKey="status"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedUniversities.map((university) => (
+                    {universities.map((university) => (
                       <TableRow
                         key={university.id}
                         className="cursor-pointer transition-colors hover:bg-muted/40"
@@ -344,7 +425,7 @@ export function UniversitiesList({ universities }: { universities: UniversityRow
                 </Table>
               </div>
               <ClientPagination
-                currentPage={currentPage}
+                currentPage={page}
                 totalPages={totalPages}
                 onPageChange={setPage}
               />

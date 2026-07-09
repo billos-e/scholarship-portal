@@ -45,6 +45,31 @@ export type StudentDetail = StudentRecord & {
   tuitionPaymentRequests: StudentRequestRow[];
 };
 
+export type StudentListParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  uni?: string;
+  program?: string;
+  status?: string;
+  incompleteProfile?: boolean;
+  sortKey?: string;
+  sortDir?: "asc" | "desc";
+};
+
+export type StudentListResult = {
+  items: StudentRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  summary: {
+    totalEnrolled: number;
+    active: number;
+    incompleteProfile: number;
+  };
+};
+
 function reviveRequest(r: StudentRequestRow): StudentRequestRow {
   return reviveDates(r, ["dueDate", "submittedAt"]);
 }
@@ -53,11 +78,26 @@ function reviveStudent<T extends StudentRecord>(s: T): T {
   return reviveDates(s, ["createdAt", "updatedAt"]);
 }
 
-export async function fetchStudents(): Promise<StudentRecord[]> {
-  const res = await fetch(`${apiBase}/api/students`);
+export async function fetchStudents(
+  params: StudentListParams = {},
+): Promise<StudentListResult> {
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", String(params.page));
+  if (params.limit) search.set("limit", String(params.limit));
+  if (params.search) search.set("search", params.search);
+  if (params.uni) search.set("uni", params.uni);
+  if (params.program) search.set("program", params.program);
+  if (params.status) search.set("status", params.status);
+  if (params.incompleteProfile) search.set("incompleteProfile", "true");
+  if (params.sortKey) search.set("sortKey", params.sortKey);
+  if (params.sortDir) search.set("sortDir", params.sortDir);
+
+  const qs = search.toString();
+  const res = await fetch(`${apiBase}/api/students${qs ? `?${qs}` : ""}`);
   if (!res.ok) throw new Error("Failed to fetch students");
-  const data = (await res.json()) as StudentRecord[];
-  return data.map(reviveStudent);
+  const data = (await res.json()) as StudentListResult;
+  data.items = data.items.map(reviveStudent);
+  return data;
 }
 
 export async function fetchStudent(id: string): Promise<StudentDetail | null> {

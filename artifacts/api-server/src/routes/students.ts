@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
-import { and, desc, eq, ilike, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, isNull, ne, or, type SQL } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import {
   db,
@@ -13,9 +13,79 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/students", async (_req, res) => {
+const STUDENT_SORT_COLUMNS = {
+  name: students.firstName,
+  studentId: students.studentId,
+  university: universities.name,
+  program: students.degreeProgram,
+  status: students.status,
+} as const;
+
+type StudentSortKey = keyof typeof STUDENT_SORT_COLUMNS;
+
+function parsePagination(req: { query: Record<string, unknown> }) {
+  const page = Math.max(1, Number.parseInt(String(req.query.page ?? "1"), 10) || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, Number.parseInt(String(req.query.limit ?? "20"), 10) || 20),
+  );
+  return { page, limit, offset: (page - 1) * limit };
+}
+
+router.get("/students", async (req, res) => {
   try {
-    const rows = await db
+    const { page, limit, offset } = parsePagination(req);
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const uni = typeof req.query.uni === "string" ? req.query.uni : "";
+    const program = typeof req.query.program === "string" ? req.query.program : "";
+    const status = typeof req.query.status === "string" ? req.query.status : "";
+    const incompleteProfile = req.query.incompleteProfile === "true";
+    const sortKeyParam = typeof req.query.sortKey === "string" ? req.query.sortKey : "";
+    const sortDir = req.query.sortDir === "desc" ? "desc" : "asc";
+    const sortKey: StudentSortKey | null =
+      sortKeyParam in STUDENT_SORT_COLUMNS ? (sortKeyParam as StudentSortKey) : null;
+
+    const conditions: SQL[] = [];
+    if (search) {
+      const needle = `%${search}%`;
+      conditions.push(
+        or(
+          ilike(students.firstName, needle),
+          ilike(students.lastName, needle),
+          ilike(students.studentId, needle),
+        ) as SQL,
+      );
+    }
+    if (uni) conditions.push(eq(students.universityId, uni));
+    if (program) conditions.push(eq(students.degreeProgram, program));
+    if (status && ["ACTIVE", "GRADUATED", "INACTIVE"].includes(status)) {
+      conditions.push(eq(students.status, status as "ACTIVE" | "GRADUATED" | "INACTIVE"));
+    }
+    if (incompleteProfile) {
+      conditions.push(
+        or(
+          isNull(students.studentId),
+          eq(students.studentId, ""),
+          isNull(students.universityId),
+          isNull(students.degreeProgram),
+          eq(students.degreeProgram, ""),
+          isNull(students.yearOfStudy),
+          eq(students.yearOfStudy, ""),
+          isNull(students.currentSemesterLabel),
+          eq(students.currentSemesterLabel, ""),
+          isNull(students.gpa),
+          isNull(bankInformation.bankAccountName),
+          eq(bankInformation.bankAccountName, ""),
+          isNull(bankInformation.bankAccountNumber),
+          eq(bankInformation.bankAccountNumber, ""),
+          isNull(bankInformation.bankName),
+          eq(bankInformation.bankName, ""),
+        ) as SQL,
+      );
+    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const baseQuery = db
       .select({
         student: students,
         university: universities,
@@ -26,17 +96,84 @@ router.get("/students", async (_req, res) => {
       .from(students)
       .leftJoin(universities, eq(students.universityId, universities.id))
       .innerJoin(users, eq(students.userId, users.id))
-      .leftJoin(bankInformation, eq(bankInformation.studentId, students.id))
-      .orderBy(desc(students.createdAt));
+      .leftJoin(bankInformation, eq(bankInformation.studentId, students.id));
 
-    const result = rows.map((r) => ({
+    const orderColumn = sortKey ? STUDENT_SORT_COLUMNS[sortKey] : students.createdAt;
+    const orderBy = sortKey
+      ? sortDir === "desc"
+        ? desc(orderColumn)
+        : asc(orderColumn)
+      : desc(students.createdAt);
+
+    const [rows, [{ value: total }]] = await Promise.all([
+      (where ? baseQuery.where(where) : baseQuery)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+      (() => {
+        const q = db
+          .select({ value: count() })
+          .from(students)
+          .leftJoin(bankInformation, eq(bankInformation.studentId, students.id));
+        return where ? q.where(where) : q;
+      })(),
+    ]);
+
+    const [totalCountRows, activeCountRows, incompleteCountRows] =
+      await Promise.all([
+        db.select({ value: count() }).from(students),
+        db
+          .select({ value: count() })
+          .from(students)
+          .where(eq(students.status, "ACTIVE")),
+        db
+          .select({ value: count() })
+          .from(students)
+          .leftJoin(bankInformation, eq(bankInformation.studentId, students.id))
+          .where(
+            or(
+              isNull(students.studentId),
+              eq(students.studentId, ""),
+              isNull(students.universityId),
+              isNull(students.degreeProgram),
+              eq(students.degreeProgram, ""),
+              isNull(students.yearOfStudy),
+              eq(students.yearOfStudy, ""),
+              isNull(students.currentSemesterLabel),
+              eq(students.currentSemesterLabel, ""),
+              isNull(students.gpa),
+              isNull(bankInformation.bankAccountName),
+              eq(bankInformation.bankAccountName, ""),
+              isNull(bankInformation.bankAccountNumber),
+              eq(bankInformation.bankAccountNumber, ""),
+              isNull(bankInformation.bankName),
+              eq(bankInformation.bankName, ""),
+            ),
+          ),
+      ]);
+    const totalCount = totalCountRows[0].value;
+    const activeCount = activeCountRows[0].value;
+    const incompleteCount = incompleteCountRows[0].value;
+
+    const items = rows.map((r) => ({
       ...r.student,
       university: r.university ?? null,
       user: { email: r.userEmail, role: r.userRole },
       bankInformation: r.bank ?? null,
     }));
 
-    res.json(result);
+    res.json({
+      items,
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(Number(total) / limit)),
+      summary: {
+        totalEnrolled: Number(totalCount),
+        active: Number(activeCount),
+        incompleteProfile: Number(incompleteCount),
+      },
+    });
   } catch (err) {
     console.error("GET /students error", err);
     res.status(500).json({ error: "Failed to fetch students." });

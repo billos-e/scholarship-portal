@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { count, eq, ilike, ne, and } from "drizzle-orm";
+import { asc, count, desc, eq, ilike, ne, and, or, type SQL } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import {
   db,
@@ -12,13 +12,69 @@ import {
 
 const router: IRouter = Router();
 
+const UNIVERSITY_SORT_COLUMNS = {
+  name: universities.name,
+  summer: universities.hasSummerSemester,
+  status: universities.isActive,
+} as const;
+
+type UniversitySortKey = keyof typeof UNIVERSITY_SORT_COLUMNS;
+
+function parsePagination(req: { query: Record<string, unknown> }) {
+  const page = Math.max(1, Number.parseInt(String(req.query.page ?? "1"), 10) || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, Number.parseInt(String(req.query.limit ?? "20"), 10) || 20),
+  );
+  return { page, limit, offset: (page - 1) * limit };
+}
+
 // ---------------------------------------------------------------------------
 // Universities
 // ---------------------------------------------------------------------------
 
-router.get("/universities", async (_req, res) => {
+router.get("/universities", async (req, res) => {
   try {
-    const unis = await db.select().from(universities).orderBy(universities.name);
+    const { page, limit, offset } = parsePagination(req);
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const status = typeof req.query.status === "string" ? req.query.status : "";
+    const sortKeyParam = typeof req.query.sortKey === "string" ? req.query.sortKey : "";
+    const sortDir = req.query.sortDir === "desc" ? "desc" : "asc";
+    const sortKey: UniversitySortKey | null =
+      sortKeyParam in UNIVERSITY_SORT_COLUMNS ? (sortKeyParam as UniversitySortKey) : null;
+
+    const conditions: SQL[] = [];
+    if (search) {
+      const needle = `%${search}%`;
+      conditions.push(
+        or(
+          ilike(universities.name, needle),
+          ilike(universities.city, needle),
+          ilike(universities.country, needle),
+        ) as SQL,
+      );
+    }
+    if (status === "active") conditions.push(eq(universities.isActive, true));
+    if (status === "inactive") conditions.push(eq(universities.isActive, false));
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const orderColumn = sortKey ? UNIVERSITY_SORT_COLUMNS[sortKey] : universities.name;
+    const orderBy =
+      sortKey && sortDir === "desc" ? desc(orderColumn) : asc(orderColumn);
+
+    const baseQuery = db.select().from(universities);
+    const countQuery = db.select({ value: count() }).from(universities);
+
+    const [unis, [{ value: total }], [{ value: totalCount }], [{ value: activeCount }]] =
+      await Promise.all([
+        (where ? baseQuery.where(where) : baseQuery)
+          .orderBy(orderBy)
+          .limit(limit)
+          .offset(offset),
+        where ? countQuery.where(where) : countQuery,
+        db.select({ value: count() }).from(universities),
+        db.select({ value: count() }).from(universities).where(eq(universities.isActive, true)),
+      ]);
 
     const result = await Promise.all(
       unis.map(async (u) => {
@@ -45,7 +101,17 @@ router.get("/universities", async (_req, res) => {
       }),
     );
 
-    res.json(result);
+    res.json({
+      items: result,
+      total: Number(total),
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(Number(total) / limit)),
+      summary: {
+        total: Number(totalCount),
+        active: Number(activeCount),
+      },
+    });
   } catch (err) {
     console.error("GET /universities error", err);
     res.status(500).json({ error: "Failed to fetch universities." });

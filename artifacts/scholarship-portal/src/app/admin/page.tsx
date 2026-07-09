@@ -27,11 +27,11 @@ export default function AdminDashboard() {
     Promise.all([
       fetchActiveUniversities(),
       fetchActiveSemesters(),
-      fetchStudents(),
+      fetchStudents({ limit: 1000 }),
       fetchRequests(),
     ])
-      .then(([universities, semesters, students, requests]) =>
-        setData({ universities, semesters, students, requests }),
+      .then(([universities, semesters, studentsResult, requests]) =>
+        setData({ universities, semesters, students: studentsResult.items, requests }),
       )
       .catch(() => setData({ universities: [], semesters: [], students: [], requests: [] }));
   }, []);

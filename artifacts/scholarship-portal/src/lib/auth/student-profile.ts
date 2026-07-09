@@ -8,7 +8,7 @@ export type StudentProfile = NonNullable<
 
 /** One round-trip per request, shared across layout + page + actions. */
 export const getStudentProfileByUserId = cache(async (userId: string) => {
-  const students = await fetchStudents();
+  const { items: students } = await fetchStudents({ limit: 1000 });
   const summary = students.find((s) => s.userId === userId);
   if (!summary) return null;
   return fetchStudent(summary.id);

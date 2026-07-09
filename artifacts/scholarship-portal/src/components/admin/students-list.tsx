@@ -28,15 +28,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  filterStudents,
-  paginateItems,
-  type StudentFilterState,
-} from "@/lib/client-filters";
+import { PAGE_SIZE } from "@/lib/pagination";
 import { STUDENTS_TABLE_COLUMNS } from "@/lib/export/table-columns";
 import { studentsToExportRows } from "@/lib/export/table-rows";
-import { useTableSort } from "@/hooks/use-table-sort";
-import { cn } from "@/lib/utils";
+import type { SortDirection } from "@/lib/table-sort";
+import { fetchStudents, type StudentRecord } from "@/lib/api/students";
 import { StudentCreateDialog } from "@/app/admin/students/student-create-dialog";
 import type { StudentAcademicOptions } from "@/lib/student-academic-options";
 
@@ -64,9 +60,16 @@ export type StudentRow = {
 };
 
 type StudentsListProps = {
-  students: StudentRow[];
   universities: { id: string; name: string }[];
   academicOptions: StudentAcademicOptions;
+};
+
+type StudentFilterState = {
+  q: string;
+  uni: string;
+  program: string;
+  status: string;
+  incompleteProfile: boolean;
 };
 
 const EMPTY_FILTERS: StudentFilterState = {
@@ -84,16 +87,28 @@ type StudentSortKey =
   | "program"
   | "status";
 
-const STUDENT_SORT_ACCESSORS: Record<
-  StudentSortKey,
-  (row: StudentRow) => unknown
-> = {
-  name: (row) => `${row.firstName} ${row.lastName}`,
-  studentId: (row) => row.studentId,
-  university: (row) => row.universityName,
-  program: (row) => row.degreeProgram,
-  status: (row) => row.status,
-};
+function toRow(student: StudentRecord): StudentRow {
+  return {
+    id: student.id,
+    firstName: student.firstName,
+    lastName: student.lastName,
+    email: student.user.email,
+    phone: student.phone,
+    studentId: student.studentId,
+    memberSince: student.createdAt.toISOString(),
+    universityId: student.universityId,
+    universityName: student.university?.name ?? null,
+    degreeProgram: student.degreeProgram,
+    yearOfStudy: student.yearOfStudy,
+    currentSemesterLabel: student.currentSemesterLabel,
+    gpa: student.gpa?.toString() ?? null,
+    status: student.status,
+    bankAccountName: student.bankInformation?.bankAccountName ?? null,
+    bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,
+    bankName: student.bankInformation?.bankName ?? null,
+    promptpayNumber: student.bankInformation?.promptpayNumber ?? null,
+  };
+}
 
 function SummaryStat({
   label,
@@ -120,10 +135,9 @@ function SummaryStat({
   const content = (
     <>
       <div
-        className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-lg",
-          toneClass,
-        )}
+        className={
+          "flex size-10 shrink-0 items-center justify-center rounded-lg " + toneClass
+        }
       >
         <Icon className="size-[18px]" />
       </div>
@@ -143,12 +157,12 @@ function SummaryStat({
       <button
         type="button"
         onClick={onClick}
-        className={cn(
-          "flex min-w-0 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 cursor-pointer active:scale-[0.97]",
-          active
+        className={
+          "flex min-w-0 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 cursor-pointer active:scale-[0.97] " +
+          (active
             ? "border-border/70 bg-card [box-shadow:inset_0_2px_4px_0_rgb(0_0_0/0.08),inset_0_1px_2px_0_rgb(0_0_0/0.06)] scale-[0.97] translate-y-px"
-            : "border-border/70 bg-card shadow-sm hover:bg-muted/30 hover:border-border",
-        )}
+            : "border-border/70 bg-card shadow-sm hover:bg-muted/30 hover:border-border")
+        }
       >
         {content}
       </button>
@@ -162,81 +176,101 @@ function SummaryStat({
   );
 }
 
-export function StudentsList({
-  students,
-  universities,
-  academicOptions,
-}: StudentsListProps) {
+export function StudentsList({ universities, academicOptions }: StudentsListProps) {
   const router = useRouter();
   const { startLoading } = useNavigationLoading();
   const [filters, setFilters] = useState<StudentFilterState>(EMPTY_FILTERS);
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<StudentSortKey>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const programs = useMemo(() => {
-    const names = new Set<string>();
-    for (const student of students) {
-      if (student.degreeProgram) names.add(student.degreeProgram);
-    }
-    return [...names].sort((a, b) => a.localeCompare(b));
-  }, [students]);
+  const [students, setStudents] = useState<StudentRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [summary, setSummary] = useState({
+    totalEnrolled: 0,
+    active: 0,
+    incompleteProfile: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const activeCount = useMemo(
-    () => students.filter((student) => student.status === "ACTIVE").length,
-    [students],
-  );
-
-  const profileIncompleteCount = useMemo(
-    () =>
-      students.filter(
-        (student) =>
-          !student.studentId?.trim() ||
-          !student.universityId ||
-          !student.degreeProgram?.trim() ||
-          !student.yearOfStudy?.trim() ||
-          !student.currentSemesterLabel?.trim() ||
-          student.gpa === null ||
-          !student.bankAccountName?.trim() ||
-          !student.bankAccountNumber?.trim() ||
-          !student.bankName?.trim(),
-      ).length,
-    [students],
-  );
-
-  const filtered = useMemo(
-    () => filterStudents(students, filters),
-    [students, filters],
-  );
-
-  const { sortedItems, sortKey, sortDirection, onSort } = useTableSort<
-    StudentRow,
-    StudentSortKey
-  >(
-    filtered,
-    STUDENT_SORT_ACCESSORS,
-    { key: "name", direction: "asc" },
-  );
-
-  const { items: paginatedStudents, currentPage, totalPages } = useMemo(
-    () => paginateItems(sortedItems, page),
-    [sortedItems, page],
-  );
-
-  const exportRows = useMemo(
-    () => studentsToExportRows(paginatedStudents),
-    [paginatedStudents],
-  );
-
-  const exportFilename = useMemo(() => {
-    const stamp = new Date().toISOString().slice(0, 10);
-    return `students-page-${currentPage}-${stamp}`;
-  }, [currentPage]);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setFilters((current) => ({ ...current, q: searchInput }));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchInput]);
 
   useEffect(() => {
     setPage(1);
-  }, [filters.q, filters.uni, filters.program, filters.status, sortKey, sortDirection]);
+  }, [filters.q, filters.uni, filters.program, filters.status, filters.incompleteProfile]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchStudents({
+      page,
+      limit: PAGE_SIZE,
+      search: filters.q || undefined,
+      uni: filters.uni || undefined,
+      program: filters.program || undefined,
+      status: filters.status || undefined,
+      incompleteProfile: filters.incompleteProfile || undefined,
+      sortKey,
+      sortDir: sortDirection,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        setStudents(result.items.map(toRow));
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
+        setSummary(result.summary);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStudents([]);
+          setTotal(0);
+          setTotalPages(1);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, filters, sortKey, sortDirection]);
+
+  const programs = useMemo(() => {
+    const names = new Set<string>();
+    for (const list of Object.values(academicOptions.programsByUniversity)) {
+      for (const name of list) names.add(name);
+    }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [academicOptions]);
+
+  const exportRows = useMemo(() => studentsToExportRows(students), [students]);
+
+  const exportFilename = useMemo(() => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    return `students-page-${page}-${stamp}`;
+  }, [page]);
 
   function updateFilters(patch: Partial<StudentFilterState>) {
     setFilters((current) => ({ ...current, ...patch }));
+  }
+
+  function handleSort(key: StudentSortKey) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDirection("asc");
+    } else if (sortDirection === "asc") {
+      setSortDirection("desc");
+    } else {
+      setSortKey("name");
+      setSortDirection("asc");
+    }
   }
 
   function openStudent(id: string) {
@@ -276,19 +310,19 @@ export function StudentsList({
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryStat
           label="Total enrolled"
-          value={students.length}
+          value={summary.totalEnrolled}
           icon={Users}
           tone="primary"
         />
         <SummaryStat
           label="Active"
-          value={activeCount}
+          value={summary.active}
           icon={GraduationCap}
           tone="success"
         />
         <SummaryStat
           label="Profile incomplete"
-          value={profileIncompleteCount}
+          value={summary.incompleteProfile}
           icon={UserX}
           tone="warning"
           onClick={() => updateFilters({ incompleteProfile: !filters.incompleteProfile })}
@@ -300,7 +334,7 @@ export function StudentsList({
         <CardHeader className="border-b border-border/60 bg-muted/20">
           <CardTitle>Directory</CardTitle>
           <CardDescription>
-            {filtered.length} student{filtered.length === 1 ? "" : "s"}
+            {total} student{total === 1 ? "" : "s"}
             {hasActiveFilters ? " match your filters" : " in the roster"}.
           </CardDescription>
         </CardHeader>
@@ -313,9 +347,9 @@ export function StudentsList({
               <SearchField
                 id="student-search"
                 label="Search"
-                value={filters.q}
+                value={searchInput}
                 placeholder="Name or student ID"
-                onChange={(q) => updateFilters({ q })}
+                onChange={setSearchInput}
               />
 
               <div className="space-y-1 lg:w-52">
@@ -383,12 +417,12 @@ export function StudentsList({
             </div>
           </div>
 
-          {paginatedStudents.length === 0 ? (
+          {!loading && students.length === 0 ? (
             <EmptyState title="No students match your filters" />
           ) : (
             <>
-              <div className="space-y-2 md:hidden">
-                {paginatedStudents.map((student) => (
+              <div className={"space-y-2 md:hidden" + (loading ? " opacity-60" : "")}>
+                {students.map((student) => (
                   <button
                     key={student.id}
                     type="button"
@@ -422,7 +456,12 @@ export function StudentsList({
                 ))}
               </div>
 
-              <div className="hidden overflow-hidden rounded-xl border border-border/70 md:block">
+              <div
+                className={
+                  "hidden overflow-hidden rounded-xl border border-border/70 md:block" +
+                  (loading ? " opacity-60" : "")
+                }
+              >
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -431,40 +470,40 @@ export function StudentsList({
                         sortKey="name"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Student ID"
                         sortKey="studentId"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="University"
                         sortKey="university"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Program"
                         sortKey="program"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                       <SortableTableHead
                         label="Status"
                         sortKey="status"
                         activeKey={sortKey}
                         direction={sortDirection}
-                        onSort={onSort}
+                        onSort={handleSort}
                       />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedStudents.map((student) => (
+                    {students.map((student) => (
                       <TableRow
                         key={student.id}
                         className="cursor-pointer transition-colors hover:bg-muted/40"
@@ -488,7 +527,7 @@ export function StudentsList({
               </div>
 
               <ClientPagination
-                currentPage={currentPage}
+                currentPage={page}
                 totalPages={totalPages}
                 onPageChange={setPage}
               />

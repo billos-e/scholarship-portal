@@ -46,8 +46,40 @@ export type UniversityDetail = Omit<UniversityListItem, "semesters"> & {
   assignedDegreePrograms: string[];
 };
 
-export async function fetchUniversities(): Promise<UniversityListItem[]> {
-  const res = await fetch(`${apiBase}/api/universities`);
+export type UniversityListParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  sortKey?: string;
+  sortDir?: "asc" | "desc";
+};
+
+export type UniversityListResult = {
+  items: UniversityListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  summary: {
+    total: number;
+    active: number;
+  };
+};
+
+export async function fetchUniversities(
+  params: UniversityListParams = {},
+): Promise<UniversityListResult> {
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", String(params.page));
+  if (params.limit) search.set("limit", String(params.limit));
+  if (params.search) search.set("search", params.search);
+  if (params.status) search.set("status", params.status);
+  if (params.sortKey) search.set("sortKey", params.sortKey);
+  if (params.sortDir) search.set("sortDir", params.sortDir);
+
+  const qs = search.toString();
+  const res = await fetch(`${apiBase}/api/universities${qs ? `?${qs}` : ""}`);
   if (!res.ok) throw new Error("Failed to fetch universities");
   return res.json();
 }

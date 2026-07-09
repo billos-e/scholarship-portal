@@ -10,13 +10,12 @@ import {
   type ActiveUniversity,
 } from "@/lib/api/universities";
 import { fetchAcademicOptions } from "@/lib/api/academic";
-import { fetchStudents, type StudentRecord } from "@/lib/api/students";
 import type { StudentAcademicOptions } from "@/lib/student-academic-options";
 
 export default function AdminStudentsPage() {
   requireAdmin();
 
-  const [students, setStudents] = useState<StudentRecord[] | null>(null);
+  const [ready, setReady] = useState(false);
   const [universities, setUniversities] = useState<ActiveUniversity[]>([]);
   const [academicOptions, setAcademicOptions] =
     useState<StudentAcademicOptions>({
@@ -25,20 +24,16 @@ export default function AdminStudentsPage() {
     });
 
   useEffect(() => {
-    Promise.all([
-      fetchStudents(),
-      fetchActiveUniversities(),
-      fetchAcademicOptions(),
-    ])
-      .then(([loadedStudents, loadedUniversities, options]) => {
-        setStudents(loadedStudents);
+    Promise.all([fetchActiveUniversities(), fetchAcademicOptions()])
+      .then(([loadedUniversities, options]) => {
         setUniversities(loadedUniversities);
         setAcademicOptions(options);
+        setReady(true);
       })
-      .catch(() => setStudents([]));
+      .catch(() => setReady(true));
   }, []);
 
-  if (students === null) {
+  if (!ready) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-16 w-full rounded-2xl" />
@@ -48,29 +43,6 @@ export default function AdminStudentsPage() {
   }
 
   return (
-    <StudentsList
-      students={students.map((student) => ({
-        id: student.id,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        email: student.user.email,
-        phone: student.phone,
-        studentId: student.studentId,
-        memberSince: student.createdAt.toISOString(),
-        universityId: student.universityId,
-        universityName: student.university?.name ?? null,
-        degreeProgram: student.degreeProgram,
-        yearOfStudy: student.yearOfStudy,
-        currentSemesterLabel: student.currentSemesterLabel,
-        gpa: student.gpa?.toString() ?? null,
-        status: student.status,
-        bankAccountName: student.bankInformation?.bankAccountName ?? null,
-        bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,
-        bankName: student.bankInformation?.bankName ?? null,
-        promptpayNumber: student.bankInformation?.promptpayNumber ?? null,
-      }))}
-      universities={universities}
-      academicOptions={academicOptions}
-    />
+    <StudentsList universities={universities} academicOptions={academicOptions} />
   );
 }
