@@ -12,7 +12,18 @@ const apiBase = import.meta.env.BASE_URL
 export type RequestActionState = {
   error?: string;
   success?: boolean;
+  nextStatus?: RequestStatusValue;
+  paymentDate?: string;
+  adminNotes?: string | null;
+  internalNotes?: string | null;
 };
+
+type RequestStatusValue =
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "APPROVED"
+  | "PAID"
+  | "REJECTED";
 
 async function apiFetch(
   path: string,
@@ -71,7 +82,11 @@ export async function transitionRequestStatus(
   if (!result.ok) return { error: result.error };
 
   pathsToRevalidate(parsed.data.requestId);
-  return { success: true };
+  return {
+    success: true,
+    nextStatus: parsed.data.nextStatus,
+    paymentDate: parsed.data.paymentDate,
+  };
 }
 
 const notesSchema = z.object({
@@ -99,7 +114,7 @@ export async function updateRequestAdminNotes(
   if (!result.ok) return { error: result.error };
 
   pathsToRevalidate(parsed.data.requestId);
-  return { success: true };
+  return { success: true, adminNotes: parsed.data.adminNotes ?? null };
 }
 
 const paymentNotesSchema = z.object({
@@ -127,5 +142,5 @@ export async function updatePaymentInternalNotes(
   if (!result.ok) return { error: result.error };
 
   pathsToRevalidate(parsed.data.requestId);
-  return { success: true };
+  return { success: true, internalNotes: parsed.data.internalNotes ?? null };
 }

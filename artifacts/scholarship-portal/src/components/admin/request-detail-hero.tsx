@@ -30,7 +30,7 @@ type RequestDetailHeroProps = {
   requestId: string;
   amountDueRaw: string;
   paidAt: Date | null;
-  onSuccess?: () => void;
+  onSuccess?: (patch: { status: RequestStatus; paidAt?: Date | null }) => void;
 };
 
 export function RequestDetailHero({

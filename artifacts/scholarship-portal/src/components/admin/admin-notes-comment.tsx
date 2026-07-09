@@ -26,7 +26,7 @@ type AdminNotesCommentProps = {
   requestId: string;
   value: string;
   className?: string;
-  onSuccess?: () => void;
+  onSuccess?: (adminNotes: string | null) => void;
 };
 
 export function AdminNotesComment({
@@ -45,7 +45,7 @@ export function AdminNotesComment({
     if (state.success) {
       toast.success("Notes saved.");
       setEditing(false);
-      onSuccess?.();
+      onSuccess?.(state.adminNotes ?? null);
     }
     if (state.error) toast.error(state.error);
   }, [state]);

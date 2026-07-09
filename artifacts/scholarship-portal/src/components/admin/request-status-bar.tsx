@@ -172,7 +172,7 @@ type RequestStatusBarProps = {
   status: RequestStatus;
   amountDue: string;
   paidAt: Date | null;
-  onSuccess?: () => void;
+  onSuccess?: (patch: { status: RequestStatus; paidAt?: Date | null }) => void;
 };
 
 export function RequestStatusBar({
@@ -189,10 +189,18 @@ export function RequestStatusBar({
   const [showPaidForm, setShowPaidForm] = useState(false);
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && state.nextStatus) {
       toast.success("Status updated.");
       setShowPaidForm(false);
-      onSuccess?.();
+      const patch: { status: RequestStatus; paidAt?: Date | null } = {
+        status: state.nextStatus,
+      };
+      if (state.nextStatus === "PAID") {
+        patch.paidAt = state.paymentDate
+          ? new Date(`${state.paymentDate}T00:00:00.000Z`)
+          : new Date();
+      }
+      onSuccess?.(patch);
     }
     if (state.error) toast.error(state.error);
   }, [state]);

@@ -41,7 +41,7 @@ export function PaymentNotesForm({
 }: {
   requestId: string;
   value: string;
-  onSuccess?: () => void;
+  onSuccess?: (internalNotes: string | null) => void;
 }) {
   const [state, formAction] = useActionState<RequestActionState, FormData>(
     updatePaymentInternalNotes,
@@ -51,7 +51,7 @@ export function PaymentNotesForm({
   useEffect(() => {
     if (state.success) {
       toast.success("Payment notes saved.");
-      onSuccess?.();
+      onSuccess?.(state.internalNotes ?? null);
     }
     if (state.error) toast.error(state.error);
   }, [state]);

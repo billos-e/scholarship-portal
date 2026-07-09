@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   BookOpen,
@@ -45,14 +45,11 @@ export default function AdminRequestDetailPage() {
   const [request, setRequest] = useState<RequestDetail | null | undefined>(
     undefined,
   );
-  const [refreshKey, setRefreshKey] = useState(0);
-  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
-
   useEffect(() => {
     fetchRequest(id)
       .then(setRequest)
       .catch(() => setRequest(null));
-  }, [id, refreshKey]);
+  }, [id]);
 
   if (request === undefined) {
     return (
@@ -93,7 +90,9 @@ export default function AdminRequestDetailPage() {
         requestId={request.id}
         amountDueRaw={request.amountDue.toString()}
         paidAt={request.paidAt}
-        onSuccess={refresh}
+        onSuccess={(patch) =>
+          setRequest((prev) => (prev ? { ...prev, ...patch } : prev))
+        }
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -213,7 +212,9 @@ export default function AdminRequestDetailPage() {
             <AdminNotesComment
               requestId={request.id}
               value={request.adminNotes ?? ""}
-              onSuccess={refresh}
+              onSuccess={(adminNotes) =>
+                setRequest((prev) => (prev ? { ...prev, adminNotes } : prev))
+              }
             />
           </div>
 
@@ -238,7 +239,19 @@ export default function AdminRequestDetailPage() {
                 <PaymentNotesForm
                   requestId={request.id}
                   value={payment.internalNotes ?? ""}
-                  onSuccess={refresh}
+                  onSuccess={(internalNotes) =>
+                    setRequest((prev) =>
+                      prev && prev.paymentHistory
+                        ? {
+                            ...prev,
+                            paymentHistory: {
+                              ...prev.paymentHistory,
+                              internalNotes,
+                            },
+                          }
+                        : prev,
+                    )
+                  }
                 />
               </div>
             </RequestSectionCard>
