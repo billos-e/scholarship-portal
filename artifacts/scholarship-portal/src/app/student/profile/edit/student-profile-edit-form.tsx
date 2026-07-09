@@ -362,7 +362,13 @@ export function StudentProfileEditForm({
             variant="outline"
             size="sm"
             render={<Link href={profileHref} />}
-            onClick={clearDraft}
+            onClick={() => {
+              clearDraft();
+              setUniversityId(student.universityId ?? "");
+              setDegreeProgram(student.degreeProgram ?? "");
+              setSemesterLabel(student.currentSemesterLabel ?? "");
+              setYearOfStudy(student.yearOfStudy ?? "");
+            }}
           >
             Cancel
           </Button>
