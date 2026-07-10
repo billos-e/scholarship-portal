@@ -40,6 +40,35 @@ function toDateInputValue(value: Date | string): string {
   return value.toISOString().slice(0, 10);
 }
 
+function pad(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+function toIsoDate(year: number, month: number, day: number): string {
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+function getDefaultTermDates(
+  termCode: TermCode,
+  academicYear: string,
+): { start: string; end: string } | null {
+  const year = Number(academicYear);
+  if (!Number.isFinite(year) || academicYear.trim().length < 4) return null;
+
+  switch (termCode) {
+    case "FALL":
+      return { start: toIsoDate(year, 9, 1), end: toIsoDate(year, 12, 20) };
+    case "SPRING":
+      return { start: toIsoDate(year, 1, 10), end: toIsoDate(year, 5, 15) };
+    case "SUMMER":
+      return { start: toIsoDate(year, 6, 1), end: toIsoDate(year, 8, 15) };
+    case "WINTER":
+      return { start: toIsoDate(year, 12, 1), end: toIsoDate(year + 1, 2, 15) };
+    default:
+      return null;
+  }
+}
+
 export function SemesterEditDialog({
   universityId,
   semester,
@@ -59,9 +88,34 @@ export function SemesterEditDialog({
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
+  const [academicYear, setAcademicYear] = useState(semester?.academicYear ?? "");
+  const [termCode, setTermCode] = useState<TermCode>(semester?.termCode ?? "FALL");
+  const [startDate, setStartDate] = useState(
+    semester ? toDateInputValue(semester.startDate) : "",
+  );
+  const [endDate, setEndDate] = useState(
+    semester ? toDateInputValue(semester.endDate) : "",
+  );
+  const [datesTouched, setDatesTouched] = useState(isEdit);
+
   useEffect(() => {
-    if (open) setError(undefined);
+    if (open) {
+      setError(undefined);
+      setAcademicYear(semester?.academicYear ?? "");
+      setTermCode(semester?.termCode ?? "FALL");
+      setStartDate(semester ? toDateInputValue(semester.startDate) : "");
+      setEndDate(semester ? toDateInputValue(semester.endDate) : "");
+      setDatesTouched(isEdit);
+    }
   }, [open, semester?.id]);
+
+  useEffect(() => {
+    if (datesTouched) return;
+    const defaults = getDefaultTermDates(termCode, academicYear);
+    if (!defaults) return;
+    setStartDate(defaults.start);
+    setEndDate(defaults.end);
+  }, [termCode, academicYear, datesTouched]);
 
   function onSubmit(formData: FormData) {
     startTransition(async () => {
@@ -106,7 +160,8 @@ export function SemesterEditDialog({
                 type="number"
                 inputMode="numeric"
                 step={1}
-                defaultValue={semester?.academicYear ?? ""}
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
                 placeholder="2026"
                 onKeyDown={(e) => {
                   if (["e", "E", "+", "-", "."].includes(e.key)) e.preventDefault();
@@ -119,7 +174,8 @@ export function SemesterEditDialog({
               <NativeSelect
                 id="semester-termCode"
                 name="termCode"
-                defaultValue={semester?.termCode ?? "FALL"}
+                value={termCode}
+                onChange={(e) => setTermCode(e.target.value as TermCode)}
               >
                 <option value="FALL">Fall</option>
                 <option value="SPRING">Spring</option>
@@ -149,9 +205,11 @@ export function SemesterEditDialog({
                 id="semester-startDate"
                 name="startDate"
                 type="date"
-                defaultValue={
-                  semester ? toDateInputValue(semester.startDate) : undefined
-                }
+                value={startDate}
+                onChange={(e) => {
+                  setDatesTouched(true);
+                  setStartDate(e.target.value);
+                }}
                 required
               />
             </div>
@@ -161,9 +219,11 @@ export function SemesterEditDialog({
                 id="semester-endDate"
                 name="endDate"
                 type="date"
-                defaultValue={
-                  semester ? toDateInputValue(semester.endDate) : undefined
-                }
+                value={endDate}
+                onChange={(e) => {
+                  setDatesTouched(true);
+                  setEndDate(e.target.value);
+                }}
                 required
               />
             </div>
