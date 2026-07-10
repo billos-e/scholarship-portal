@@ -154,7 +154,7 @@ function SummaryStat({
         className={
           "flex min-w-0 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 cursor-pointer active:scale-[0.97] " +
           (active
-            ? "border-border/70 bg-card [box-shadow:inset_0_2px_4px_0_rgb(0_0_0/0.08),inset_0_1px_2px_0_rgb(0_0_0/0.06)] scale-[0.97] translate-y-px"
+            ? "border-warning/40 bg-warning-light [box-shadow:inset_0_2px_4px_0_rgb(0_0_0/0.08),inset_0_1px_2px_0_rgb(0_0_0/0.06)] scale-[0.97] translate-y-px"
             : "border-border/70 bg-card shadow-sm hover:bg-muted/30 hover:border-border")
         }
       >
