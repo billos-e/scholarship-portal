@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { requireStudent } from "@/lib/auth/session";
 import {
   fetchActiveUniversities,
+  fetchUniversity,
   type ActiveUniversity,
 } from "@/lib/api/universities";
 import { fetchAcademicOptions } from "@/lib/api/academic";
@@ -35,9 +36,25 @@ export default function StudentProfileEditPage() {
       fetchActiveUniversities(),
       fetchAcademicOptions(),
     ])
-      .then(([loadedStudent, loadedUniversities, options]) => {
+      .then(async ([loadedStudent, loadedUniversities, options]) => {
+        let universityOptions = loadedUniversities;
+        // If the student's currently assigned university has since been
+        // deactivated, keep it selectable (tagged as inactive) so the edit
+        // form doesn't silently drop the existing assignment.
+        if (
+          loadedStudent?.universityId &&
+          !loadedUniversities.some((u) => u.id === loadedStudent.universityId)
+        ) {
+          const currentUniversity = await fetchUniversity(loadedStudent.universityId);
+          if (currentUniversity) {
+            universityOptions = [
+              ...loadedUniversities,
+              { id: currentUniversity.id, name: `${currentUniversity.name} (inactive)` },
+            ];
+          }
+        }
         setStudent(loadedStudent);
-        setUniversities(loadedUniversities);
+        setUniversities(universityOptions);
         setAcademicOptions(options);
       })
       .catch(() => setStudent(null));
