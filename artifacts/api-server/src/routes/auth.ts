@@ -116,4 +116,68 @@ router.post("/auth/clerk-admin-session", async (req, res) => {
   }
 });
 
+/**
+ * TEMPORARY one-time bootstrap endpoint to seed the first admin in a fresh
+ * environment (e.g. production right after a DB wipe). Guarded by a random
+ * token and only runs if the users table is empty. Remove this route once
+ * the admin has been created.
+ */
+const BOOTSTRAP_TOKEN = "e8f3c1a0-6b2d-4a9e-9f7c-1d4b7a2e5c93";
+
+router.post("/auth/__bootstrap-admin", async (req, res) => {
+  try {
+    const token = req.header("x-bootstrap-token");
+    if (token !== BOOTSTRAP_TOKEN) {
+      res.status(404).json({ error: "Not found." });
+      return;
+    }
+
+    const existingCount = await db.select().from(users).limit(1);
+    if (existingCount.length > 0) {
+      res.status(409).json({ error: "Users table is not empty; refusing to bootstrap." });
+      return;
+    }
+
+    const { email, password } = req.body ?? {};
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
+      res.status(400).json({ error: "Email and password are required." });
+      return;
+    }
+    const emailLower = email.toLowerCase().trim();
+
+    const clerkResp = await fetch("https://api.clerk.com/v1/users", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email_address: [emailLower],
+        password,
+        skip_password_checks: true,
+      }),
+    });
+    const clerkData = await clerkResp.json();
+    if (!clerkResp.ok) {
+      res.status(500).json({ error: "Clerk user creation failed.", detail: clerkData });
+      return;
+    }
+
+    const { randomUUID } = await import("node:crypto");
+    const hash = await bcrypt.hash(password, 10);
+    await db.insert(users).values({
+      id: randomUUID(),
+      email: emailLower,
+      passwordHash: hash,
+      role: "ADMIN",
+      isActive: true,
+    });
+
+    res.json({ ok: true, clerkUserId: clerkData.id });
+  } catch (err) {
+    console.error("Bootstrap admin error", err);
+    res.status(500).json({ error: "Bootstrap failed." });
+  }
+});
+
 export default router;
