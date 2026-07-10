@@ -116,35 +116,70 @@ router.post("/auth/clerk-admin-session", async (req, res) => {
   }
 });
 
+async function getAdminEmailFromClerk(req: express.Request): Promise<string | null> {
+  const auth = getAuth(req);
+  if (!auth.userId) return null;
+
+  const clerkResp = await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
+    headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
+  });
+  if (!clerkResp.ok) return null;
+
+  const clerkUser = (await clerkResp.json()) as {
+    email_addresses: Array<{ email_address: string; id: string }>;
+    primary_email_address_id: string;
+  };
+  const primary = clerkUser.email_addresses.find(
+    (e) => e.id === clerkUser.primary_email_address_id,
+  );
+  return primary?.email_address?.toLowerCase().trim() ?? null;
+}
+
 /**
- * TEMPORARY one-time bootstrap endpoint to seed the first admin in a fresh
- * environment (e.g. production right after a DB wipe). Guarded by a random
- * token and only runs if the users table is empty. Remove this route once
- * the admin has been created.
+ * Admin-only endpoint to create a new admin account.
+ * Caller must be authenticated with Clerk and have the ADMIN role in the DB.
+ * Creates a Clerk user + local DB row with a generated password.
  */
-const BOOTSTRAP_TOKEN = "e8f3c1a0-6b2d-4a9e-9f7c-1d4b7a2e5c93";
-
-router.post("/auth/__bootstrap-admin", async (req, res) => {
+router.post("/auth/create-admin", async (req, res) => {
   try {
-    const token = req.header("x-bootstrap-token");
-    if (token !== BOOTSTRAP_TOKEN) {
-      res.status(404).json({ error: "Not found." });
+    const callerEmail = await getAdminEmailFromClerk(req);
+    if (!callerEmail) {
+      res.status(401).json({ error: "Not authenticated." });
       return;
     }
 
-    const existingCount = await db.select().from(users).limit(1);
-    if (existingCount.length > 0) {
-      res.status(409).json({ error: "Users table is not empty; refusing to bootstrap." });
+    const callerRows = await db.select().from(users).where(eq(users.email, callerEmail)).limit(1);
+    const caller = callerRows[0];
+    if (!caller || !caller.isActive || caller.role !== "ADMIN") {
+      res.status(403).json({ error: "Admin access required." });
       return;
     }
 
-    const { email, password } = req.body ?? {};
-    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
-      res.status(400).json({ error: "Email and password are required." });
+    const { email } = req.body ?? {};
+    if (!email || typeof email !== "string") {
+      res.status(400).json({ error: "Email is required." });
       return;
     }
     const emailLower = email.toLowerCase().trim();
 
+    // Validate email format loosely
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
+      res.status(400).json({ error: "Invalid email address." });
+      return;
+    }
+
+    // Prevent duplicate
+    const existing = await db.select().from(users).where(eq(users.email, emailLower)).limit(1);
+    if (existing.length > 0) {
+      res.status(409).json({ error: "An account with this email already exists." });
+      return;
+    }
+
+    // Generate a secure temporary password
+    const { randomBytes } = await import("node:crypto");
+    const tempPassword = randomBytes(9).toString("base64").replace(/[+/=]/g, "x") + "!A1";
+
+    // Create Clerk user
     const clerkResp = await fetch("https://api.clerk.com/v1/users", {
       method: "POST",
       headers: {
@@ -153,7 +188,7 @@ router.post("/auth/__bootstrap-admin", async (req, res) => {
       },
       body: JSON.stringify({
         email_address: [emailLower],
-        password,
+        password: tempPassword,
         skip_password_checks: true,
       }),
     });
@@ -163,8 +198,9 @@ router.post("/auth/__bootstrap-admin", async (req, res) => {
       return;
     }
 
+    // Create local DB row
     const { randomUUID } = await import("node:crypto");
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(tempPassword, 10);
     await db.insert(users).values({
       id: randomUUID(),
       email: emailLower,
@@ -173,10 +209,10 @@ router.post("/auth/__bootstrap-admin", async (req, res) => {
       isActive: true,
     });
 
-    res.json({ ok: true, clerkUserId: clerkData.id });
+    res.json({ ok: true, email: emailLower, generatedPassword: tempPassword });
   } catch (err) {
-    console.error("Bootstrap admin error", err);
-    res.status(500).json({ error: "Bootstrap failed." });
+    console.error("Create admin error", err);
+    res.status(500).json({ error: "Could not create admin account." });
   }
 });
 
