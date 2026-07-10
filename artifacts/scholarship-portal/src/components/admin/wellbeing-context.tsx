@@ -127,7 +127,6 @@ export function WellbeingGrid({ items }: { items: WellbeingItem[] }) {
               <p className="text-sm font-medium leading-snug text-foreground">
                 {item.label}
               </p>
-              <p className="text-xs text-muted-foreground">Scale 1 – 5</p>
             </div>
           </div>
         );
