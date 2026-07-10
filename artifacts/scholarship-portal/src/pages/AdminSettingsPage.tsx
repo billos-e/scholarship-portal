@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SignIn, useUser } from "@clerk/react";
+import { UserProfile, SignIn, useUser } from "@clerk/react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { clerkLightAppearance } from "@/lib/clerk-appearance";
 import { apiCreateAdmin, apiListAdmins, type AdminListItem } from "@/lib/auth/api";
@@ -138,6 +138,35 @@ function AddAdminModal({
   );
 }
 
+function AdminAccountModal({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const adminEmail = getCurrentUser()?.email ?? "";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Account Settings</DialogTitle>
+          <DialogDescription>Manage your email address and password.</DialogDescription>
+        </DialogHeader>
+        <UserProfile routing="hash" appearance={clerkLightAppearance} />
+        {!adminEmail && (
+          <SignIn
+            routing="hash"
+            signUpUrl={undefined}
+            appearance={clerkLightAppearance}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminSettingsPage() {
   const { isSignedIn, isLoaded } = useUser();
   const adminEmail = getCurrentUser()?.email?.toLowerCase().trim() ?? "";
@@ -146,6 +175,7 @@ export default function AdminSettingsPage() {
   const [loadingAdmins, setLoadingAdmins] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   async function loadAdmins() {
     setLoadingAdmins(true);
@@ -226,7 +256,13 @@ export default function AdminSettingsPage() {
                 admins.map((admin) => {
                   const isSelf = admin.email.toLowerCase().trim() === adminEmail;
                   return (
-                    <TableRow key={admin.id}>
+                    <TableRow
+                      key={admin.id}
+                      className={isSelf ? "cursor-pointer" : "cursor-default"}
+                      onClick={() => {
+                        if (isSelf) setAccountOpen(true);
+                      }}
+                    >
                       <TableCell>
                         <Avatar>
                           <AvatarImage src={admin.imageUrl ?? undefined} alt={admin.email} />
@@ -260,6 +296,7 @@ export default function AdminSettingsPage() {
           loadAdmins();
         }}
       />
+      <AdminAccountModal open={accountOpen} onOpenChange={setAccountOpen} />
     </div>
   );
 }
