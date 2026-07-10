@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CountryCombobox } from "@/components/country-combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -118,15 +119,20 @@ export function UniversityDialog({
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" name="city" placeholder="Bangkok" />
+                  <Input
+                    id="city"
+                    name="city"
+                    placeholder="Bangkok"
+                    autoComplete="address-level2"
+                  />
                 </div>
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="country">Country</Label>
-                  <Input id="country" name="country" placeholder="Thailand" />
+                  <CountryCombobox id="country" name="country" placeholder="Thailand" />
                 </div>
                 <div className="min-w-0 space-y-2 sm:col-span-2">
                   <Label htmlFor="addressLine">Address</Label>
-                  <Input id="addressLine" name="addressLine" />
+                  <Input id="addressLine" name="addressLine" autoComplete="street-address" />
                 </div>
                 <div className="min-w-0 space-y-2 sm:col-span-2">
                   <Label htmlFor="websiteUrl">Website URL</Label>

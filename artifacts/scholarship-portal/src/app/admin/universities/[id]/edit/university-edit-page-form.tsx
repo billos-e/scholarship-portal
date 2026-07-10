@@ -8,6 +8,7 @@ import { BadgeCheck, Sun } from "lucide-react";
 import { toast } from "sonner";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
+import { CountryCombobox } from "@/components/country-combobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -158,6 +159,7 @@ export function UniversityEditPageForm({
                     name="addressLine"
                     defaultValue={university.addressLine ?? ""}
                     placeholder="254 Phayathai Road, Pathumwan"
+                    autoComplete="street-address"
                   />
                 </div>
                 <div className="space-y-2">
@@ -167,11 +169,12 @@ export function UniversityEditPageForm({
                     name="city"
                     defaultValue={university.city ?? ""}
                     placeholder="Bangkok"
+                    autoComplete="address-level2"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="country">Country</Label>
-                  <Input
+                  <CountryCombobox
                     id="country"
                     name="country"
                     defaultValue={university.country ?? ""}
