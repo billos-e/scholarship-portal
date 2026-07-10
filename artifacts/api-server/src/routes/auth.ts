@@ -156,41 +156,45 @@ router.get("/auth/admins", async (req, res) => {
       return;
     }
 
-    const admins = await db.select().from(users).where(eq(users.role, "ADMIN"));
+    const dbAdmins = await db.select().from(users).where(eq(users.role, "ADMIN"));
+    const dbAdminByEmail = new Map(dbAdmins.map((a) => [a.email.toLowerCase().trim(), a]));
 
-    let clerkByEmail = new Map<string, { imageUrl?: string }>();
-    if (admins.length > 0) {
-      const params = new URLSearchParams();
-      for (const admin of admins) {
-        params.append("email_address", admin.email);
-      }
+    // Source of truth for "does this admin still exist" is Clerk itself — a
+    // user deleted in Clerk must disappear here even if a stale row remains
+    // in our local DB. Page through every Clerk user and keep only the ones
+    // whose email matches a local ADMIN record.
+    const clerkUsers: Array<{
+      id: string;
+      image_url?: string;
+      email_addresses: Array<{ email_address: string }>;
+    }> = [];
+    const pageSize = 100;
+    for (let offset = 0; offset < 2000; offset += pageSize) {
       const clerkResp = await fetch(
-        `https://api.clerk.com/v1/users?${params.toString()}&limit=${admins.length}`,
+        `https://api.clerk.com/v1/users?limit=${pageSize}&offset=${offset}`,
         {
           headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
         },
       );
-      if (clerkResp.ok) {
-        const clerkUsers = (await clerkResp.json()) as Array<{
-          image_url?: string;
-          email_addresses: Array<{ email_address: string }>;
-        }>;
-        clerkByEmail = new Map(
-          clerkUsers.map((u) => [
-            u.email_addresses[0]?.email_address?.toLowerCase().trim() ?? "",
-            { imageUrl: u.image_url },
-          ]),
-        );
-      }
+      if (!clerkResp.ok) break;
+      const page = (await clerkResp.json()) as typeof clerkUsers;
+      clerkUsers.push(...page);
+      if (page.length < pageSize) break;
     }
 
-    const result = admins
-      .map((admin) => ({
-        id: admin.id,
-        email: admin.email,
-        imageUrl: clerkByEmail.get(admin.email)?.imageUrl ?? null,
-        lastLoginAt: admin.lastLoginAt ? admin.lastLoginAt.toISOString() : null,
-      }))
+    const result = clerkUsers
+      .map((cu) => {
+        const email = cu.email_addresses[0]?.email_address?.toLowerCase().trim() ?? "";
+        const dbAdmin = dbAdminByEmail.get(email);
+        if (!dbAdmin || !dbAdmin.isActive) return null;
+        return {
+          id: cu.id,
+          email,
+          imageUrl: cu.image_url ?? null,
+          lastLoginAt: dbAdmin.lastLoginAt ? dbAdmin.lastLoginAt.toISOString() : null,
+        };
+      })
+      .filter((a): a is NonNullable<typeof a> => a !== null)
       .sort((a, b) => a.email.localeCompare(b.email));
 
     res.json({ admins: result });

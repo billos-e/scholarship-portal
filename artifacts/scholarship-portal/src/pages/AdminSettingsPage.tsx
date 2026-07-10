@@ -237,45 +237,53 @@ export default function AdminSettingsPage() {
         ) : loadError ? (
           <div className="p-6 text-sm text-destructive">{loadError}</div>
         ) : (
-          <Table>
+          <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Profile</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Last login</TableHead>
+                <TableHead className="w-16">Profile</TableHead>
+                <TableHead className="w-auto">Email</TableHead>
+                <TableHead className="w-48 text-right">Last login</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {admins.map((admin) => {
-                const isSelf = admin.email.toLowerCase().trim() === adminEmail;
-                return (
-                  <TableRow
-                    key={admin.id}
-                    className={isSelf ? "cursor-pointer" : "cursor-default"}
-                    onClick={() => {
-                      if (isSelf) setAccountOpen(true);
-                    }}
-                  >
-                    <TableCell>
-                      <Avatar>
-                        <AvatarImage src={admin.imageUrl ?? undefined} alt={admin.email} />
-                        <AvatarFallback>{getInitials(admin.email.split("@")[0])}</AvatarFallback>
-                      </Avatar>
-                    </TableCell>
-                    <TableCell className="font-medium text-foreground">
-                      {admin.email}
-                      {isSelf && (
-                        <span className="ml-2 text-xs font-normal text-muted-foreground">
-                          (you)
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatLastLogin(admin.lastLoginAt)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {admins.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                    No admin accounts found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                admins.map((admin) => {
+                  const isSelf = admin.email.toLowerCase().trim() === adminEmail;
+                  return (
+                    <TableRow
+                      key={admin.id}
+                      className={isSelf ? "cursor-pointer" : "cursor-default"}
+                      onClick={() => {
+                        if (isSelf) setAccountOpen(true);
+                      }}
+                    >
+                      <TableCell>
+                        <Avatar>
+                          <AvatarImage src={admin.imageUrl ?? undefined} alt={admin.email} />
+                          <AvatarFallback>{getInitials(admin.email.split("@")[0])}</AvatarFallback>
+                        </Avatar>
+                      </TableCell>
+                      <TableCell className="truncate font-medium text-foreground">
+                        {admin.email}
+                        {isSelf && (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            (you)
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {formatLastLogin(admin.lastLoginAt)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         )}
