@@ -126,7 +126,7 @@ export default function StudentDetailPage() {
         ]}
       />
 
-      {missingFields.length > 0 && (
+      {missingFields.length > 0 && student.status === "ACTIVE" && (
         <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
           <div className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
