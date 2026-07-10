@@ -77,3 +77,26 @@ export async function apiCreateAdmin(
   }
   return body as { email: string; generatedPassword: string };
 }
+
+export type AdminListItem = {
+  id: string;
+  email: string;
+  imageUrl: string | null;
+  lastLoginAt: string | null;
+};
+
+/**
+ * Lists all admin accounts. Caller must already be signed in as an admin
+ * via Clerk (session cookie is sent with the request).
+ */
+export async function apiListAdmins(): Promise<AdminListItem[]> {
+  const res = await fetch(`${base}/api/auth/admins`, {
+    method: "GET",
+    credentials: "include",
+  });
+  const body = await res.json().catch(() => ({ error: "Request failed." }));
+  if (!res.ok) {
+    throw new Error(body.error ?? "Could not load admin accounts.");
+  }
+  return (body as { admins: AdminListItem[] }).admins;
+}

@@ -109,6 +109,8 @@ router.post("/auth/clerk-admin-session", async (req, res) => {
       return;
     }
 
+    await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+
     res.json({ id: user.id, email: user.email, role: user.role });
   } catch (err) {
     console.error("Clerk admin session error", err);
@@ -134,6 +136,69 @@ async function getAdminEmailFromClerk(req: Request): Promise<string | null> {
   );
   return primary?.email_address?.toLowerCase().trim() ?? null;
 }
+
+/**
+ * Admin-only endpoint to list all admin accounts, enriched with their Clerk
+ * profile picture. Requires the caller to be an authenticated ADMIN.
+ */
+router.get("/auth/admins", async (req, res) => {
+  try {
+    const callerEmail = await getAdminEmailFromClerk(req);
+    if (!callerEmail) {
+      res.status(401).json({ error: "Not authenticated." });
+      return;
+    }
+
+    const callerRows = await db.select().from(users).where(eq(users.email, callerEmail)).limit(1);
+    const caller = callerRows[0];
+    if (!caller || !caller.isActive || caller.role !== "ADMIN") {
+      res.status(403).json({ error: "Admin access required." });
+      return;
+    }
+
+    const admins = await db.select().from(users).where(eq(users.role, "ADMIN"));
+
+    let clerkByEmail = new Map<string, { imageUrl?: string }>();
+    if (admins.length > 0) {
+      const params = new URLSearchParams();
+      for (const admin of admins) {
+        params.append("email_address", admin.email);
+      }
+      const clerkResp = await fetch(
+        `https://api.clerk.com/v1/users?${params.toString()}&limit=${admins.length}`,
+        {
+          headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
+        },
+      );
+      if (clerkResp.ok) {
+        const clerkUsers = (await clerkResp.json()) as Array<{
+          image_url?: string;
+          email_addresses: Array<{ email_address: string }>;
+        }>;
+        clerkByEmail = new Map(
+          clerkUsers.map((u) => [
+            u.email_addresses[0]?.email_address?.toLowerCase().trim() ?? "",
+            { imageUrl: u.image_url },
+          ]),
+        );
+      }
+    }
+
+    const result = admins
+      .map((admin) => ({
+        id: admin.id,
+        email: admin.email,
+        imageUrl: clerkByEmail.get(admin.email)?.imageUrl ?? null,
+        lastLoginAt: admin.lastLoginAt ? admin.lastLoginAt.toISOString() : null,
+      }))
+      .sort((a, b) => a.email.localeCompare(b.email));
+
+    res.json({ admins: result });
+  } catch (err) {
+    console.error("List admins error", err);
+    res.status(500).json({ error: "Could not load admin accounts." });
+  }
+});
 
 /**
  * Admin-only endpoint to create a new admin account.
