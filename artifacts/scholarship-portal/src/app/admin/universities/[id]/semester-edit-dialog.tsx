@@ -48,6 +48,18 @@ function toIsoDate(year: number, month: number, day: number): string {
   return `${year}-${pad(month)}-${pad(day)}`;
 }
 
+const TERM_LABELS: Record<TermCode, string> = {
+  FALL: "Fall",
+  SPRING: "Spring",
+  SUMMER: "Summer",
+  WINTER: "Winter",
+};
+
+function getDefaultLabel(termCode: TermCode, academicYear: string): string | null {
+  if (!academicYear.trim()) return null;
+  return `${TERM_LABELS[termCode]} ${academicYear.trim()}`;
+}
+
 function getDefaultTermDates(
   termCode: TermCode,
   academicYear: string,
@@ -97,6 +109,8 @@ export function SemesterEditDialog({
     semester ? toDateInputValue(semester.endDate) : "",
   );
   const [datesTouched, setDatesTouched] = useState(isEdit);
+  const [label, setLabel] = useState(semester?.label ?? "");
+  const [labelTouched, setLabelTouched] = useState(isEdit);
 
   useEffect(() => {
     if (open) {
@@ -106,6 +120,8 @@ export function SemesterEditDialog({
       setStartDate(semester ? toDateInputValue(semester.startDate) : "");
       setEndDate(semester ? toDateInputValue(semester.endDate) : "");
       setDatesTouched(isEdit);
+      setLabel(semester?.label ?? "");
+      setLabelTouched(isEdit);
     }
   }, [open, semester?.id]);
 
@@ -116,6 +132,13 @@ export function SemesterEditDialog({
     setStartDate(defaults.start);
     setEndDate(defaults.end);
   }, [termCode, academicYear, datesTouched]);
+
+  useEffect(() => {
+    if (labelTouched) return;
+    const defaultLabel = getDefaultLabel(termCode, academicYear);
+    if (!defaultLabel) return;
+    setLabel(defaultLabel);
+  }, [termCode, academicYear, labelTouched]);
 
   function onSubmit(formData: FormData) {
     startTransition(async () => {
@@ -192,7 +215,11 @@ export function SemesterEditDialog({
             <Input
               id="semester-label"
               name="label"
-              defaultValue={semester?.label ?? ""}
+              value={label}
+              onChange={(e) => {
+                setLabelTouched(true);
+                setLabel(e.target.value);
+              }}
               placeholder="Fall 2026"
               required
             />
