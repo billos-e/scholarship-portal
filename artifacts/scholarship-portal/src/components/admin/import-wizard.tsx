@@ -603,23 +603,15 @@ export function ImportWizard() {
                   : "Column mapping"}
                 <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
               </summary>
-              <div className="space-y-4 px-4 pb-5 pt-3">
-                <ColumnMappingList
-                  fields={fields}
+              <div className="space-y-5 px-4 pb-5 pt-3">
+                <MappingProgressHeader fields={fields} mapping={mapping} />
+                <MappingSpreadsheetTable
                   headers={headers}
+                  fields={fields}
                   mapping={mapping}
                   onChange={handleMappingChange}
+                  sampleRows={sampleRows}
                   disabled={pending}
-                />
-                <MappedPreviewTable
-                  title={
-                    entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet)
-                      ? "University data preview"
-                      : "Data preview"
-                  }
-                  fields={fields}
-                  mapping={mapping}
-                  rows={sampleRows}
                 />
               </div>
             </details>
@@ -635,19 +627,15 @@ export function ImportWizard() {
                   </span>
                   <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
                 </summary>
-                <div className="space-y-4 px-4 pb-5 pt-3">
-                  <ColumnMappingList
-                    fields={semesterFields}
+                <div className="space-y-5 px-4 pb-5 pt-3">
+                  <MappingProgressHeader fields={semesterFields} mapping={semesterMapping} />
+                  <MappingSpreadsheetTable
                     headers={semesterHeaders}
+                    fields={semesterFields}
                     mapping={semesterMapping}
                     onChange={handleSemesterMappingChange}
+                    sampleRows={semesterSampleRows}
                     disabled={pending}
-                  />
-                  <MappedPreviewTable
-                    title="Semester data preview"
-                    fields={semesterFields}
-                    mapping={semesterMapping}
-                    rows={semesterSampleRows}
                   />
                 </div>
               </details>
@@ -664,19 +652,15 @@ export function ImportWizard() {
                   </span>
                   <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
                 </summary>
-                <div className="space-y-4 px-4 pb-5 pt-3">
-                  <ColumnMappingList
-                    fields={degreeProgramFields}
+                <div className="space-y-5 px-4 pb-5 pt-3">
+                  <MappingProgressHeader fields={degreeProgramFields} mapping={degreeProgramMapping} />
+                  <MappingSpreadsheetTable
                     headers={degreeProgramHeaders}
+                    fields={degreeProgramFields}
                     mapping={degreeProgramMapping}
                     onChange={handleDegreeProgramMappingChange}
+                    sampleRows={degreeProgramSampleRows}
                     disabled={pending}
-                  />
-                  <MappedPreviewTable
-                    title="Degree program data preview"
-                    fields={degreeProgramFields}
-                    mapping={degreeProgramMapping}
-                    rows={degreeProgramSampleRows}
                   />
                 </div>
               </details>
@@ -986,132 +970,211 @@ export function ImportWizard() {
   );
 }
 
-function ColumnMappingList({
+function MappingProgressHeader({
   fields,
-  headers,
   mapping,
-  onChange,
-  disabled,
 }: {
   fields: ImportFieldDef[];
-  headers: string[];
   mapping: ColumnMapping;
-  onChange: (fieldKey: string, header: string | null) => void;
-  disabled?: boolean;
 }) {
+  const requiredFields = fields.filter((field) => field.required);
+  const mappedCount = requiredFields.filter((field) =>
+    mapping[field.key]?.trim(),
+  ).length;
+  const total = requiredFields.length;
+  const pct = total > 0 ? mappedCount / total : 1;
+
+  const radius = 22;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - pct);
+  const isComplete = total > 0 && mappedCount === total;
+
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <span>Your spreadsheet columns</span>
-        <span />
-        <span>System fields</span>
+    <div className="flex flex-col gap-4 rounded-xl border border-border/80 bg-muted/20 p-4 shadow-sm sm:flex-row sm:items-center">
+      <div className="flex shrink-0 items-center gap-3">
+        <div className="relative flex size-14 items-center justify-center">
+          <svg viewBox="0 0 56 56" className="size-14 -rotate-90">
+            <circle
+              cx="28"
+              cy="28"
+              r={radius}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="5"
+              className={isComplete ? "text-success-light" : "text-brand-fuchsia-light"}
+            />
+            <circle
+              cx="28"
+              cy="28"
+              r={radius}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              className={cn(
+                "transition-all duration-300",
+                isComplete ? "text-success" : "text-primary",
+              )}
+            />
+          </svg>
+          <span className="absolute text-xs font-semibold tabular-nums">
+            {mappedCount}/{total}
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-semibold">Required fields mapped</p>
+          <p className="text-xs text-muted-foreground">
+            {isComplete
+              ? "All required fields are mapped."
+              : `${total - mappedCount} required field${total - mappedCount === 1 ? "" : "s"} still need${total - mappedCount === 1 ? "s" : ""} a column.`}
+          </p>
+        </div>
       </div>
-      <div className="space-y-2">
-        {fields.map((field) => {
-          const value = mapping[field.key] ?? "__none__";
-          const isMapped = value !== "__none__";
-          return (
-            <div
-              key={field.key}
-              className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3"
-            >
-              <Select
-                value={value}
-                onValueChange={(v) => onChange(field.key, v)}
-                disabled={disabled}
+
+      {requiredFields.length > 0 ? (
+        <div className="flex flex-wrap gap-2 sm:border-l sm:border-border sm:pl-4">
+          {requiredFields.map((field) => {
+            const isMapped = Boolean(mapping[field.key]?.trim());
+            return (
+              <Badge
+                key={field.key}
+                variant={isMapped ? "default" : "outline"}
+                className={cn(
+                  "h-6 gap-1.5 rounded-full px-2.5 text-xs font-medium",
+                  isMapped
+                    ? "border-transparent bg-success-light text-success"
+                    : "border-border bg-background text-muted-foreground",
+                )}
               >
-                <SelectTrigger disabled={disabled} className="w-full">
-                  <SelectValue placeholder="Select column" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">— Not mapped —</SelectItem>
-                  {headers.map((header) => (
-                    <SelectItem key={header} value={header}>
-                      {header}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-              <div className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm">
-                <span className="truncate">
-                  {field.label}
-                  {field.required ? (
-                    <span className="text-destructive"> *</span>
-                  ) : null}
-                </span>
                 {isMapped ? (
-                  <CheckCircle2 className="size-4 shrink-0 text-success" />
-                ) : null}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  <CheckCircle2 className="size-3.5" />
+                ) : (
+                  <span className="size-1.5 rounded-full bg-muted-foreground/50" />
+                )}
+                {field.label}
+              </Badge>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function MappedPreviewTable({
-  title,
+function MappingSpreadsheetTable({
+  headers,
   fields,
   mapping,
-  rows,
+  onChange,
+  sampleRows,
+  disabled,
 }: {
-  title: string;
+  headers: string[];
   fields: ImportFieldDef[];
   mapping: ColumnMapping;
-  rows: Record<string, string>[];
+  onChange: (fieldKey: string, header: string | null) => void;
+  sampleRows: Record<string, string>[];
+  disabled?: boolean;
 }) {
-  const mappedFields = fields.filter((field) => {
-    const header = mapping[field.key];
-    return header && header !== "__none__";
-  });
-
-  if (mappedFields.length === 0 || rows.length === 0) {
+  if (fields.length === 0) {
     return null;
+  }
+
+  function handleSelect(fieldKey: string, header: string) {
+    onChange(fieldKey, header === "__none__" ? null : header);
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {title}
-      </p>
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {mappedFields.map((field) => (
-                <TableHead key={field.key} className="whitespace-nowrap">
-                  {field.label}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row, index) => (
-              <TableRow key={index}>
-                {mappedFields.map((field) => {
-                  const header = mapping[field.key]!;
+      <div className="overflow-x-auto rounded-xl border border-border/80 shadow-sm">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-muted/20">
+              {fields.map((field, index) => {
+                const header = mapping[field.key] ?? "__none__";
+                const isMapped = header !== "__none__";
+                return (
+                  <th
+                    key={field.key}
+                    className="min-w-[190px] border-b border-border/60 px-4 py-3 text-left align-top"
+                  >
+                    <div className="space-y-2">
+                      <span
+                        className={cn(
+                          "flex items-center gap-1 truncate text-sm font-semibold",
+                          index === 0 ? "text-primary" : "text-foreground",
+                        )}
+                        title={field.label}
+                      >
+                        {field.label}
+                        {field.required ? (
+                          <span className="text-destructive">*</span>
+                        ) : null}
+                      </span>
+                      <Select
+                        value={header}
+                        onValueChange={(v: string) => handleSelect(field.key, v)}
+                        disabled={disabled}
+                      >
+                        <SelectTrigger disabled={disabled} className="h-8 w-full text-xs">
+                          <SelectValue placeholder="Map column" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Map column…</SelectItem>
+                          {headers.map((h) => (
+                            <SelectItem key={h} value={h}>
+                              {h}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {isMapped ? (
+                        <span className="inline-flex items-center gap-1 truncate text-[11px] font-medium text-success">
+                          <CheckCircle2 className="size-3 shrink-0" />
+                          {header}
+                        </span>
+                      ) : null}
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {sampleRows.map((row, index) => (
+              <tr
+                key={index}
+                className="border-b border-border/60 transition-colors last:border-b-0 hover:bg-muted/30"
+              >
+                {fields.map((field, colIndex) => {
+                  const header = mapping[field.key];
+                  const value = header ? row[header] : undefined;
                   return (
-                    <TableCell
+                    <td
                       key={field.key}
-                      className="max-w-[220px] truncate whitespace-nowrap"
-                      title={row[header] || undefined}
+                      className={cn(
+                        "max-w-[220px] truncate px-4 py-2.5 text-muted-foreground",
+                        colIndex === 0 && "font-medium text-foreground",
+                      )}
+                      title={value || undefined}
                     >
-                      {row[header] || "—"}
-                    </TableCell>
+                      {value || "—"}
+                    </td>
                   );
                 })}
-              </TableRow>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Showing first {rows.length} row{rows.length === 1 ? "" : "s"} from your
-        file, using matched columns only.
-      </p>
+      {sampleRows.length > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Showing first {sampleRows.length} row{sampleRows.length === 1 ? "" : "s"} from
+          your file.
+        </p>
+      ) : null}
     </div>
   );
 }

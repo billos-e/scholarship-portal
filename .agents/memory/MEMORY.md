@@ -9,3 +9,4 @@
 - [Admin action latency/race](admin-action-latency.md) — write-then-refetch pattern caused slow double round-trips and stale-response races; fixed via mutations echoing back new value, merged directly into state.
 - [Upload URL double-wrap bug](upload-url-double-wrap.md) — uploadPublicUrl() must recognize already-complete /api/storage/ URLs or it double-wraps/mangles them; in-memory cache masked this in the uploading tab only.
 - [Scholarship portal server-side pagination](scholarship-portal-server-pagination.md) — sortKey aliases, `.items` unwrap at all call sites, computed-field sort stays client-side.
+- [Admin login blocks e2e testing](scholarship-portal-admin-clerk-testing.md) — admin login uses real Clerk UI (Google OAuth); testClerkAuth programmatic sign-in doesn't reach it, so admin-only flows can't be e2e tested here.
