@@ -1,3 +1,4 @@
+import { ensureDefaultAdmin } from "@workspace/db";
 import app from "./app";
 import { logger } from "./lib/logger";
 
@@ -13,6 +14,12 @@ const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+try {
+  await ensureDefaultAdmin();
+} catch (err) {
+  logger.error({ err }, "Failed to ensure default admin account exists");
 }
 
 app.listen(port, (err) => {
