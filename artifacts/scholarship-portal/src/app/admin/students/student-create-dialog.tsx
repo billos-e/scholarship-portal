@@ -130,12 +130,14 @@ export function StudentCreateDialog({
                 aria-hidden
               />
               <DialogHeader className="relative text-left">
-                <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Sparkles className="size-5" />
+                <div className="mb-1 flex items-center gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Sparkles className="size-5" />
+                  </div>
+                  <DialogTitle className="font-heading text-xl font-semibold tracking-tight">
+                    Add student
+                  </DialogTitle>
                 </div>
-                <DialogTitle className="font-heading text-xl font-semibold tracking-tight">
-                  Add student
-                </DialogTitle>
                 <DialogDescription className="max-w-sm text-sm leading-relaxed">
                   Create a portal login with email and university. Names and
                   academic details can be filled in now or later.
