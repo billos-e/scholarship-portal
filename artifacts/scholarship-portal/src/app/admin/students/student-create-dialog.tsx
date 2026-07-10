@@ -248,7 +248,7 @@ export function StudentCreateDialog({
                     semester, and GPA can be filled in now or added later from
                     the student profile.
                   </p>
-                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                     <StudentAcademicFields
                       idPrefix="create-extra"
                       universities={universities}
@@ -256,15 +256,15 @@ export function StudentCreateDialog({
                       showUniversity={false}
                       universityId={universityId}
                       onUniversityChange={onUniversityChange}
-                      programClassName="min-w-0 space-y-2 order-1 sm:col-span-2 lg:col-span-4"
-                      yearClassName="min-w-0 space-y-2 order-3 lg:col-span-2"
-                      semesterClassName="min-w-0 space-y-2 order-4 lg:col-span-2"
+                      programClassName="min-w-0 space-y-2 order-1 sm:col-span-2"
+                      yearClassName="min-w-0 space-y-2 order-3"
+                      semesterClassName="min-w-0 space-y-2 order-4"
                     />
-                    <div className="min-w-0 space-y-2 order-2 lg:col-span-2">
+                    <div className="min-w-0 space-y-2 order-2">
                       <Label htmlFor="phone">Phone</Label>
                       <Input id="phone" name="phone" type="tel" />
                     </div>
-                    <div className="min-w-0 space-y-2 order-5 lg:col-span-2">
+                    <div className="min-w-0 space-y-2 order-5">
                       <Label htmlFor="gpa">GPA</Label>
                       <Input
                         id="gpa"
