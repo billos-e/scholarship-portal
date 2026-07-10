@@ -68,12 +68,14 @@ export function UniversityDialog({
             aria-hidden
           />
           <DialogHeader className="relative text-left">
-            <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="size-5" />
+            <div className="mb-1 flex items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Sparkles className="size-5" />
+              </div>
+              <DialogTitle className="font-heading text-xl font-semibold tracking-tight">
+                Add university
+              </DialogTitle>
             </div>
-            <DialogTitle className="font-heading text-xl font-semibold tracking-tight">
-              Add university
-            </DialogTitle>
             <DialogDescription className="max-w-md text-sm leading-relaxed">
               Partner universities used across student profiles. Location and
               website details can be added now or later.
