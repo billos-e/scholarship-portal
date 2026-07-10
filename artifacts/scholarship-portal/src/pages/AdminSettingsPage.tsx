@@ -150,10 +150,6 @@ function AdminAccountModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Account Settings</DialogTitle>
-          <DialogDescription>Manage your email address and password.</DialogDescription>
-        </DialogHeader>
         <UserProfile routing="hash" appearance={clerkLightAppearance} />
         {!adminEmail && (
           <SignIn
