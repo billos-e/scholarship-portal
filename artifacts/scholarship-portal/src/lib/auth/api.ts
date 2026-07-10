@@ -57,3 +57,23 @@ export async function apiClerkAdminSession(): Promise<SessionUser> {
   }
   return (await res.json()) as SessionUser;
 }
+
+/**
+ * Creates a new admin account. Caller must already be signed in as an admin
+ * via Clerk (session cookie is sent with the request).
+ */
+export async function apiCreateAdmin(
+  email: string,
+): Promise<{ email: string; generatedPassword: string }> {
+  const res = await fetch(`${base}/api/auth/create-admin`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const body = await res.json().catch(() => ({ error: "Request failed." }));
+  if (!res.ok) {
+    throw new Error(body.error ?? "Could not create admin account.");
+  }
+  return body as { email: string; generatedPassword: string };
+}

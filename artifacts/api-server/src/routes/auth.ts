@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
@@ -116,7 +116,7 @@ router.post("/auth/clerk-admin-session", async (req, res) => {
   }
 });
 
-async function getAdminEmailFromClerk(req: express.Request): Promise<string | null> {
+async function getAdminEmailFromClerk(req: Request): Promise<string | null> {
   const auth = getAuth(req);
   if (!auth.userId) return null;
 
