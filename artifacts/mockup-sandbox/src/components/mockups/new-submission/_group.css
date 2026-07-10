@@ -1,0 +1,38 @@
+:root {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --background: #f2efe1;
+  --foreground: #2a1522;
+  --card: #ffffff;
+  --card-foreground: #2a1522;
+  --popover: #ffffff;
+  --popover-foreground: #2a1522;
+  --primary: #c0269a;
+  --primary-foreground: #ffffff;
+  --secondary: #fce8f3;
+  --secondary-foreground: #9d174d;
+  --muted: #f5f0e8;
+  --muted-foreground: #8a7080;
+  --accent: #e07a54;
+  --accent-foreground: #ffffff;
+  --destructive: #b3402f;
+  --destructive-foreground: #ffffff;
+  --success: #15803d;
+  --success-light: #dcfce7;
+  --warning: #d9664a;
+  --warning-light: #fdf0e8;
+  --info: #7c3aed;
+  --info-light: #ede9fe;
+  --border: #e8ddd4;
+  --input: #ddd0c6;
+  --ring: #c0269a;
+  --radius: 0.75rem;
+  --brand-orange: #e07a54;
+  --brand-orange-light: #fdf0e8;
+  --brand-fuchsia: #c0269a;
+  --brand-fuchsia-light: #fce8f3;
+}
+
+.font-heading {
+  font-family: var(--font-sans);
+}
