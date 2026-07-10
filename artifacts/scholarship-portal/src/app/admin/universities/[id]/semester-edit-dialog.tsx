@@ -103,8 +103,14 @@ export function SemesterEditDialog({
               <Input
                 id="semester-academicYear"
                 name="academicYear"
+                type="number"
+                inputMode="numeric"
+                step={1}
                 defaultValue={semester?.academicYear ?? ""}
                 placeholder="2026"
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", "."].includes(e.key)) e.preventDefault();
+                }}
                 required
               />
             </div>
