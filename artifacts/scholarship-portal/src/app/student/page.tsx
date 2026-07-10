@@ -159,16 +159,6 @@ export default function StudentDashboard() {
               <User className="size-4" />
               Complete profile
             </Button>
-          ) : eligibility.openRequest ? (
-            <Button
-              variant="outline"
-              className="h-11 gap-2 px-5"
-              render={
-                <Link href={`/student/history/${eligibility.openRequest.id}`} />
-              }
-            >
-              View active request
-            </Button>
           ) : null
         }
       />
