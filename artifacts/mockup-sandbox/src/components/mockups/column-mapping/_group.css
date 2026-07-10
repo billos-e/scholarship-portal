@@ -1,0 +1,69 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap");
+
+:root {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --background: #f2efe1;
+  --foreground: #2a1522;
+  --card: #ffffff;
+  --card-foreground: #2a1522;
+  --popover: #ffffff;
+  --popover-foreground: #2a1522;
+  --primary: #c0269a;
+  --primary-foreground: #ffffff;
+  --secondary: #fce8f3;
+  --secondary-foreground: #9d174d;
+  --muted: #f5f0e8;
+  --muted-foreground: #8a7080;
+  --accent: #e07a54;
+  --accent-foreground: #ffffff;
+  --destructive: #b3402f;
+  --destructive-foreground: #ffffff;
+  --success: #15803d;
+  --success-light: #dcfce7;
+  --warning: #d9664a;
+  --warning-light: #fdf0e8;
+  --info: #7c3aed;
+  --info-light: #ede9fe;
+  --border: #e8ddd4;
+  --input: #ddd0c6;
+  --ring: #c0269a;
+  --radius: 0.75rem;
+  --brand-orange: #e07a54;
+  --brand-orange-light: #fdf0e8;
+  --brand-fuchsia: #c0269a;
+  --brand-fuchsia-light: #fce8f3;
+}
+
+.dark {
+  --background: #1a0f16;
+  --foreground: #f2efe1;
+  --card: #261820;
+  --card-foreground: #f2efe1;
+  --popover: #261820;
+  --popover-foreground: #f2efe1;
+  --primary: #e879c9;
+  --primary-foreground: #1a0f16;
+  --secondary: #3b1a2e;
+  --secondary-foreground: #fce8f3;
+  --muted: #3b1a2e;
+  --muted-foreground: #c4a8b8;
+  --accent: #f0a080;
+  --accent-foreground: #1a0f16;
+  --destructive: #d4674f;
+  --destructive-foreground: #ffffff;
+  --success: #86efac;
+  --success-light: #14532d;
+  --warning: #f0a080;
+  --warning-light: #3a2018;
+  --info: #c4b5fd;
+  --info-light: #2e1065;
+  --border: #ffffff1a;
+  --input: #ffffff26;
+  --ring: #e879c9;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
