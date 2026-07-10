@@ -25,6 +25,7 @@ import type {
   ColumnMapping,
   ImportCommitResult,
   ImportEntity,
+  ImportFieldDef,
   ImportPreviewResult,
   UniversitiesImportPreview,
 } from "@/lib/import/types";
@@ -603,44 +604,21 @@ export function ImportWizard() {
                 <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
               </summary>
               <div className="space-y-4 px-4 pb-5 pt-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {fields.map((field) => (
-                    <div key={field.key} className="space-y-1.5">
-                      <Label>
-                        {field.label}
-                        {field.required ? (
-                          <span className="text-destructive"> *</span>
-                        ) : null}
-                      </Label>
-                      <Select
-                        value={mapping[field.key] ?? "__none__"}
-                        onValueChange={(value) =>
-                          handleMappingChange(field.key, value)
-                        }
-                        disabled={pending}
-                      >
-                        <SelectTrigger disabled={pending}>
-                          <SelectValue placeholder="Select column" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">— Not mapped —</SelectItem>
-                          {headers.map((header) => (
-                            <SelectItem key={header} value={header}>
-                              {header}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
-                </div>
-                <SpreadsheetSampleTable
+                <ColumnMappingList
+                  fields={fields}
+                  headers={headers}
+                  mapping={mapping}
+                  onChange={handleMappingChange}
+                  disabled={pending}
+                />
+                <MappedPreviewTable
                   title={
                     entity === "universities" && (hasSemesterSheet || hasDegreeProgramSheet)
                       ? "University data preview"
                       : "Data preview"
                   }
-                  headers={headers}
+                  fields={fields}
+                  mapping={mapping}
                   rows={sampleRows}
                 />
               </div>
@@ -658,40 +636,17 @@ export function ImportWizard() {
                   <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
                 </summary>
                 <div className="space-y-4 px-4 pb-5 pt-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {semesterFields.map((field) => (
-                      <div key={field.key} className="space-y-1.5">
-                        <Label>
-                          {field.label}
-                          {field.required ? (
-                            <span className="text-destructive"> *</span>
-                          ) : null}
-                        </Label>
-                        <Select
-                          value={semesterMapping[field.key] ?? "__none__"}
-                          onValueChange={(value) =>
-                            handleSemesterMappingChange(field.key, value)
-                          }
-                          disabled={pending}
-                        >
-                          <SelectTrigger disabled={pending}>
-                            <SelectValue placeholder="Select column" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">— Not mapped —</SelectItem>
-                            {semesterHeaders.map((header) => (
-                              <SelectItem key={header} value={header}>
-                                {header}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
-                  <SpreadsheetSampleTable
-                    title="Semester data preview"
+                  <ColumnMappingList
+                    fields={semesterFields}
                     headers={semesterHeaders}
+                    mapping={semesterMapping}
+                    onChange={handleSemesterMappingChange}
+                    disabled={pending}
+                  />
+                  <MappedPreviewTable
+                    title="Semester data preview"
+                    fields={semesterFields}
+                    mapping={semesterMapping}
                     rows={semesterSampleRows}
                   />
                 </div>
@@ -710,40 +665,17 @@ export function ImportWizard() {
                   <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/section:rotate-180" />
                 </summary>
                 <div className="space-y-4 px-4 pb-5 pt-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {degreeProgramFields.map((field) => (
-                      <div key={field.key} className="space-y-1.5">
-                        <Label>
-                          {field.label}
-                          {field.required ? (
-                            <span className="text-destructive"> *</span>
-                          ) : null}
-                        </Label>
-                        <Select
-                          value={degreeProgramMapping[field.key] ?? "__none__"}
-                          onValueChange={(value) =>
-                            handleDegreeProgramMappingChange(field.key, value)
-                          }
-                          disabled={pending}
-                        >
-                          <SelectTrigger disabled={pending}>
-                            <SelectValue placeholder="Select column" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">— Not mapped —</SelectItem>
-                            {degreeProgramHeaders.map((header) => (
-                              <SelectItem key={header} value={header}>
-                                {header}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
-                  <SpreadsheetSampleTable
-                    title="Degree program data preview"
+                  <ColumnMappingList
+                    fields={degreeProgramFields}
                     headers={degreeProgramHeaders}
+                    mapping={degreeProgramMapping}
+                    onChange={handleDegreeProgramMappingChange}
+                    disabled={pending}
+                  />
+                  <MappedPreviewTable
+                    title="Degree program data preview"
+                    fields={degreeProgramFields}
+                    mapping={degreeProgramMapping}
                     rows={degreeProgramSampleRows}
                   />
                 </div>
@@ -1054,16 +986,89 @@ export function ImportWizard() {
   );
 }
 
-function SpreadsheetSampleTable({
-  title,
+function ColumnMappingList({
+  fields,
   headers,
+  mapping,
+  onChange,
+  disabled,
+}: {
+  fields: ImportFieldDef[];
+  headers: string[];
+  mapping: ColumnMapping;
+  onChange: (fieldKey: string, header: string | null) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span>Your spreadsheet columns</span>
+        <span />
+        <span>System fields</span>
+      </div>
+      <div className="space-y-2">
+        {fields.map((field) => {
+          const value = mapping[field.key] ?? "__none__";
+          const isMapped = value !== "__none__";
+          return (
+            <div
+              key={field.key}
+              className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3"
+            >
+              <Select
+                value={value}
+                onValueChange={(v) => onChange(field.key, v)}
+                disabled={disabled}
+              >
+                <SelectTrigger disabled={disabled} className="w-full">
+                  <SelectValue placeholder="Select column" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Not mapped —</SelectItem>
+                  {headers.map((header) => (
+                    <SelectItem key={header} value={header}>
+                      {header}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+              <div className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm">
+                <span className="truncate">
+                  {field.label}
+                  {field.required ? (
+                    <span className="text-destructive"> *</span>
+                  ) : null}
+                </span>
+                {isMapped ? (
+                  <CheckCircle2 className="size-4 shrink-0 text-success" />
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MappedPreviewTable({
+  title,
+  fields,
+  mapping,
   rows,
 }: {
   title: string;
-  headers: string[];
+  fields: ImportFieldDef[];
+  mapping: ColumnMapping;
   rows: Record<string, string>[];
 }) {
-  if (headers.length === 0 || rows.length === 0) {
+  const mappedFields = fields.filter((field) => {
+    const header = mapping[field.key];
+    return header && header !== "__none__";
+  });
+
+  if (mappedFields.length === 0 || rows.length === 0) {
     return null;
   }
 
@@ -1076,9 +1081,9 @@ function SpreadsheetSampleTable({
         <Table>
           <TableHeader>
             <TableRow>
-              {headers.map((header) => (
-                <TableHead key={header} className="whitespace-nowrap">
-                  {header}
+              {mappedFields.map((field) => (
+                <TableHead key={field.key} className="whitespace-nowrap">
+                  {field.label}
                 </TableHead>
               ))}
             </TableRow>
@@ -1086,15 +1091,18 @@ function SpreadsheetSampleTable({
           <TableBody>
             {rows.map((row, index) => (
               <TableRow key={index}>
-                {headers.map((header) => (
-                  <TableCell
-                    key={header}
-                    className="max-w-[220px] truncate whitespace-nowrap"
-                    title={row[header] || undefined}
-                  >
-                    {row[header] || "—"}
-                  </TableCell>
-                ))}
+                {mappedFields.map((field) => {
+                  const header = mapping[field.key]!;
+                  return (
+                    <TableCell
+                      key={field.key}
+                      className="max-w-[220px] truncate whitespace-nowrap"
+                      title={row[header] || undefined}
+                    >
+                      {row[header] || "—"}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))}
           </TableBody>
@@ -1102,7 +1110,7 @@ function SpreadsheetSampleTable({
       </div>
       <p className="text-xs text-muted-foreground">
         Showing first {rows.length} row{rows.length === 1 ? "" : "s"} from your
-        file.
+        file, using matched columns only.
       </p>
     </div>
   );
