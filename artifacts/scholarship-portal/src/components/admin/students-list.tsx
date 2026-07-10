@@ -13,6 +13,7 @@ import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { StudentStatusBadge } from "@/components/student-status-badge";
+import { TableSkeleton, TableSkeletonCards } from "@/components/table-skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
@@ -397,11 +398,18 @@ export function StudentsList({ universities, academicOptions }: StudentsListProp
             </div>
           </div>
 
-          {!loading && students.length === 0 ? (
+          {loading ? (
+            <>
+              <TableSkeletonCards className="md:hidden" rows={4} />
+              <div className="hidden overflow-hidden rounded-xl border border-border/70 md:block">
+                <TableSkeleton columns={5} rows={6} />
+              </div>
+            </>
+          ) : students.length === 0 ? (
             <EmptyState title="No students match your filters" />
           ) : (
             <>
-              <div className={"space-y-2 md:hidden" + (loading ? " opacity-60" : "")}>
+              <div className="space-y-2 md:hidden">
                 {students.map((student) => (
                   <button
                     key={student.id}
@@ -436,12 +444,7 @@ export function StudentsList({ universities, academicOptions }: StudentsListProp
                 ))}
               </div>
 
-              <div
-                className={
-                  "hidden overflow-hidden rounded-xl border border-border/70 md:block" +
-                  (loading ? " opacity-60" : "")
-                }
-              >
+              <div className="hidden overflow-hidden rounded-xl border border-border/70 md:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">

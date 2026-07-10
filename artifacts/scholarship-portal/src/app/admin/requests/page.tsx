@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 
 import { RequestsList } from "@/components/admin/requests-list";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth/session";
 import {
   fetchActiveUniversities,
@@ -40,7 +42,27 @@ export default function AdminRequestsPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-16 w-full rounded-2xl" />
-        <Skeleton className="h-96 w-full rounded-2xl" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="mt-2 h-3.5 w-56" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-7 w-24 rounded-full" />
+              ))}
+            </div>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-9 w-full lg:w-48" />
+              ))}
+            </div>
+            <div className="overflow-hidden rounded-xl border border-border/70">
+              <TableSkeleton columns={5} rows={6} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

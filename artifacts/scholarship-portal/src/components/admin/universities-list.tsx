@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/empty-state";
 import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -323,11 +324,15 @@ export function UniversitiesList() {
             </div>
           </div>
 
-          {!loading && universities.length === 0 ? (
+          {loading ? (
+            <div className="overflow-hidden rounded-xl border border-border/70">
+              <TableSkeleton columns={6} rows={6} />
+            </div>
+          ) : universities.length === 0 ? (
             <EmptyState title="No universities match your filters" />
           ) : (
             <>
-              <div className={"overflow-x-auto" + (loading ? " opacity-60" : "")}>
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
