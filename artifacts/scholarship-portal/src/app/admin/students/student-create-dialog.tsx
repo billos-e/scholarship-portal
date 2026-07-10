@@ -50,27 +50,17 @@ export function StudentCreateDialog({
   const [universityId, setUniversityId] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [autoStudentId, setAutoStudentId] = useState("");
-
-  function generateStudentId() {
-    const year = new Date().getFullYear();
-    const num = Math.floor(1000 + Math.random() * 9000);
-    return `STU-${year}-${String(num).padStart(4, "0")}`;
-  }
 
   function resetState() {
     setError(undefined);
     setGeneratedPassword(null);
     setUniversityId("");
     setDetailsOpen(false);
-    setAutoStudentId("");
   }
 
   function onOpenChange(next: boolean) {
     setOpen(next);
-    if (next) {
-      setAutoStudentId(generateStudentId());
-    } else {
+    if (!next) {
       resetState();
     }
   }
@@ -254,24 +244,11 @@ export function StudentCreateDialog({
                 </summary>
                 <div className="min-w-0 space-y-4 border-t border-border/60 px-6 py-4">
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Student ID, contact, program, semester, and GPA. Leave blank
-                    to add later from the student profile.
+                    A student ID is assigned automatically. Contact, program,
+                    semester, and GPA can be filled in now or added later from
+                    the student profile.
                   </p>
-                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="min-w-0 space-y-2">
-                      <Label htmlFor="studentId">Student ID</Label>
-                      <Input
-                        id="studentId"
-                        name="studentId"
-                        value={autoStudentId}
-                        onChange={(e) => setAutoStudentId(e.target.value)}
-                        placeholder="e.g. STU-2026-1234"
-                      />
-                    </div>
-                    <div className="min-w-0 space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input id="phone" name="phone" type="tel" />
-                    </div>
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
                     <StudentAcademicFields
                       idPrefix="create-extra"
                       universities={universities}
@@ -279,8 +256,15 @@ export function StudentCreateDialog({
                       showUniversity={false}
                       universityId={universityId}
                       onUniversityChange={onUniversityChange}
+                      programClassName="min-w-0 space-y-2 order-1 sm:col-span-2 lg:col-span-4"
+                      yearClassName="min-w-0 space-y-2 order-3 lg:col-span-2"
+                      semesterClassName="min-w-0 space-y-2 order-4 lg:col-span-2"
                     />
-                    <div className="min-w-0 space-y-2">
+                    <div className="min-w-0 space-y-2 order-2 lg:col-span-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input id="phone" name="phone" type="tel" />
+                    </div>
+                    <div className="min-w-0 space-y-2 order-5 lg:col-span-2">
                       <Label htmlFor="gpa">GPA</Label>
                       <Input
                         id="gpa"

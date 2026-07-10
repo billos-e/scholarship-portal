@@ -27,6 +27,10 @@ type StudentAcademicFieldsProps = {
   /** When set, university is controlled by the parent (e.g. split create form layout). */
   universityId?: string;
   onUniversityChange?: (id: string) => void;
+  universityClassName?: string;
+  programClassName?: string;
+  yearClassName?: string;
+  semesterClassName?: string;
 };
 
 function mergeProgramOptions(
@@ -71,6 +75,10 @@ export function StudentAcademicFields({
   idPrefix = "",
   universityId: controlledUniversityId,
   onUniversityChange,
+  universityClassName = "min-w-0 space-y-2",
+  programClassName = "min-w-0 space-y-2",
+  yearClassName = "min-w-0 space-y-2",
+  semesterClassName = "min-w-0 space-y-2",
 }: StudentAcademicFieldsProps) {
   const prefix = idPrefix ? `${idPrefix}-` : "";
   const [internalUniversityId, setInternalUniversityId] = useState(
@@ -163,7 +171,7 @@ export function StudentAcademicFields({
   return (
     <>
       {showUniversity ? (
-        <div className="min-w-0 space-y-2">
+        <div className={universityClassName}>
           <Label htmlFor={`${prefix}universityId`}>
             University
             {universityRequired ? (
@@ -190,7 +198,7 @@ export function StudentAcademicFields({
       ) : null}
 
       {showProgram ? (
-        <div className="min-w-0 space-y-2">
+        <div className={programClassName}>
           <Label htmlFor={`${prefix}degreeProgram`}>Degree program</Label>
           <input type="hidden" name="degreeProgram" value={degreeProgram} />
           <NativeSelect
@@ -221,7 +229,7 @@ export function StudentAcademicFields({
         </div>
       ) : null}
 
-      <div className="min-w-0 space-y-2">
+      <div className={yearClassName}>
         <Label htmlFor={`${prefix}yearOfStudy`}>Year of study</Label>
         <input type="hidden" name="yearOfStudy" value={yearOfStudy} />
         <Input
@@ -233,7 +241,7 @@ export function StudentAcademicFields({
       </div>
 
       {showSemester ? (
-        <div className="min-w-0 space-y-2">
+        <div className={semesterClassName}>
           <Label htmlFor={`${prefix}currentSemesterLabel`}>
             Current semester
           </Label>

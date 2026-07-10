@@ -186,15 +186,6 @@ export function StudentEditPageForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input
-                id="studentId"
-                name="studentId"
-                defaultValue={student.studentId ?? ""}
-                placeholder="e.g. STU-20481"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="phone">Phone number</Label>
               <Input
                 id="phone"

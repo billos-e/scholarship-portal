@@ -53,7 +53,6 @@ function profileToPayload(
   return {
     firstName: rest.firstName || "",
     lastName: rest.lastName || "",
-    studentId: rest.studentId ?? null,
     phone: rest.phone ?? null,
     degreeProgram: rest.degreeProgram ?? null,
     yearOfStudy: rest.yearOfStudy ?? null,

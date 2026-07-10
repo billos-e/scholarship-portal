@@ -23,6 +23,21 @@ const STUDENT_SORT_COLUMNS = {
 
 type StudentSortKey = keyof typeof STUDENT_SORT_COLUMNS;
 
+async function generateUniqueStudentId(): Promise<string> {
+  const year = new Date().getFullYear();
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    const candidate = `STU-${year}-${String(num).padStart(4, "0")}`;
+    const [existing] = await db
+      .select({ id: students.id })
+      .from(students)
+      .where(eq(students.studentId, candidate))
+      .limit(1);
+    if (!existing) return candidate;
+  }
+  return `STU-${year}-${randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
 function parsePagination(req: { query: Record<string, unknown> }) {
   const page = Math.max(1, Number.parseInt(String(req.query.page ?? "1"), 10) || 1);
   const limit = Math.min(
@@ -284,6 +299,9 @@ router.post("/students", async (req, res) => {
     const bankId = randomUUID();
     const studentStatus = (["ACTIVE", "GRADUATED", "INACTIVE"].includes(status) ? status : "ACTIVE") as "ACTIVE" | "GRADUATED" | "INACTIVE";
 
+    const resolvedStudentId =
+      (studentId as string)?.trim() || (await generateUniqueStudentId());
+
     await db.insert(users).values({
       id: userId,
       email: emailLower,
@@ -297,7 +315,7 @@ router.post("/students", async (req, res) => {
       userId,
       firstName: firstName.trim(),
       lastName: (lastName as string)?.trim() || "",
-      studentId: (studentId as string)?.trim() || null,
+      studentId: resolvedStudentId,
       phone: (phone as string)?.trim() || null,
       universityId: (universityId as string) || null,
       degreeProgram: (degreeProgram as string)?.trim() || null,
