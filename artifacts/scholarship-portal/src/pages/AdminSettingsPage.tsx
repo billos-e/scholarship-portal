@@ -149,7 +149,10 @@ function AdminAccountModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent
+        className="max-w-fit border-0 bg-transparent p-0 ring-0 sm:max-w-fit"
+        showCloseButton={false}
+      >
         <UserProfile routing="hash" appearance={clerkLightAppearance} />
         {!adminEmail && (
           <SignIn
