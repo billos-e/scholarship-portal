@@ -191,7 +191,7 @@ export async function createUniversitySemester(
     label: formData.get("label"),
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
-    isActive: formData.get("isActive") !== "off",
+    isActive: formData.get("isActive") === "on",
   });
 
   if (!parsed.success) {
@@ -283,7 +283,7 @@ export async function createUniversityDegreeProgram(
   const parsed = degreeProgramSchema.safeParse({
     universityId: formData.get("universityId"),
     name: formData.get("name"),
-    isActive: formData.get("isActive") !== "off",
+    isActive: formData.get("isActive") === "on",
   });
 
   if (!parsed.success) {
