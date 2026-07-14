@@ -81,3 +81,17 @@ export const Prisma = {
     }
   },
 };
+
+// Type-only namespace merge — provides loose structural types for the
+// handful of Prisma-generated filter/where-input types still referenced by
+// (mostly dead/legacy) code paths ported from the original Next.js app.
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Prisma {
+  export type TuitionPaymentRequestWhereInput = Record<string, unknown>;
+  export type StudentWhereInput = Record<string, unknown>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type BankInformation = Record<string, any> | null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Student = Record<string, any>;

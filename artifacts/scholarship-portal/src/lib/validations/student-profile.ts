@@ -54,7 +54,7 @@ const optionalGpa = z.preprocess(
     return Number.isFinite(n) ? n : NaN;
   },
   z
-    .number({ error: "GPA must be a number." })
+    .number({ invalid_type_error: "GPA must be a number." })
     .min(0, "GPA must be at least 0.")
     .max(4, "GPA cannot exceed 4.")
     .optional(),

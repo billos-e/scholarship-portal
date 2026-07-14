@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
-import { syncStudentSession } from "@/lib/auth/sync-session";
 import { uploadFileToStorage, validateUpload } from "@/lib/uploads";
 import {
   readStudentSelfProfileFromFormData,
@@ -93,7 +92,6 @@ export async function updateOwnProfile(
   revalidatePath("/student/profile");
   revalidatePath("/student/profile/edit");
   revalidatePath("/student/submit");
-  await syncStudentSession(profileFields.firstName, profileFields.lastName);
   return { success: true };
 }
 
@@ -159,7 +157,6 @@ export async function saveOwnProfileEdit(
   revalidatePath("/student/profile");
   revalidatePath("/student/profile/edit");
   revalidatePath("/student/submit");
-  await syncStudentSession(profileFields.firstName, profileFields.lastName);
   return { success: true };
 }
 

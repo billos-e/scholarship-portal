@@ -258,7 +258,7 @@ export default function UniversityDetailPage() {
               id: student.id,
               name: `${student.firstName} ${student.lastName}`,
               studentId: student.studentId,
-              status: student.status,
+              status: student.status as import("@prisma/client").StudentStatus,
             }))}
           />
         )}

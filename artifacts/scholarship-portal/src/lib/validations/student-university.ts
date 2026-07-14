@@ -36,10 +36,10 @@ export async function validateUniversityContext(
   }
 
   if (data.currentSemesterLabel) {
+    const currentSemesterLabel = data.currentSemesterLabel;
     const semesters = await fetchUniversitySemesters(data.universityId, true);
     const semester = semesters.find(
-      (s) =>
-        s.label.toLowerCase() === data.currentSemesterLabel.toLowerCase(),
+      (s) => s.label.toLowerCase() === currentSemesterLabel.toLowerCase(),
     );
     if (!semester) {
       return "Current semester must match an active semester for this university.";

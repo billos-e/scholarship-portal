@@ -1,3 +1,5 @@
+import { apiBase } from "@/lib/api/shared";
+import { requireAdmin } from "@/lib/auth/session";
 import type { TableExportColumn } from "./table-columns";
 
 export type ExportRow = Record<string, string | number | boolean | null>;
@@ -57,17 +59,21 @@ export async function downloadExportFile(
 ): Promise<void> {
   const mainSheet: ExportSheet = { name: sheetName, columns, rows };
   const allSheets = [mainSheet, ...extraSheets];
+  const admin = requireAdmin();
 
   if (format === "csv") {
     if (extraSheets.length > 0) {
-      const response = await fetch("/api/export/csv-zip", {
+      const response = await fetch(`${apiBase}/api/export/csv-zip`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Id": admin.id,
+        },
         body: JSON.stringify({ filename, sheets: allSheets }),
       });
 
       if (!response.ok) {
-        throw new Error("CSV export failed. Please try again.");
+        throw new Error(await readExportError(response, "CSV export failed. Please try again."));
       }
 
       const blob = await response.blob();
@@ -91,14 +97,17 @@ export async function downloadExportFile(
     return;
   }
 
-  const response = await fetch("/api/export/xlsx", {
+  const response = await fetch(`${apiBase}/api/export/xlsx`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Id": admin.id,
+    },
     body: JSON.stringify({ filename, sheets: allSheets }),
   });
 
   if (!response.ok) {
-    throw new Error("Excel export failed. Please try again.");
+    throw new Error(await readExportError(response, "Excel export failed. Please try again."));
   }
 
   const blob = await response.blob();
@@ -107,6 +116,15 @@ export async function downloadExportFile(
   }
 
   triggerDownload(blob, `${filename}.xlsx`);
+}
+
+async function readExportError(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: string };
+    return body.error ?? fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function triggerDownload(blob: Blob, filename: string) {

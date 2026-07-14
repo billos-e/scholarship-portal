@@ -2,6 +2,7 @@ import Image from "next/image";
 import { CreditCard } from "lucide-react";
 
 import { CopyableValue } from "@/components/admin/copyable-value";
+import { uploadPublicUrl } from "@/lib/upload-path";
 import { cn } from "@/lib/utils";
 
 type BankCardProps = {
@@ -85,14 +86,14 @@ export function BankCard({
 
         {qrImageUrl ? (
           <a
-            href={`/api/uploads/${qrImageUrl}`}
+            href={uploadPublicUrl(qrImageUrl)}
             target="_blank"
             rel="noreferrer noopener"
             className="group shrink-0 self-start overflow-hidden rounded-lg border border-border bg-background p-1 shadow-sm transition-colors hover:border-primary/30"
             title="Open QR payment image"
           >
             <Image
-              src={`/api/uploads/${qrImageUrl}`}
+              src={uploadPublicUrl(qrImageUrl)}
               alt="QR payment code"
               width={56}
               height={56}
