@@ -1,0 +1,38 @@
+
+Bug fix task — scholarship portal API/action mismatches
+
+There are three bugs where form data is submitted but silently dropped before reaching the database. Fix all three:
+
+Bug 1 — University image not saved on edit
+
+File: artifacts/api-server/src/routes/universities.ts
+Route: PUT /universities/:id
+
+The client action (updateUniversity in artifacts/scholarship-portal/src/lib/actions/universities.ts) uploads the image to storage and sends imageUrl in the JSON body, but the route only destructures name, city, country, addressLine, websiteUrl, hasSummerSemester, isActive, notes — imageUrl is never read or written to the DB.
+
+Fix: Accept imageUrl from the request body and include it in the db.update(universities).set(...) call when it is present in the payload.
+
+Bug 2 — Admin student edit encodes photos as base64 instead of uploading to storage
+
+File: artifacts/scholarship-portal/src/lib/actions/students.ts
+Function: saveStudentEdit
+
+The photo handling block uses file.arrayBuffer() → btoa(...) to create a data:image/...;base64,... string and sends that as photoUrl. It should call uploadFileToStorage(file) (already imported from @/lib/uploads) just like saveOwnProfileEdit does in artifacts/scholarship-portal/src/lib/actions/profile.ts.
+
+Fix: Replace the arrayBuffer/btoa block with photoUrl = await uploadFileToStorage(file).
+
+Bug 3 — Standalone admin photo upload also uses base64
+
+File: artifacts/scholarship-portal/src/lib/actions/students.ts
+Function: uploadStudentPhoto
+
+Same issue as Bug 2 — uses btoa base64 instead of uploadFileToStorage.
+
+Fix: Replace the arrayBuffer/btoa block with const photoUrl = await uploadFileToStorage(file). The validateUpload and uploadFileToStorage imports are already at the top of the file.
+
+Verification:
+After fixing, confirm:
+
+PUT /universities/:id reads imageUrl from req.body and writes it to the universities table when provided.
+Both saveStudentEdit and uploadStudentPhoto call uploadFileToStorage(file) (returning a storage URL string) instead of using btoa.
+The pattern in saveOwnProfileEdit (profile.ts) can be used as the reference for the correct approach.

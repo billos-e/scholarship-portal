@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { generateSecurePassword } from "@/lib/password";
+import { uploadFileToStorage, validateUpload } from "@/lib/uploads";
 import {
   readStudentProfileFromFormData,
   validateStudentProfileCreate,
@@ -213,15 +214,11 @@ export async function saveStudentEdit(
   const file = formData.get("photo");
   let photoUrl: string | undefined;
   if (file instanceof File && file.size > 0) {
-    const { validateUpload } = await import("@/lib/uploads");
     const check = validateUpload(file, "profile-photo");
     if (!check.ok) return { error: check.error, submitAttempt: attempt };
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
-      photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+      photoUrl = await uploadFileToStorage(file);
     } catch {
       return { error: "Failed to process photo.", submitAttempt: attempt };
     }
@@ -286,15 +283,11 @@ export async function uploadStudentPhoto(
     return { error: "Please choose a photo to upload." };
   }
 
-  const { validateUpload } = await import("@/lib/uploads");
   const check = validateUpload(file, "profile-photo");
   if (!check.ok) return { error: check.error };
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    const b64 = btoa(Array.from(bytes).map((b) => String.fromCharCode(b)).join(""));
-    const photoUrl = `data:${file.type || "image/jpeg"};base64,${b64}`;
+    const photoUrl = await uploadFileToStorage(file);
 
     const result = await apiFetch(`/students/${id}`, "PUT", { photoUrl });
     if (!result.ok) return { error: result.error };

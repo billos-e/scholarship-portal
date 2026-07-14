@@ -264,8 +264,17 @@ router.get("/universities/:id", async (req, res) => {
 router.put("/universities/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, city, country, addressLine, websiteUrl, hasSummerSemester, isActive, notes } =
-      req.body ?? {};
+    const {
+      name,
+      city,
+      country,
+      addressLine,
+      websiteUrl,
+      hasSummerSemester,
+      isActive,
+      notes,
+      imageUrl,
+    } = req.body ?? {};
 
     if (!name || typeof name !== "string" || name.trim().length < 2) {
       res.status(400).json({ error: "University name is required." });
@@ -283,6 +292,7 @@ router.put("/universities/:id", async (req, res) => {
         hasSummerSemester: Boolean(hasSummerSemester),
         isActive: isActive !== false && isActive !== "false",
         notes: notes?.trim() || null,
+        ...(imageUrl !== undefined ? { imageUrl: imageUrl || null } : {}),
         updatedAt: new Date(),
       })
       .where(eq(universities.id, id))
