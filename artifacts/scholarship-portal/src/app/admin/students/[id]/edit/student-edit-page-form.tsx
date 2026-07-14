@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -61,6 +62,7 @@ export function StudentEditPageForm({
 }) {
   const fullName = `${student.firstName} ${student.lastName}`;
 
+  const router = useRouter();
   const initials = getInitials(fullName);
   const [password, setPassword] = useState("");
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
@@ -92,6 +94,7 @@ export function StudentEditPageForm({
       toast.success("Student updated.");
       setPassword("");
       onSuccess?.();
+      router.push(`/admin/students/${student.id}`);
     }
   }, [state]);
 
