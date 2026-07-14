@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -30,6 +31,9 @@ import {
 import { getInitials } from "@/lib/initials";
 import { cn } from "@/lib/utils";
 import { clerkLightAppearance } from "@/lib/clerk-appearance";
+import { getCurrentUser } from "@/lib/auth/session";
+import { fetchStudent } from "@/lib/api/students";
+import { uploadPublicUrl } from "@/lib/upload-path";
 
 export type SidebarNavItem = {
   href: string;
@@ -124,6 +128,18 @@ export function AppSidebar({
   const isAdmin = variant === "admin";
   const userLabel = displayName ?? email.split("@")[0] ?? "User";
   const initials = getInitials(userLabel);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAdmin) return;
+    const studentProfileId = getCurrentUser()?.studentProfileId;
+    if (!studentProfileId) return;
+    fetchStudent(studentProfileId)
+      .then((student) => setPhotoUrl(student?.photoUrl ?? null))
+      .catch(() => setPhotoUrl(null));
+  }, [isAdmin]);
+
+  const hasPhoto = Boolean(photoUrl?.trim());
 
   function isActive(href: string) {
     if (href === "/student" || href === "/admin") {
@@ -233,6 +249,14 @@ export function AppSidebar({
                     },
                   }}
                 />
+              ) : hasPhoto ? (
+                <span className="relative size-9 shrink-0 overflow-hidden rounded-full">
+                  <img
+                    src={uploadPublicUrl(photoUrl!)}
+                    alt={`${userLabel} profile photo`}
+                    className="size-full object-cover"
+                  />
+                </span>
               ) : (
                 <span
                   className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-fuchsia-light text-xs font-semibold text-primary"
