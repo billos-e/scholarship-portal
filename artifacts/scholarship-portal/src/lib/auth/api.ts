@@ -43,13 +43,20 @@ export function clearSession() {
 }
 
 /**
- * Exchange the active Clerk session cookie for an admin portal session.
- * Must be called after the admin has signed into Clerk on the login page.
+ * Exchange the active Clerk session for an admin portal session.
+ * Accepts an optional Bearer token so this works in dev (where the Clerk proxy
+ * is disabled and the __session cookie never reaches Express) as well as in
+ * production (where cookies flow through the same-origin proxy).
  */
-export async function apiClerkAdminSession(): Promise<SessionUser> {
+export async function apiClerkAdminSession(token?: string | null): Promise<SessionUser> {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
   const res = await fetch(`${base}/api/auth/clerk-admin-session`, {
     method: "POST",
     credentials: "include",
+    headers,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: "Sign-in failed." }));

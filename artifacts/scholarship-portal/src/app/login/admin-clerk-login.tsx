@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { SignIn, useUser, useClerk } from "@clerk/react";
+import { SignIn, useUser, useClerk, useAuth } from "@clerk/react";
 import { apiClerkAdminSession, saveSession } from "@/lib/auth/api";
 
 export function AdminClerkLogin() {
   const { isSignedIn, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
   const [, navigate] = useLocation();
   const [bridging, setBridging] = useState(false);
   const [error, setError] = useState("");
@@ -16,7 +17,8 @@ export function AdminClerkLogin() {
     if (!isLoaded || !isSignedIn || bridging) return;
 
     setBridging(true);
-    apiClerkAdminSession()
+    getToken()
+      .then((token) => apiClerkAdminSession(token))
       .then((user) => {
         saveSession(user);
         navigate("/admin");
