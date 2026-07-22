@@ -103,6 +103,7 @@ export default function StudentEditPage() {
           yearOfStudy: student.yearOfStudy,
           currentSemesterLabel: student.currentSemesterLabel,
           gpa: student.gpa ? student.gpa.toString() : null,
+          ethnicity: student.ethnicity,
           status: student.status,
           photoUrl: student.photoUrl,
           bankAccountName:

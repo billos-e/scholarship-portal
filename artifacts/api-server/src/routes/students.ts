@@ -384,6 +384,7 @@ router.put("/students/:id", async (req, res) => {
       studentPatch.studentId = newStudentId;
     }
     if ("phone" in body) studentPatch.phone = (body.phone as string)?.trim() || null;
+    if ("ethnicity" in body) studentPatch.ethnicity = (body.ethnicity as string)?.trim() || null;
     if ("universityId" in body) studentPatch.universityId = (body.universityId as string) || null;
     if ("degreeProgram" in body) studentPatch.degreeProgram = (body.degreeProgram as string)?.trim() || null;
     if ("yearOfStudy" in body) studentPatch.yearOfStudy = (body.yearOfStudy as string)?.trim() || null;

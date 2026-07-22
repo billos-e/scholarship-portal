@@ -225,6 +225,7 @@ export default function StudentProfilePage() {
             <ProfileInfoField label="Last name" value={student.lastName} />
             <ProfileInfoField label="Student ID" value={student.studentId} />
             <ProfileInfoField label="Phone number" value={student.phone} />
+            <ProfileInfoField label="Ethnicity" value={student.ethnicity} />
             <ProfileInfoField label="Email address">
               <a
                 href={`mailto:${user.email}`}

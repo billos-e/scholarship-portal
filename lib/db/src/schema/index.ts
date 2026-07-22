@@ -128,6 +128,7 @@ export const students = pgTable("students", {
   currentSemesterLabel: text("current_semester_label"),
   gpa: decimal("gpa", { precision: 3, scale: 2 }),
   photoUrl: text("photo_url"),
+  ethnicity: text("ethnicity"),
   status: studentStatusEnum("status").notNull().default("ACTIVE"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

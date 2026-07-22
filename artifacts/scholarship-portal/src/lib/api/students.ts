@@ -33,6 +33,7 @@ export type StudentRecord = {
   currentSemesterLabel: string | null;
   gpa: string | null;
   photoUrl: string | null;
+  ethnicity: string | null;
   status: StudentStatus;
   createdAt: Date;
   updatedAt: Date;

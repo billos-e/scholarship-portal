@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { ETHNICITY_OPTIONS } from "@/lib/ethnicity-options";
 
 type UniversityOption = { id: string; name: string };
 
@@ -32,6 +33,7 @@ export type StudentProfileEditData = {
   email: string;
   studentId: string | null;
   phone: string | null;
+  ethnicity: string | null;
   universityId: string | null;
   degreeProgram: string | null;
   yearOfStudy: string | null;
@@ -443,6 +445,18 @@ export function StudentProfileEditForm({
               title="Enter a valid phone number (7–20 digits, spaces, +, -, ( ) allowed)"
               placeholder="e.g. 081 000 0000"
             />
+          </Row>
+          <Row label="Ethnicity">
+            <FieldSelect
+              id="ethnicity"
+              name="ethnicity"
+              defaultValue={getDraft("ethnicity", student.ethnicity ?? "")}
+            >
+              <option value="">— Not specified —</option>
+              {ETHNICITY_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </FieldSelect>
           </Row>
         </Group>
 

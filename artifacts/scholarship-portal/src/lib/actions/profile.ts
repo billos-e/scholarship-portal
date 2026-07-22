@@ -75,6 +75,7 @@ export async function updateOwnProfile(
     lastName: profileFields.lastName,
     studentId: profileFields.studentId ?? null,
     phone: profileFields.phone ?? null,
+    ethnicity: profileFields.ethnicity ?? null,
     universityId: profileFields.universityId ?? null,
     degreeProgram: profileFields.degreeProgram ?? null,
     yearOfStudy: profileFields.yearOfStudy ?? null,

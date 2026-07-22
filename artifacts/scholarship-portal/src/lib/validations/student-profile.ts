@@ -69,6 +69,7 @@ const sharedProfileFields = {
       .string()
       .regex(/^[\d\s+().-]{7,20}$/, "Enter a valid phone number."),
   ),
+  ethnicity: trimmedOptional(z.string()),
   degreeProgram: degreeProgramFieldSchema,
   yearOfStudy: yearOfStudyFieldSchema,
   currentSemesterLabel: currentSemesterFieldSchema,
@@ -88,6 +89,7 @@ export const studentProfileSelfEditSchema = z
         .string()
         .regex(/^[\d\s+().-]{7,20}$/, "Enter a valid phone number."),
     ),
+    ethnicity: trimmedOptional(z.string()),
     universityId: universityIdFieldSchema,
     degreeProgram: degreeProgramFieldSchema,
     yearOfStudy: yearOfStudyFieldSchema,
@@ -196,6 +198,7 @@ export function readStudentProfileFromFormData(
     lastName: String(formData.get("lastName") ?? ""),
     studentId: formData.get("studentId"),
     phone: formData.get("phone"),
+    ethnicity: formData.get("ethnicity"),
     universityId: formData.get("universityId"),
     degreeProgram: formData.get("degreeProgram"),
     yearOfStudy: formData.get("yearOfStudy"),
@@ -213,6 +216,7 @@ export function readStudentSelfProfileFromFormData(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     studentId: formData.get("studentId"),
     phone: formData.get("phone"),
+    ethnicity: formData.get("ethnicity"),
     universityId: formData.get("universityId"),
     degreeProgram: formData.get("degreeProgram"),
     yearOfStudy: formData.get("yearOfStudy"),

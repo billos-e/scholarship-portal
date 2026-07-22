@@ -16,6 +16,7 @@ import {
   type ActionState,
   saveStudentEdit,
 } from "@/lib/actions/students";
+import { ETHNICITY_OPTIONS } from "@/lib/ethnicity-options";
 import { getInitials } from "@/lib/initials";
 import { generateSecurePassword } from "@/lib/password";
 import type { StudentAcademicOptions } from "@/lib/student-academic-options";
@@ -36,6 +37,7 @@ export type StudentEditPageData = {
   lastName: string;
   studentId: string | null;
   phone: string | null;
+  ethnicity: string | null;
   universityId: string | null;
   degreeProgram: string | null;
   yearOfStudy: string | null;
@@ -196,6 +198,19 @@ export function StudentEditPageForm({
                 type="tel"
                 defaultValue={student.phone ?? ""}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ethnicity">Ethnicity</Label>
+              <NativeSelect
+                id="ethnicity"
+                name="ethnicity"
+                defaultValue={student.ethnicity ?? ""}
+              >
+                <option value="">— Not specified —</option>
+                {ETHNICITY_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Account status</Label>

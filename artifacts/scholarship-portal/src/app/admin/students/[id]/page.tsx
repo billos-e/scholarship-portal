@@ -408,6 +408,18 @@ export default function StudentDetailPage() {
               </div>
               <Separator />
               <div className="flex items-start gap-3">
+                <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">
+                    Ethnicity
+                  </p>
+                  <p className="font-medium text-foreground">
+                    {student.ethnicity ?? "—"}
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-start gap-3">
                 <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                   <p className="text-muted-foreground text-xs mb-0.5">

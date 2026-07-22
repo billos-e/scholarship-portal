@@ -96,6 +96,7 @@ export default function StudentProfileEditPage() {
           yearOfStudy: student.yearOfStudy,
           currentSemesterLabel: student.currentSemesterLabel,
           gpa: student.gpa ? student.gpa.toString() : null,
+          ethnicity: student.ethnicity,
           photoUrl: student.photoUrl,
           bankAccountName: student.bankInformation?.bankAccountName ?? null,
           bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,

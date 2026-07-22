@@ -55,6 +55,7 @@ function profileToPayload(
     firstName: rest.firstName || "",
     lastName: rest.lastName || "",
     phone: rest.phone ?? null,
+    ethnicity: rest.ethnicity ?? null,
     degreeProgram: rest.degreeProgram ?? null,
     yearOfStudy: rest.yearOfStudy ?? null,
     currentSemesterLabel: rest.currentSemesterLabel ?? null,
