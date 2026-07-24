@@ -47,7 +47,7 @@ const QUESTION_META: Record<string, QuestionMeta> = {
   },
   wellbeingStress: {
     icon: Gauge,
-    title: "Stress level",
+    title: "Overall Stress Level",
     low: "None",
     high: "Severe",
     inverted: true,
