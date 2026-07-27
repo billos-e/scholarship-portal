@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { SignIn, useUser, useClerk, useAuth } from "@clerk/react";
+import { toast } from "sonner";
 import { apiClerkAdminSession, saveSession } from "@/lib/auth/api";
+
+function friendlyError(msg: string): string {
+  if (msg.includes("No active account found")) {
+    return "You haven't been added as an admin yet. Ask your administrator to add your account before signing in.";
+  }
+  return "Access denied. Please contact your administrator.";
+}
 
 export function AdminClerkLogin() {
   const { isSignedIn, isLoaded } = useUser();
@@ -11,7 +19,6 @@ export function AdminClerkLogin() {
   const { getToken } = useAuth();
   const [, navigate] = useLocation();
   const [bridging, setBridging] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || bridging) return;
@@ -24,7 +31,7 @@ export function AdminClerkLogin() {
         navigate("/admin");
       })
       .catch(async (err) => {
-        setError(err?.message ?? "Access denied.");
+        toast.error(friendlyError(err?.message ?? ""), { duration: 8000 });
         await signOut();
         setBridging(false);
       });
@@ -42,11 +49,6 @@ export function AdminClerkLogin() {
 
   return (
     <div className="space-y-4">
-      {error && (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
-          {error}
-        </p>
-      )}
       <SignIn
         routing="hash"
         signUpUrl={undefined}

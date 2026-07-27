@@ -101,10 +101,21 @@ router.post("/auth/clerk-admin-session", async (req, res) => {
     const user = rows[0];
 
     if (!user || !user.isActive) {
+      // Best-effort: delete the stale Clerk account so it can be re-invited later.
+      // Await + drain body so Node.js actually sends the request before we return.
+      await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
+      }).then((r) => r.text()).catch(() => {});
       res.status(403).json({ error: "No active account found for this email." });
       return;
     }
     if (user.role !== "ADMIN") {
+      // Best-effort: delete the stale Clerk account so it can be re-invited later.
+      await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
+      }).then((r) => r.text()).catch(() => {});
       res.status(403).json({ error: "This account does not have admin access." });
       return;
     }
