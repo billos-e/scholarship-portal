@@ -1,0 +1,48 @@
+Fix: Admin Google sign-in — unwanted Clerk accounts and silent failures
+
+Current state of the other project
+
+The admin login page uses Clerk's <SignIn> component with Google OAuth. When someone signs in with Google using an account that hasn't been added as an admin:
+
+Clerk silently creates a new account for them
+The backend rejects the session (the email has no admin record in the local DB)
+The user sees no feedback — the page just goes blank or spins forever
+Worse: if an admin later tries to add that person via the "add admin" flow, it fails with a Clerk error like "Clerk user creation failed" because a Clerk account already exists for that email
+There are two things to fix, one on the backend and one on the frontend.
+
+Backend fix — delete the Clerk account on rejected sign-in
+
+File: artifacts/api-server/src/routes/auth.ts, route POST /auth/clerk-admin-session
+
+When this route detects that the signed-in Clerk user has no active admin record in the local DB, it currently returns 403 immediately. Before returning 403, add a best-effort call to delete the Clerk account:
+
+await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
+  method: "DELETE",
+  headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
+}).catch(() => {
+  // Best-effort — don't block the 403 response if the delete fails.
+});
+res.status(403).json({ error: "No active account found for this email." });
+
+This prevents stale Clerk accounts from accumulating and unblocks re-adding the same email later.
+
+
+Frontend fix — show a toast instead of inline error
+
+File: artifacts/scholarship-portal/src/app/login/admin-clerk-login.tsx
+
+The component has a useEffect that calls the backend, then tries to display an inline error via React state when the backend returns 403. This silently fails because:
+
+The catch block calls setError(...) then setBridging(false)
+When bridging flips to false, isSignedIn is still true (Clerk hasn't signed the user out yet)
+The effect has bridging in its dependency array, so it immediately re-fires, calls setBridging(true) again, and the spinner overwrites the error before the user sees it
+The fix is to use Sonner's toast.error() (already installed and mounted as <Toaster richColors position="top-center" /> in App.tsx) instead of inline state. A toast is independent of React state and Clerk's isSignedIn, so the re-entry loop can't suppress it.
+
+Changes to admin-clerk-login.tsx:
+
+Add import { toast } from "sonner";
+In the .catch() block, replace setError(friendlyError(...)) with toast.error(friendlyError(...), { duration: 8000 })
+Remove the error state variable, setError, any error-based guard in the useEffect condition, and any JSX that renders an inline error paragraph
+Keep the existing friendlyError() helper that maps backend messages like "No active account found" to "You haven't been added as an admin yet. Ask your administrator to add your account before signing in." — just point it at toast.error().
+
+
