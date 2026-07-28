@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export type ExportRow = Record<string, string | number | boolean | null>;
 
@@ -65,24 +65,24 @@ export async function buildCsvZipBuffer(sheets: ExportSheet[]): Promise<Buffer> 
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
-function rowsToWorksheet(rows: ExportRow[], columns: ExportColumn[]): XLSX.WorkSheet {
-  const header = columns.map((column) => column.label);
-  const data = rows.map((row) => columns.map((column) => row[column.key] ?? ""));
-  return XLSX.utils.aoa_to_sheet([header, ...data]);
-}
-
-export function buildXlsxBuffer(sheets: ExportSheet[]): Buffer {
-  const workbook = XLSX.utils.book_new();
+export async function buildXlsxBuffer(
+  sheets: ExportSheet[],
+): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
 
   for (const sheet of sheets) {
     const pickedRows = pickExportColumns(
       sheet.rows,
       sheet.columns.map((column) => column.key),
     );
-    const worksheet = rowsToWorksheet(pickedRows, sheet.columns);
     const safeName = sheet.name.slice(0, 31) || "Export";
-    XLSX.utils.book_append_sheet(workbook, worksheet, safeName);
+    const worksheet = workbook.addWorksheet(safeName);
+    worksheet.addRow(sheet.columns.map((column) => column.label));
+    for (const row of pickedRows) {
+      worksheet.addRow(sheet.columns.map((column) => row[column.key] ?? ""));
+    }
   }
 
-  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
 }

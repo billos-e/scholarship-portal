@@ -79,14 +79,13 @@ export async function parseImportFile(
   if (
     !name.endsWith(".csv") &&
     !name.endsWith(".xlsx") &&
-    !name.endsWith(".xls") &&
     !(entityParsed.data === "universities" && name.endsWith(".zip"))
   ) {
     return {
       error:
         entityParsed.data === "universities"
-          ? "Supported formats: .csv, .xlsx, .xls, .zip"
-          : "Supported formats: .csv, .xlsx, .xls",
+          ? "Supported formats: .csv, .xlsx, .zip"
+          : "Supported formats: .csv, .xlsx",
     };
   }
 
@@ -101,12 +100,12 @@ export async function parseImportFile(
     semesterParsed = workbook.semesters;
     degreeProgramParsed = workbook.degreePrograms;
   } else if (entityParsed.data === "universities") {
-    const workbook = parseUniversitiesImportBuffer(buffer);
+    const workbook = await parseUniversitiesImportBuffer(buffer, name);
     parsed = workbook.universities;
     semesterParsed = workbook.semesters;
     degreeProgramParsed = workbook.degreePrograms;
   } else {
-    parsed = parseSpreadsheetBuffer(buffer);
+    parsed = await parseSpreadsheetBuffer(buffer, name);
   }
 
   if (parsed.headers.length === 0 || parsed.rows.length === 0) {

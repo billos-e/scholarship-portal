@@ -84,6 +84,6 @@
     "@uppy/dashboard": "^5.1.1",
     "@uppy/react": "^5.2.0",
     "jszip": "^3.10.1",
-    "xlsx": "^0.18.5"
+    "exceljs": "^4.4.0"
   }
 }

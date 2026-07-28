@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import JSZip from "jszip";
 
 import {
@@ -177,38 +177,69 @@ function getMockRows(entity: ImportEntity): RowData[] {
   }
 }
 
-function buildWorksheet(headers: string[], rows: RowData[]): XLSX.WorkSheet {
-  const data = [headers, ...rows.map((row) => headers.map((h) => row[h] ?? ""))];
-  return XLSX.utils.aoa_to_sheet(data);
+// ── CSV helpers ────────────────────────────────────────────────────────────────
+
+function escapeCsvCell(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const s = String(value);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
+
+function rowsToCsv(headers: string[], rows: RowData[]): string {
+  const lines = [
+    headers.map(escapeCsvCell).join(","),
+    ...rows.map((row) =>
+      headers.map((h) => escapeCsvCell(row[h] ?? "")).join(","),
+    ),
+  ];
+  return lines.join("\r\n");
+}
+
+// ── Excel helpers ──────────────────────────────────────────────────────────────
+
+async function buildExcelBuffer(
+  sheets: Array<{ name: string; headers: string[]; rows: RowData[] }>,
+): Promise<ArrayBuffer> {
+  const workbook = new ExcelJS.Workbook();
+  for (const sheet of sheets) {
+    const ws = workbook.addWorksheet(sheet.name);
+    ws.addRow(sheet.headers);
+    for (const row of sheet.rows) {
+      ws.addRow(sheet.headers.map((h) => row[h] ?? ""));
+    }
+  }
+  return workbook.xlsx.writeBuffer();
+}
+
+// ── Public API ─────────────────────────────────────────────────────────────────
 
 export function generateCsvBlob(entity: ImportEntity): Blob {
   const headers = getHeaders(entity);
   const rows = getMockRows(entity);
-  const ws = buildWorksheet(headers, rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-  const csvString = XLSX.utils.sheet_to_csv(ws);
+  const csvString = rowsToCsv(headers, rows);
   return new Blob([csvString], { type: "text/csv" });
 }
 
-export function generateExcelBlob(entity: ImportEntity): Blob {
+export async function generateExcelBlob(entity: ImportEntity): Promise<Blob> {
   if (entity === "universities") {
-    const wb = XLSX.utils.book_new();
-
-    const uniHeaders = getHeaders("universities");
-    const uniWs = buildWorksheet(uniHeaders, UNIVERSITY_MOCK_ROWS);
-    XLSX.utils.book_append_sheet(wb, uniWs, "Universities");
-
-    const semHeaders = UNIVERSITY_SEMESTER_FIELDS.map((f) => f.label);
-    const semWs = buildWorksheet(semHeaders, SEMESTER_MOCK_ROWS);
-    XLSX.utils.book_append_sheet(wb, semWs, "Semesters");
-
-    const dpHeaders = DEGREE_PROGRAM_FIELDS.map((f) => f.label);
-    const dpWs = buildWorksheet(dpHeaders, DEGREE_PROGRAM_MOCK_ROWS);
-    XLSX.utils.book_append_sheet(wb, dpWs, "Degree Programs");
-
-    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const buffer = await buildExcelBuffer([
+      {
+        name: "Universities",
+        headers: getHeaders("universities"),
+        rows: UNIVERSITY_MOCK_ROWS,
+      },
+      {
+        name: "Semesters",
+        headers: UNIVERSITY_SEMESTER_FIELDS.map((f) => f.label),
+        rows: SEMESTER_MOCK_ROWS,
+      },
+      {
+        name: "Degree Programs",
+        headers: DEGREE_PROGRAM_FIELDS.map((f) => f.label),
+        rows: DEGREE_PROGRAM_MOCK_ROWS,
+      },
+    ]);
     return new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
@@ -216,10 +247,7 @@ export function generateExcelBlob(entity: ImportEntity): Blob {
 
   const headers = getHeaders(entity);
   const rows = getMockRows(entity);
-  const ws = buildWorksheet(headers, rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-  const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const buffer = await buildExcelBuffer([{ name: "Sheet1", headers, rows }]);
   return new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
@@ -228,20 +256,24 @@ export function generateExcelBlob(entity: ImportEntity): Blob {
 export async function generateUniversitiesZipBlob(): Promise<Blob> {
   const zip = new JSZip();
 
-  const uniHeaders = getHeaders("universities");
-  const uniWs = buildWorksheet(uniHeaders, UNIVERSITY_MOCK_ROWS);
-  const uniCsv = XLSX.utils.sheet_to_csv(uniWs);
-  zip.file("universities.csv", uniCsv);
-
-  const semHeaders = UNIVERSITY_SEMESTER_FIELDS.map((f) => f.label);
-  const semWs = buildWorksheet(semHeaders, SEMESTER_MOCK_ROWS);
-  const semCsv = XLSX.utils.sheet_to_csv(semWs);
-  zip.file("semesters.csv", semCsv);
-
-  const dpHeaders = DEGREE_PROGRAM_FIELDS.map((f) => f.label);
-  const dpWs = buildWorksheet(dpHeaders, DEGREE_PROGRAM_MOCK_ROWS);
-  const dpCsv = XLSX.utils.sheet_to_csv(dpWs);
-  zip.file("degree-programs.csv", dpCsv);
+  zip.file(
+    "universities.csv",
+    rowsToCsv(getHeaders("universities"), UNIVERSITY_MOCK_ROWS),
+  );
+  zip.file(
+    "semesters.csv",
+    rowsToCsv(
+      UNIVERSITY_SEMESTER_FIELDS.map((f) => f.label),
+      SEMESTER_MOCK_ROWS,
+    ),
+  );
+  zip.file(
+    "degree-programs.csv",
+    rowsToCsv(
+      DEGREE_PROGRAM_FIELDS.map((f) => f.label),
+      DEGREE_PROGRAM_MOCK_ROWS,
+    ),
+  );
 
   return zip.generateAsync({ type: "blob" });
 }

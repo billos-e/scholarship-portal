@@ -442,7 +442,7 @@ export function ImportWizard() {
               variant="outline"
               size="sm"
               disabled={pending}
-              onClick={() => downloadBlob(generateExcelBlob(entity), `${entity}-template.xlsx`)}
+              onClick={() => generateExcelBlob(entity).then((blob) => downloadBlob(blob, `${entity}-template.xlsx`))}
             >
               <Download className="size-3.5" />
               Excel

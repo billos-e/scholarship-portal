@@ -79,7 +79,7 @@ router.post("/export/csv-zip", requireAdmin, async (req, res) => {
   }
 });
 
-router.post("/export/xlsx", requireAdmin, (req, res) => {
+router.post("/export/xlsx", requireAdmin, async (req, res) => {
   const parsed = exportBodySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid export payload" });
@@ -87,7 +87,7 @@ router.post("/export/xlsx", requireAdmin, (req, res) => {
   }
 
   try {
-    const buffer = buildXlsxBuffer(parsed.data.sheets as ExportSheet[]);
+    const buffer = await buildXlsxBuffer(parsed.data.sheets as ExportSheet[]);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
