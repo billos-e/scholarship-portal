@@ -55,7 +55,7 @@ const QUESTION_META: Record<string, QuestionMeta> = {
   },
   wellbeingConfidence: {
     icon: GraduationCap,
-    title: "Confidence in studies",
+    title: "Academic Stress",
     low: "Uncertain",
     high: "Confident",
   },

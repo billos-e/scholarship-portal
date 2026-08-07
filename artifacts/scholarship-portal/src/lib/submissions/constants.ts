@@ -49,5 +49,5 @@ export const WELLBEING_QUESTIONS = [
   { name: "wellbeingMental", label: "Mental wellbeing" },
   { name: "wellbeingFinancial", label: "Financial wellbeing" },
   { name: "wellbeingStress", label: "Overall Stress Level" },
-  { name: "wellbeingConfidence", label: "Confidence in studies" },
+  { name: "wellbeingConfidence", label: "Academic Stress" },
 ] as const;
