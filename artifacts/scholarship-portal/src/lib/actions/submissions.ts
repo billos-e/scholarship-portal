@@ -93,7 +93,8 @@ const submissionSchema = z
     promptpayNumber: z.string().trim().optional(),
     gpa: z.number().min(0).max(4).optional(),
     creditsCompleted: z.number().int().min(0).max(60).optional(),
-    passedAllCourses: z.boolean().optional(),
+    withdrawnFromCourses: z.boolean().optional(),
+    academicComment: z.string().trim().max(2000).optional(),
     wellbeingPhysical: z.number().int().min(1).max(5).optional(),
     wellbeingMental: z.number().int().min(1).max(5).optional(),
     wellbeingFinancial: z.number().int().min(1).max(5).optional(),
@@ -146,12 +147,13 @@ export async function createSubmission(
     promptpayNumber: trimmed(formData.get("promptpayNumber")),
     gpa: optionalNumber(formData.get("gpa")),
     creditsCompleted: optionalInt(formData.get("creditsCompleted"), { min: 0, max: 60 }),
-    passedAllCourses:
-      formData.get("passedAllCourses") === "true"
+    withdrawnFromCourses:
+      formData.get("withdrawnFromCourses") === "true"
         ? true
-        : formData.get("passedAllCourses") === "false"
+        : formData.get("withdrawnFromCourses") === "false"
           ? false
           : undefined,
+    academicComment: trimmed(formData.get("academicComment")),
     wellbeingPhysical: optionalInt(formData.get("wellbeingPhysical"), { min: 1, max: 5 }),
     wellbeingMental: optionalInt(formData.get("wellbeingMental"), { min: 1, max: 5 }),
     wellbeingFinancial: optionalInt(formData.get("wellbeingFinancial"), { min: 1, max: 5 }),
@@ -214,7 +216,8 @@ export async function createSubmission(
     qrPaymentImageUrl: qrPaymentImageUrl ?? null,
     gpa: data.gpa ?? null,
     creditsCompleted: data.creditsCompleted ?? null,
-    passedAllCourses: data.passedAllCourses ?? null,
+    withdrawnFromCourses: data.withdrawnFromCourses ?? null,
+    academicComment: data.academicComment ?? null,
     transcriptFileUrl: transcriptFileUrl ?? null,
     wellbeingPhysical: data.wellbeingPhysical ?? null,
     wellbeingMental: data.wellbeingMental ?? null,

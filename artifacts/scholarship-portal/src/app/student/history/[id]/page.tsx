@@ -258,15 +258,21 @@ export default function StudentSubmissionDetailPage() {
                   value={report.creditsCompleted ?? null}
                 />
                 <Field
-                  label="Passed all courses"
+                  label="Withdrew from any courses"
                   value={
-                    report.passedAllCourses === null
+                    report.withdrawnFromCourses === null
                       ? null
-                      : report.passedAllCourses
+                      : report.withdrawnFromCourses
                         ? "Yes"
                         : "No"
                   }
                 />
+                {report.academicComment && (
+                  <Field
+                    label="Your comment"
+                    value={report.academicComment}
+                  />
+                )}
                 <FileLink
                   label="Transcript"
                   url={report.transcriptFileUrl}

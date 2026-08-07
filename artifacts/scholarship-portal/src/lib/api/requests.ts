@@ -29,7 +29,8 @@ export type SemesterReportRecord = {
   id: string;
   gpa: string | null;
   creditsCompleted: number | null;
-  passedAllCourses: boolean | null;
+  withdrawnFromCourses: boolean | null;
+  academicComment: string | null;
   transcriptFileUrl: string | null;
   wellbeingPhysical: number | null;
   wellbeingMental: number | null;

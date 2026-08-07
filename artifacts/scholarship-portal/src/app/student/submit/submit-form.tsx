@@ -151,7 +151,7 @@ function PassedCoursesToggle({
   return (
     <div>
       <Label className="mb-1.5 block text-sm font-medium">
-        Passed all courses?
+        Have you had to withdraw from any courses this semester?
       </Label>
       <div className="flex gap-2">
         {options.map((opt) => {
@@ -187,7 +187,7 @@ function PassedCoursesToggle({
           );
         })}
       </div>
-      <input type="hidden" name="passedAllCourses" value={val} />
+      <input type="hidden" name="withdrawnFromCourses" value={val} />
     </div>
   );
 }
@@ -457,9 +457,21 @@ function Step3({
         </div>
       </div>
       <PassedCoursesToggle
-        defaultValue={defaults.passedAllCourses ?? ""}
+        defaultValue={defaults.withdrawnFromCourses ?? ""}
         onValueChange={onPassedCoursesChange}
       />
+      <div className="space-y-2">
+        <Label htmlFor="academicComment">Comments (optional)</Label>
+        <textarea
+          id="academicComment"
+          name="academicComment"
+          rows={3}
+          maxLength={2000}
+          placeholder="Any additional comments about your academic performance this semester…"
+          defaultValue={defaults.academicComment ?? ""}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+        />
+      </div>
       <FormFileField
         id="transcriptFile"
         name="transcriptFile"
@@ -669,7 +681,7 @@ export function SubmissionForm({
   const stepContent = [
     <Step1 key={1} semesters={semesters} defaults={{ universitySemesterId: get("universitySemesterId"), semesterLabel: get("semesterLabel") }} />,
     <Step2 key={2} defaults={{ amountDue: get("amountDue"), dueDate: get("dueDate") }} />,
-    <Step3 key={3} defaults={{ gpa: get("gpa"), creditsCompleted: get("creditsCompleted"), passedAllCourses: get("passedAllCourses") }} onPassedCoursesChange={(v) => save({ passedAllCourses: v })} />,
+    <Step3 key={3} defaults={{ gpa: get("gpa"), creditsCompleted: get("creditsCompleted"), withdrawnFromCourses: get("withdrawnFromCourses"), academicComment: get("academicComment") }} onPassedCoursesChange={(v) => save({ withdrawnFromCourses: v })} />,
     <Step4
       key={4}
       defaults={Object.fromEntries(

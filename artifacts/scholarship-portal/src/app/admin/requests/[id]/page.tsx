@@ -139,15 +139,21 @@ export default function AdminRequestDetailPage() {
                     value={report.creditsCompleted ?? null}
                   />
                   <DetailField
-                    label="Passed all courses"
+                    label="Withdrew from any courses"
                     value={
-                      report.passedAllCourses === null
+                      report.withdrawnFromCourses === null
                         ? null
-                        : report.passedAllCourses
+                        : report.withdrawnFromCourses
                           ? "Yes"
                           : "No"
                     }
                   />
+                  {report.academicComment && (
+                    <DetailField
+                      label="Student comment"
+                      value={report.academicComment}
+                    />
+                  )}
                   <DetailFileLink
                     label="Transcript"
                     url={report.transcriptFileUrl}
