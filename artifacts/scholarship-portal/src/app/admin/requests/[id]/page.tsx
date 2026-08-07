@@ -102,6 +102,17 @@ export default function AdminRequestDetailPage() {
             <ScreenshotDocument url={request.qrPaymentImageUrl} />
           </div>
 
+          {request.message && (
+            <RequestSectionCard
+              title="Message from student"
+              description="A note submitted alongside this payment request."
+              icon={MessageSquare}
+              tone="primary"
+            >
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{request.message}</p>
+            </RequestSectionCard>
+          )}
+
           <BankCard
             accountName={request.bankAccountName}
             accountNumber={request.bankAccountNumber}

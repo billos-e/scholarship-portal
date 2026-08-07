@@ -163,6 +163,7 @@ export const tuitionPaymentRequests = pgTable(
     amountDue: decimal("amount_due", { precision: 10, scale: 2 }).notNull(),
     dueDate: timestamp("due_date", { withTimezone: false }),
     invoiceFileUrl: text("invoice_file_url"),
+    message: text("message"),
     status: requestStatusEnum("status").notNull().default("SUBMITTED"),
     adminNotes: text("admin_notes"),
     bankAccountName: text("bank_account_name"),

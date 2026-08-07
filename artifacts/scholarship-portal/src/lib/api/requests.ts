@@ -57,6 +57,7 @@ export type RequestRecord = {
   amountDue: string;
   dueDate: Date | null;
   invoiceFileUrl: string | null;
+  message: string | null;
   qrPaymentImageUrl: string | null;
   status: RequestStatus;
   adminNotes: string | null;

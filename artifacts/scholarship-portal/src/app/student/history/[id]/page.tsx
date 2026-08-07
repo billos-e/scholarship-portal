@@ -206,6 +206,12 @@ export default function StudentSubmissionDetailPage() {
               icon={ImageIcon}
             />
           </dl>
+          {request.message && (
+            <div className="rounded-lg border bg-muted/40 p-4 text-sm space-y-1">
+              <p className="font-medium">Your message</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{request.message}</p>
+            </div>
+          )}
           {payment ? (
             <div className="rounded-lg border bg-muted/40 p-4 text-sm">
               <p className="font-medium">Payment recorded</p>

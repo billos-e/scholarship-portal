@@ -398,6 +398,17 @@ function Step2({ defaults = {} }: { defaults?: Record<string, string> }) {
           variant="image"
         />
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="message">Message to admin</Label>
+        <Textarea
+          id="message"
+          name="message"
+          rows={3}
+          className="resize-y"
+          placeholder="Optional — any notes or context you'd like to share with the admin team…"
+          defaultValue={defaults.message ?? ""}
+        />
+      </div>
     </div>
   );
 }
