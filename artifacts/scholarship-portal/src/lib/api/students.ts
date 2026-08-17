@@ -1,6 +1,11 @@
 import { apiBase, reviveDates } from "./shared";
 import type { RequestCategory } from "@/lib/request-category";
 import { parseRequestCategory } from "@/lib/request-category";
+import { normalizeEthnicity } from "@/lib/ethnicity-options";
+import type { Religion } from "@/lib/religion";
+import { parseReligion } from "@/lib/religion";
+import type { ScholarshipType } from "@/lib/scholarship-type";
+import { parseScholarshipType } from "@/lib/scholarship-type";
 
 export type StudentStatus = "ACTIVE" | "GRADUATED" | "INACTIVE";
 
@@ -36,7 +41,10 @@ export type StudentRecord = {
   currentSemesterLabel: string | null;
   gpa: string | null;
   photoUrl: string | null;
-  ethnicity: string | null;
+  scholarshipType: ScholarshipType | null;
+  graduationYear: number | null;
+  religion: Religion | null;
+  ethnicity: string[] | null;
   status: StudentStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -81,7 +89,16 @@ function reviveRequest(r: StudentRequestRow): StudentRequestRow {
 }
 
 function reviveStudent<T extends StudentRecord>(s: T): T {
-  return reviveDates(s, ["createdAt", "updatedAt"]);
+  reviveDates(s, ["createdAt", "updatedAt"]);
+  const ethnicity = normalizeEthnicity(s.ethnicity);
+  s.ethnicity = ethnicity.length > 0 ? ethnicity : null;
+  s.scholarshipType = parseScholarshipType(s.scholarshipType);
+  s.religion = parseReligion(s.religion);
+  if (s.graduationYear != null) {
+    const year = Number(s.graduationYear);
+    s.graduationYear = Number.isInteger(year) ? year : null;
+  }
+  return s;
 }
 
 export async function fetchStudents(

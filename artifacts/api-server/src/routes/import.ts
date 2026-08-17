@@ -12,6 +12,10 @@ import {
   bankInformation,
   tuitionPaymentRequests,
   paymentHistory,
+  SCHOLARSHIP_TYPE_VALUES,
+  RELIGION_VALUES,
+  type ScholarshipType,
+  type Religion,
 } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -71,6 +75,37 @@ function parseStudentStatus(raw: string | undefined): "ACTIVE" | "GRADUATED" | "
   if (v === "GRADUATED" || v === "GRADUATE") return "GRADUATED";
   if (v === "INACTIVE") return "INACTIVE";
   return "ACTIVE";
+}
+
+function parseImportedEnum<T extends string>(
+  raw: string | undefined,
+  allowed: readonly T[],
+): T | null {
+  if (!raw?.trim()) return null;
+  const normalized = raw.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  return (allowed as readonly string[]).includes(normalized)
+    ? (normalized as T)
+    : null;
+}
+
+function parseImportedYear(raw: string | undefined): number | null {
+  if (!raw?.trim()) return null;
+  const n = Number(raw.trim());
+  if (!Number.isInteger(n) || n < 1990 || n > 2100) return null;
+  return n;
+}
+
+function parseImportedEthnicity(raw: string | undefined): string[] | null {
+  if (!raw?.trim()) return null;
+  const items = [
+    ...new Set(
+      raw
+        .split(/[,;]/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+  return items.length > 0 ? items : null;
 }
 
 function parseDate(raw: string | undefined): Date | undefined {
@@ -152,8 +187,9 @@ function generateSecurePassword(length = 12): string {
 
 const STUDENT_FIELD_KEYS = [
   "email", "first_name", "last_name", "student_id", "phone",
-  "university", "degree_program", "year_of_study", "current_semester",
-  "gpa", "status", "bank_account_name", "bank_account_number",
+  "university", "degree_program", "year_of_study", "graduation_year",
+  "scholarship_type", "current_semester",
+  "gpa", "religion", "ethnicity", "status", "bank_account_name", "bank_account_number",
   "bank_name", "promptpay_number",
 ];
 
@@ -325,6 +361,13 @@ async function commitStudents(
         yearOfStudy: values.year_of_study?.trim() || null,
         currentSemesterLabel: values.current_semester?.trim() || null,
         gpa: gpa != null ? String(gpa) : null,
+        scholarshipType: parseImportedEnum(
+          values.scholarship_type,
+          SCHOLARSHIP_TYPE_VALUES,
+        ) as ScholarshipType | null,
+        graduationYear: parseImportedYear(values.graduation_year),
+        religion: parseImportedEnum(values.religion, RELIGION_VALUES) as Religion | null,
+        ethnicity: parseImportedEthnicity(values.ethnicity),
         status,
       });
 

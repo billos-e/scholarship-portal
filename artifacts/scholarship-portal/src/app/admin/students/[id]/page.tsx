@@ -41,6 +41,9 @@ import { requireAdmin } from "@/lib/auth/session";
 import { formatDate, formatCurrency } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import { formatEthnicity } from "@/lib/ethnicity-options";
+import { RELIGION_LABELS } from "@/lib/religion";
+import { SCHOLARSHIP_TYPE_LABELS } from "@/lib/scholarship-type";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import {
   getMissingProfileFields,
@@ -341,12 +344,30 @@ export default function StudentDetailPage() {
                         ? `Year ${student.yearOfStudy}`
                         : ""}
                       {student.currentSemesterLabel
-                        ? `, ${student.currentSemesterLabel}`
+                        ? `${student.yearOfStudy ? ", " : ""}${student.currentSemesterLabel}`
                         : ""}
                       {student.gpa
                         ? `. Maintained GPA of ${student.gpa}.`
-                        : ""}
+                        : student.yearOfStudy || student.currentSemesterLabel
+                          ? "."
+                          : "No academic details on file."}
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-4 text-sm text-foreground">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Scholarship type</p>
+                        <p className="font-medium">
+                          {student.scholarshipType
+                            ? SCHOLARSHIP_TYPE_LABELS[student.scholarshipType]
+                            : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Graduation year</p>
+                        <p className="font-medium">
+                          {student.graduationYear ?? "—"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -419,7 +440,19 @@ export default function StudentDetailPage() {
                     Ethnicity
                   </p>
                   <p className="font-medium text-foreground">
-                    {student.ethnicity ?? "—"}
+                    {formatEthnicity(student.ethnicity) ?? "—"}
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-start gap-3">
+                <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">
+                    Religion
+                  </p>
+                  <p className="font-medium text-foreground">
+                    {student.religion ? RELIGION_LABELS[student.religion] : "—"}
                   </p>
                 </div>
               </div>

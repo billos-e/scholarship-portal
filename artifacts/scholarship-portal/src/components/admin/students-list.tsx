@@ -45,8 +45,12 @@ export type StudentRow = {
   universityName: string | null;
   degreeProgram: string | null;
   yearOfStudy: string | null;
+  graduationYear: number | null;
+  scholarshipType: string | null;
   currentSemesterLabel: string | null;
   gpa: string | null;
+  religion: string | null;
+  ethnicity: string[] | null;
   status: StudentStatus;
   bankAccountName: string | null;
   bankAccountNumber: string | null;
@@ -95,8 +99,12 @@ function toRow(student: StudentRecord): StudentRow {
     universityName: student.university?.name ?? null,
     degreeProgram: student.degreeProgram,
     yearOfStudy: student.yearOfStudy,
+    graduationYear: student.graduationYear,
+    scholarshipType: student.scholarshipType,
     currentSemesterLabel: student.currentSemesterLabel,
     gpa: student.gpa?.toString() ?? null,
+    religion: student.religion,
+    ethnicity: student.ethnicity,
     status: student.status,
     bankAccountName: student.bankInformation?.bankAccountName ?? null,
     bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,

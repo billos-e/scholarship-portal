@@ -1,6 +1,12 @@
 import { z } from "zod";
 
+import { normalizeEthnicity } from "@/lib/ethnicity-options";
+import { RELIGIONS } from "@/lib/religion";
+import { SCHOLARSHIP_TYPES } from "@/lib/scholarship-type";
+
 export const studentStatusEnum = z.enum(["ACTIVE", "GRADUATED", "INACTIVE"]);
+export const scholarshipTypeFieldEnum = z.enum(SCHOLARSHIP_TYPES);
+export const religionFieldEnum = z.enum(RELIGIONS);
 
 const trimmedOptional = (schema: z.ZodType<string>) =>
   z.preprocess(
@@ -60,6 +66,27 @@ const optionalGpa = z.preprocess(
     .optional(),
 );
 
+const optionalGraduationYear = z.preprocess(
+  (value) => {
+    if (value === null || value === undefined) return undefined;
+    const s = String(value).trim();
+    if (!s) return undefined;
+    const n = Number(s);
+    return Number.isInteger(n) ? n : NaN;
+  },
+  z
+    .number({ invalid_type_error: "Graduation year must be a number." })
+    .int("Graduation year must be a whole year.")
+    .min(1990, "Graduation year looks too early.")
+    .max(2100, "Graduation year looks too far in the future.")
+    .optional(),
+);
+
+const optionalEthnicity = z.preprocess((value) => {
+  const list = normalizeEthnicity(value);
+  return list.length > 0 ? list : undefined;
+}, z.array(z.string().min(1).max(80)).max(40).optional());
+
 const sharedProfileFields = {
   firstName: optionalName,
   lastName: optionalName,
@@ -69,7 +96,10 @@ const sharedProfileFields = {
       .string()
       .regex(/^[\d\s+().-]{7,20}$/, "Enter a valid phone number."),
   ),
-  ethnicity: trimmedOptional(z.string()),
+  ethnicity: optionalEthnicity,
+  scholarshipType: trimmedOptional(scholarshipTypeFieldEnum),
+  graduationYear: optionalGraduationYear,
+  religion: trimmedOptional(religionFieldEnum),
   degreeProgram: degreeProgramFieldSchema,
   yearOfStudy: yearOfStudyFieldSchema,
   currentSemesterLabel: currentSemesterFieldSchema,
@@ -89,7 +119,10 @@ export const studentProfileSelfEditSchema = z
         .string()
         .regex(/^[\d\s+().-]{7,20}$/, "Enter a valid phone number."),
     ),
-    ethnicity: trimmedOptional(z.string()),
+    ethnicity: optionalEthnicity,
+    scholarshipType: trimmedOptional(scholarshipTypeFieldEnum),
+    graduationYear: optionalGraduationYear,
+    religion: trimmedOptional(religionFieldEnum),
     universityId: universityIdFieldSchema,
     degreeProgram: degreeProgramFieldSchema,
     yearOfStudy: yearOfStudyFieldSchema,
@@ -198,7 +231,10 @@ export function readStudentProfileFromFormData(
     lastName: String(formData.get("lastName") ?? ""),
     studentId: formData.get("studentId"),
     phone: formData.get("phone"),
-    ethnicity: formData.get("ethnicity"),
+    ethnicity: formData.getAll("ethnicity"),
+    scholarshipType: formData.get("scholarshipType"),
+    graduationYear: formData.get("graduationYear"),
+    religion: formData.get("religion"),
     universityId: formData.get("universityId"),
     degreeProgram: formData.get("degreeProgram"),
     yearOfStudy: formData.get("yearOfStudy"),
@@ -216,7 +252,10 @@ export function readStudentSelfProfileFromFormData(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     studentId: formData.get("studentId"),
     phone: formData.get("phone"),
-    ethnicity: formData.get("ethnicity"),
+    ethnicity: formData.getAll("ethnicity"),
+    scholarshipType: formData.get("scholarshipType"),
+    graduationYear: formData.get("graduationYear"),
+    religion: formData.get("religion"),
     universityId: formData.get("universityId"),
     degreeProgram: formData.get("degreeProgram"),
     yearOfStudy: formData.get("yearOfStudy"),

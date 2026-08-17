@@ -4,6 +4,9 @@ import {
   requestCategoryLabel,
   type RequestCategory,
 } from "@/lib/request-category";
+import { formatEthnicity } from "@/lib/ethnicity-options";
+import { religionLabel } from "@/lib/religion";
+import { scholarshipTypeLabel } from "@/lib/scholarship-type";
 import type { RequestStatus } from "@prisma/client";
 
 import type { ExportRow } from "./spreadsheet";
@@ -38,8 +41,12 @@ type StudentExportSource = {
   universityName: string | null;
   degreeProgram: string | null;
   yearOfStudy: string | null;
+  graduationYear: number | null;
+  scholarshipType: string | null;
   currentSemesterLabel: string | null;
   gpa: string | null;
+  religion: string | null;
+  ethnicity: string[] | null;
   status: string;
   bankAccountName: string | null;
   bankAccountNumber: string | null;
@@ -102,8 +109,12 @@ export function studentsToExportRows(rows: StudentExportSource[]): ExportRow[] {
     university: row.universityName,
     degree_program: row.degreeProgram,
     year_of_study: row.yearOfStudy,
+    graduation_year: row.graduationYear,
+    scholarship_type: scholarshipTypeLabel(row.scholarshipType),
     current_semester: row.currentSemesterLabel,
     gpa: row.gpa,
+    religion: religionLabel(row.religion),
+    ethnicity: formatEthnicity(row.ethnicity),
     status: formatStudentStatus(row.status),
     bank_account_name: row.bankAccountName,
     bank_account_number: row.bankAccountNumber,

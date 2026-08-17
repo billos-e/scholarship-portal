@@ -19,6 +19,9 @@ import { formatDate } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import { formatEthnicity } from "@/lib/ethnicity-options";
+import { RELIGION_LABELS } from "@/lib/religion";
+import { SCHOLARSHIP_TYPE_LABELS } from "@/lib/scholarship-type";
 import {
   getMissingProfileFields,
   PROFILE_FIELD_LABELS,
@@ -213,6 +216,18 @@ export default function StudentProfilePage() {
               value={student.gpa ? student.gpa.toString() : null}
             />
             <ProfileInfoField
+              label="Scholarship type"
+              value={
+                student.scholarshipType
+                  ? SCHOLARSHIP_TYPE_LABELS[student.scholarshipType]
+                  : null
+              }
+            />
+            <ProfileInfoField
+              label="Graduation year"
+              value={student.graduationYear}
+            />
+            <ProfileInfoField
               label="Member since"
               value={formatDate(student.createdAt)}
             />
@@ -225,7 +240,14 @@ export default function StudentProfilePage() {
             <ProfileInfoField label="Last name" value={student.lastName} />
             <ProfileInfoField label="Student ID" value={student.studentId} />
             <ProfileInfoField label="Phone number" value={student.phone} />
-            <ProfileInfoField label="Ethnicity" value={student.ethnicity} />
+            <ProfileInfoField
+              label="Religion"
+              value={student.religion ? RELIGION_LABELS[student.religion] : null}
+            />
+            <ProfileInfoField
+              label="Ethnicity"
+              value={formatEthnicity(student.ethnicity)}
+            />
             <ProfileInfoField label="Email address">
               <a
                 href={`mailto:${user.email}`}

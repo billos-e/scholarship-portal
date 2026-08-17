@@ -15,6 +15,13 @@
       "when": 1755449460000,
       "tag": "0002_add_request_category",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786983600000,
+      "tag": "0003_add_student_profile_fields",
+      "breakpoints": true
     }
   ]
 }

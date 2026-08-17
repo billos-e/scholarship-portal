@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
 import { StudentAcademicFields } from "@/components/admin/student-academic-fields";
+import { EthnicityChipSelect } from "@/components/ethnicity-chip-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,12 @@ import {
   type ActionState,
   saveStudentEdit,
 } from "@/lib/actions/students";
-import { ETHNICITY_OPTIONS } from "@/lib/ethnicity-options";
+import { graduationYearOptions } from "@/lib/graduation-year";
+import { RELIGION_LABELS, RELIGIONS } from "@/lib/religion";
+import {
+  SCHOLARSHIP_TYPE_LABELS,
+  SCHOLARSHIP_TYPES,
+} from "@/lib/scholarship-type";
 import { getInitials } from "@/lib/initials";
 import { generateSecurePassword } from "@/lib/password";
 import type { StudentAcademicOptions } from "@/lib/student-academic-options";
@@ -37,7 +43,10 @@ export type StudentEditPageData = {
   lastName: string;
   studentId: string | null;
   phone: string | null;
-  ethnicity: string | null;
+  ethnicity: string[] | null;
+  scholarshipType: string | null;
+  graduationYear: number | null;
+  religion: string | null;
   universityId: string | null;
   degreeProgram: string | null;
   yearOfStudy: string | null;
@@ -200,17 +209,23 @@ export function StudentEditPageForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ethnicity">Ethnicity</Label>
+              <Label htmlFor="religion">Religion</Label>
               <NativeSelect
-                id="ethnicity"
-                name="ethnicity"
-                defaultValue={student.ethnicity ?? ""}
+                id="religion"
+                name="religion"
+                defaultValue={student.religion ?? ""}
               >
                 <option value="">— Not specified —</option>
-                {ETHNICITY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
+                {RELIGIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {RELIGION_LABELS[opt]}
+                  </option>
                 ))}
               </NativeSelect>
+            </div>
+            <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+              <Label>Ethnicity</Label>
+              <EthnicityChipSelect defaultSelected={student.ethnicity ?? []} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Account status</Label>
@@ -251,6 +266,38 @@ export function StudentEditPageForm({
               max="4"
               defaultValue={student.gpa ?? ""}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="scholarshipType">Scholarship type</Label>
+            <NativeSelect
+              id="scholarshipType"
+              name="scholarshipType"
+              defaultValue={student.scholarshipType ?? ""}
+            >
+              <option value="">— Not specified —</option>
+              {SCHOLARSHIP_TYPES.map((opt) => (
+                <option key={opt} value={opt}>
+                  {SCHOLARSHIP_TYPE_LABELS[opt]}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="graduationYear">Graduation year</Label>
+            <NativeSelect
+              id="graduationYear"
+              name="graduationYear"
+              defaultValue={
+                student.graduationYear != null ? String(student.graduationYear) : ""
+              }
+            >
+              <option value="">— Not specified —</option>
+              {graduationYearOptions(student.graduationYear).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </NativeSelect>
           </div>
         </div>
       </ProfileInfoCard>

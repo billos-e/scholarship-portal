@@ -104,6 +104,9 @@ export default function StudentEditPage() {
           currentSemesterLabel: student.currentSemesterLabel,
           gpa: student.gpa ? student.gpa.toString() : null,
           ethnicity: student.ethnicity,
+          scholarshipType: student.scholarshipType,
+          graduationYear: student.graduationYear,
+          religion: student.religion,
           status: student.status,
           photoUrl: student.photoUrl,
           bankAccountName:

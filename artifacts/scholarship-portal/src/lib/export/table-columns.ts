@@ -67,6 +67,18 @@ export const STUDENTS_TABLE_COLUMNS: TableExportColumn[] = [
     column: "year_of_study",
   },
   {
+    key: "graduation_year",
+    label: "Graduation year",
+    table: "students",
+    column: "graduation_year",
+  },
+  {
+    key: "scholarship_type",
+    label: "Scholarship type",
+    table: "students",
+    column: "scholarship_type",
+  },
+  {
     key: "current_semester",
     label: "Current semester",
     table: "students",
@@ -77,6 +89,18 @@ export const STUDENTS_TABLE_COLUMNS: TableExportColumn[] = [
     label: "GPA",
     table: "students",
     column: "gpa",
+  },
+  {
+    key: "religion",
+    label: "Religion",
+    table: "students",
+    column: "religion",
+  },
+  {
+    key: "ethnicity",
+    label: "Ethnicity",
+    table: "students",
+    column: "ethnicity",
   },
   {
     key: "status",

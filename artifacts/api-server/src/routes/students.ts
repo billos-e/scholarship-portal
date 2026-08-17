@@ -9,6 +9,10 @@ import {
   bankInformation,
   universities,
   tuitionPaymentRequests,
+  SCHOLARSHIP_TYPE_VALUES,
+  RELIGION_VALUES,
+  type ScholarshipType,
+  type Religion,
 } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -22,6 +26,49 @@ const STUDENT_SORT_COLUMNS = {
 } as const;
 
 type StudentSortKey = keyof typeof STUDENT_SORT_COLUMNS;
+
+function parseOptionalEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  field: string,
+): { ok: true; value: T | null } | { ok: false; error: string } {
+  if (value == null || value === "") return { ok: true, value: null };
+  if (typeof value === "string" && (allowed as readonly string[]).includes(value)) {
+    return { ok: true, value: value as T };
+  }
+  return { ok: false, error: `Invalid ${field}.` };
+}
+
+function parseGraduationYear(
+  value: unknown,
+): { ok: true; value: number | null } | { ok: false; error: string } {
+  if (value == null || value === "") return { ok: true, value: null };
+  const n = typeof value === "number" ? value : Number(String(value).trim());
+  if (!Number.isInteger(n) || n < 1990 || n > 2100) {
+    return { ok: false, error: "Graduation year must be a valid calendar year." };
+  }
+  return { ok: true, value: n };
+}
+
+function parseEthnicity(
+  value: unknown,
+): { ok: true; value: string[] | null } | { ok: false; error: string } {
+  if (value == null || value === "") return { ok: true, value: null };
+  let items: unknown[];
+  if (Array.isArray(value)) {
+    items = value;
+  } else if (typeof value === "string") {
+    items = value.includes(",") || value.includes(";")
+      ? value.split(/[,;]/)
+      : [value];
+  } else {
+    return { ok: false, error: "Ethnicity must be a list of values." };
+  }
+  const cleaned = [
+    ...new Set(items.map((item) => String(item).trim()).filter(Boolean)),
+  ];
+  return { ok: true, value: cleaned.length > 0 ? cleaned : null };
+}
 
 async function generateUniqueStudentId(): Promise<string> {
   const year = new Date().getFullYear();
@@ -253,6 +300,10 @@ router.post("/students", async (req, res) => {
       currentSemesterLabel,
       gpa,
       status,
+      scholarshipType,
+      graduationYear,
+      religion,
+      ethnicity,
     } = req.body ?? {};
 
     if (!email || typeof email !== "string") {
@@ -293,6 +344,31 @@ router.post("/students", async (req, res) => {
       }
     }
 
+    const parsedScholarshipType = parseOptionalEnum(
+      scholarshipType,
+      SCHOLARSHIP_TYPE_VALUES,
+      "scholarship type",
+    );
+    if (!parsedScholarshipType.ok) {
+      res.status(400).json({ error: parsedScholarshipType.error });
+      return;
+    }
+    const parsedReligion = parseOptionalEnum(religion, RELIGION_VALUES, "religion");
+    if (!parsedReligion.ok) {
+      res.status(400).json({ error: parsedReligion.error });
+      return;
+    }
+    const parsedGraduationYear = parseGraduationYear(graduationYear);
+    if (!parsedGraduationYear.ok) {
+      res.status(400).json({ error: parsedGraduationYear.error });
+      return;
+    }
+    const parsedEthnicity = parseEthnicity(ethnicity);
+    if (!parsedEthnicity.ok) {
+      res.status(400).json({ error: parsedEthnicity.error });
+      return;
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
     const userId = randomUUID();
     const studentDbId = randomUUID();
@@ -322,6 +398,10 @@ router.post("/students", async (req, res) => {
       yearOfStudy: (yearOfStudy as string)?.trim() || null,
       currentSemesterLabel: (currentSemesterLabel as string)?.trim() || null,
       gpa: (gpa as string)?.trim() || null,
+      scholarshipType: parsedScholarshipType.value as ScholarshipType | null,
+      graduationYear: parsedGraduationYear.value,
+      religion: parsedReligion.value as Religion | null,
+      ethnicity: parsedEthnicity.value,
       status: studentStatus,
     });
 
@@ -384,12 +464,47 @@ router.put("/students/:id", async (req, res) => {
       studentPatch.studentId = newStudentId;
     }
     if ("phone" in body) studentPatch.phone = (body.phone as string)?.trim() || null;
-    if ("ethnicity" in body) studentPatch.ethnicity = (body.ethnicity as string)?.trim() || null;
     if ("universityId" in body) studentPatch.universityId = (body.universityId as string) || null;
     if ("degreeProgram" in body) studentPatch.degreeProgram = (body.degreeProgram as string)?.trim() || null;
     if ("yearOfStudy" in body) studentPatch.yearOfStudy = (body.yearOfStudy as string)?.trim() || null;
     if ("currentSemesterLabel" in body) studentPatch.currentSemesterLabel = (body.currentSemesterLabel as string)?.trim() || null;
     if ("gpa" in body) studentPatch.gpa = body.gpa != null ? String(body.gpa).trim() || null : null;
+    if ("scholarshipType" in body) {
+      const parsed = parseOptionalEnum(
+        body.scholarshipType,
+        SCHOLARSHIP_TYPE_VALUES,
+        "scholarship type",
+      );
+      if (!parsed.ok) {
+        res.status(400).json({ error: parsed.error });
+        return;
+      }
+      studentPatch.scholarshipType = parsed.value;
+    }
+    if ("graduationYear" in body) {
+      const parsed = parseGraduationYear(body.graduationYear);
+      if (!parsed.ok) {
+        res.status(400).json({ error: parsed.error });
+        return;
+      }
+      studentPatch.graduationYear = parsed.value;
+    }
+    if ("religion" in body) {
+      const parsed = parseOptionalEnum(body.religion, RELIGION_VALUES, "religion");
+      if (!parsed.ok) {
+        res.status(400).json({ error: parsed.error });
+        return;
+      }
+      studentPatch.religion = parsed.value;
+    }
+    if ("ethnicity" in body) {
+      const parsed = parseEthnicity(body.ethnicity);
+      if (!parsed.ok) {
+        res.status(400).json({ error: parsed.error });
+        return;
+      }
+      studentPatch.ethnicity = parsed.value;
+    }
     if ("status" in body) {
       const validStatuses = ["ACTIVE", "GRADUATED", "INACTIVE"];
       if (!validStatuses.includes(body.status)) {

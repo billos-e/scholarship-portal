@@ -23,7 +23,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { ETHNICITY_OPTIONS } from "@/lib/ethnicity-options";
+import { EthnicityChipSelect } from "@/components/ethnicity-chip-select";
+import { normalizeEthnicity } from "@/lib/ethnicity-options";
+import { graduationYearOptions } from "@/lib/graduation-year";
+import { RELIGION_LABELS, RELIGIONS } from "@/lib/religion";
+import {
+  SCHOLARSHIP_TYPE_LABELS,
+  SCHOLARSHIP_TYPES,
+} from "@/lib/scholarship-type";
 
 type UniversityOption = { id: string; name: string };
 
@@ -33,7 +40,10 @@ export type StudentProfileEditData = {
   email: string;
   studentId: string | null;
   phone: string | null;
-  ethnicity: string | null;
+  ethnicity: string[] | null;
+  scholarshipType: string | null;
+  graduationYear: number | null;
+  religion: string | null;
   universityId: string | null;
   degreeProgram: string | null;
   yearOfStudy: string | null;
@@ -80,20 +90,23 @@ const LABEL_W = "w-44 shrink-0";
 function Row({
   label,
   locked,
+  align = "center",
   children,
 }: {
   label: string;
   locked?: boolean;
+  align?: "center" | "start";
   children: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-5 border-b border-border/30 py-3 last:border-0",
+        "flex gap-5 border-b border-border/30 py-3 last:border-0",
+        align === "start" ? "items-start" : "items-center",
         locked && "opacity-60",
       )}
     >
-      <div className={`${LABEL_W} flex items-center gap-1.5`}>
+      <div className={`${LABEL_W} flex items-center gap-1.5 ${align === "start" ? "pt-1.5" : ""}`}>
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         {locked && <Lock className="size-2.5 text-muted-foreground/50" />}
       </div>
@@ -300,6 +313,22 @@ export function StudentProfileEditForm({
   const [degreeProgram, setDegreeProgram] = useState(getDraft("degreeProgram", student.degreeProgram ?? ""));
   const [semesterLabel, setSemesterLabel] = useState(getDraft("currentSemesterLabel", student.currentSemesterLabel ?? ""));
   const [yearOfStudy, setYearOfStudy] = useState(getDraft("yearOfStudy", student.yearOfStudy ?? ""));
+  const [ethnicities, setEthnicities] = useState<string[]>(() => {
+    const draft = getDraft("__chips_ethnicity", "");
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft) as unknown;
+        if (Array.isArray(parsed)) return normalizeEthnicity(parsed);
+      } catch {
+        /* keep stored profile */
+      }
+    }
+    return normalizeEthnicity(student.ethnicity);
+  });
+  const graduationYears = useMemo(
+    () => graduationYearOptions(student.graduationYear),
+    [student.graduationYear],
+  );
 
   // Only keep the student's original program/semester selectable while the
   // originally-assigned university is still selected. Switching to a
@@ -446,17 +475,28 @@ export function StudentProfileEditForm({
               placeholder="e.g. 081 000 0000"
             />
           </Row>
-          <Row label="Ethnicity">
+          <Row label="Religion">
             <FieldSelect
-              id="ethnicity"
-              name="ethnicity"
-              defaultValue={getDraft("ethnicity", student.ethnicity ?? "")}
+              id="religion"
+              name="religion"
+              defaultValue={getDraft("religion", student.religion ?? "")}
             >
               <option value="">— Not specified —</option>
-              {ETHNICITY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+              {RELIGIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {RELIGION_LABELS[opt]}
+                </option>
               ))}
             </FieldSelect>
+          </Row>
+          <Row label="Ethnicity" align="start">
+            <EthnicityChipSelect
+              defaultSelected={ethnicities}
+              onSelectionChange={(values) => {
+                setEthnicities(values);
+                saveDraft({ __chips_ethnicity: JSON.stringify(values) });
+              }}
+            />
           </Row>
         </Group>
 
@@ -553,6 +593,41 @@ export function StudentProfileEditForm({
                 max="4"
                 defaultValue={getDraft("gpa", student.gpa ?? "")}
               />
+            }
+          />
+          <PairRow
+            label1="Scholarship type"
+            children1={
+              <FieldSelect
+                id="scholarshipType"
+                name="scholarshipType"
+                defaultValue={getDraft("scholarshipType", student.scholarshipType ?? "")}
+              >
+                <option value="">— Not specified —</option>
+                {SCHOLARSHIP_TYPES.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {SCHOLARSHIP_TYPE_LABELS[opt]}
+                  </option>
+                ))}
+              </FieldSelect>
+            }
+            label2="Graduation year"
+            children2={
+              <FieldSelect
+                id="graduationYear"
+                name="graduationYear"
+                defaultValue={getDraft(
+                  "graduationYear",
+                  student.graduationYear != null ? String(student.graduationYear) : "",
+                )}
+              >
+                <option value="">— Not specified —</option>
+                {graduationYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </FieldSelect>
             }
           />
         </Group>

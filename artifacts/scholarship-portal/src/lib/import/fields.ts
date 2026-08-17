@@ -41,11 +41,35 @@ const STUDENT_FIELDS: ImportFieldDef[] = [
     aliases: ["year of study", "year", "class year"],
   },
   {
+    key: "graduation_year",
+    label: "Graduation year",
+    type: "number",
+    aliases: ["graduation year", "expected graduation", "grad year"],
+  },
+  {
+    key: "scholarship_type",
+    label: "Scholarship type",
+    type: "enum",
+    enumValues: ["TUITION", "LIVING_EXPENSES", "FULL_SCHOLARSHIP"],
+    aliases: ["scholarship", "award type"],
+  },
+  {
     key: "current_semester",
     label: "Current semester",
     aliases: ["current semester", "semester", "current_semester_label"],
   },
   { key: "gpa", label: "GPA", type: "number", aliases: ["grade point average"] },
+  {
+    key: "religion",
+    label: "Religion",
+    type: "enum",
+    enumValues: ["CHRISTIAN", "BUDDHIST", "ANIMIST", "NONE"],
+  },
+  {
+    key: "ethnicity",
+    label: "Ethnicity",
+    aliases: ["ethnic group", "ethnicities"],
+  },
   {
     key: "status",
     label: "Status",

@@ -46,6 +46,27 @@ export const termCodeEnum = pgEnum("term_code", [
   "WINTER",
 ]);
 
+/** Student's overall scholarship — not a payment-request category. */
+export const SCHOLARSHIP_TYPE_VALUES = [
+  "TUITION",
+  "LIVING_EXPENSES",
+  "FULL_SCHOLARSHIP",
+] as const;
+export type ScholarshipType = (typeof SCHOLARSHIP_TYPE_VALUES)[number];
+export const scholarshipTypeEnum = pgEnum(
+  "scholarship_type",
+  SCHOLARSHIP_TYPE_VALUES,
+);
+
+export const RELIGION_VALUES = [
+  "CHRISTIAN",
+  "BUDDHIST",
+  "ANIMIST",
+  "NONE",
+] as const;
+export type Religion = (typeof RELIGION_VALUES)[number];
+export const religionEnum = pgEnum("religion", RELIGION_VALUES);
+
 // ---------------------------------------------------------------------------
 // Reference data
 // ---------------------------------------------------------------------------
@@ -140,7 +161,10 @@ export const students = pgTable("students", {
   currentSemesterLabel: text("current_semester_label"),
   gpa: decimal("gpa", { precision: 3, scale: 2 }),
   photoUrl: text("photo_url"),
-  ethnicity: text("ethnicity"),
+  scholarshipType: scholarshipTypeEnum("scholarship_type"),
+  graduationYear: integer("graduation_year"),
+  religion: religionEnum("religion"),
+  ethnicity: text("ethnicity").array(),
   status: studentStatusEnum("status").notNull().default("ACTIVE"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
