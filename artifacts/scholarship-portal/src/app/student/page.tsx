@@ -7,13 +7,13 @@ import {
   ArrowRight,
   ClipboardList,
   History,
+  Plus,
   User,
 } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { LatestSubmissionCard } from "@/components/student/latest-submission-card";
-import { RequestCategoryPicker, openRequestsByCategory } from "@/components/student/request-category-picker";
 import { PaymentRequestsTable } from "@/components/payment-requests-table";
 import { QuickActionCard } from "@/components/quick-action-card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 import {
   getMissingProfileFields,
   PROFILE_FIELD_LABELS,
-  BLOCKING_REQUEST_STATUSES,
   type StudentForEligibility,
   type ProfileField,
 } from "@/lib/submissions/eligibility";
@@ -92,15 +91,10 @@ export default function StudentDashboard() {
   const missingProfileFields = getMissingProfileFields(
     student as unknown as StudentForEligibility,
   );
-  const openByCategory = openRequestsByCategory(
-    student.tuitionPaymentRequests,
-    BLOCKING_REQUEST_STATUSES,
-  );
   const profileReady = missingProfileFields.length === 0;
   const eligibility = {
     canStart: profileReady,
     missingProfileFields: missingProfileFields as ProfileField[],
-    openRequest: null as { id: string; semesterLabel: string } | null,
   };
 
   const requests = student.tuitionPaymentRequests;
@@ -108,7 +102,6 @@ export default function StudentDashboard() {
   const recentRequests = requests.slice(0, 5);
 
   const semesterHint =
-    eligibility.openRequest?.semesterLabel ??
     student.currentSemesterLabel ??
     latestRequest?.semesterLabel ??
     "Current semester";
@@ -145,7 +138,12 @@ export default function StudentDashboard() {
         title={`${greetingForHour(hour)}, ${student.firstName}`}
         description={`${semesterHint} · ${student.university?.name ?? "No university set"}`}
         actions={
-          eligibility.missingProfileFields.length > 0 ? (
+          eligibility.canStart ? (
+            <Button className="h-11 gap-2 px-5" render={<Link href="/student/submit" />}>
+              <Plus className="size-4" />
+              New Submission
+            </Button>
+          ) : eligibility.missingProfileFields.length > 0 ? (
             <Button
               className="h-11 gap-2 px-5"
               render={<Link href="/student/profile/edit" />}
@@ -156,13 +154,6 @@ export default function StudentDashboard() {
           ) : null
         }
       />
-
-      {eligibility.canStart ? (
-        <RequestCategoryPicker
-          hrefFor={(category) => `/student/submit?category=${category}`}
-          openByCategory={openByCategory}
-        />
-      ) : null}
 
       {latestRequest ? (
         <LatestSubmissionCard
@@ -181,11 +172,15 @@ export default function StudentDashboard() {
           title="No submissions yet"
           description={
             eligibility.canStart
-              ? "Choose a payment type above to start your first semester submission."
+              ? "Start your first semester submission to track tuition and academic progress."
               : "Complete your profile before starting your first submission."
           }
           action={
-            eligibility.missingProfileFields.length > 0 ? (
+            eligibility.canStart ? (
+              <Button render={<Link href="/student/submit" />}>
+                New Submission
+              </Button>
+            ) : eligibility.missingProfileFields.length > 0 ? (
               <Button render={<Link href="/student/profile/edit" />}>
                 Complete profile
               </Button>
@@ -203,10 +198,21 @@ export default function StudentDashboard() {
             tone="primary"
           />
         </Link>
-        <Link href="/student/submit" className="block">
+        <Link
+          href={
+            eligibility.canStart
+              ? "/student/submit"
+              : "/student/profile/edit"
+          }
+          className="block"
+        >
           <QuickActionCard
             title="Semester Submission"
-            description="Choose a payment type and file your report"
+            description={
+              eligibility.canStart
+                ? "Start a payment request and academic report"
+                : "Complete your profile first"
+            }
             icon={ClipboardList}
             tone="accent"
           />
