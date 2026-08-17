@@ -11,14 +11,17 @@ import type { RequestStatus } from "@prisma/client";
 import { RequestStatusBar } from "@/components/admin/request-status-bar";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import { Button } from "@/components/ui/button";
 import { getInitials } from "@/lib/initials";
 import { cn } from "@/lib/utils";
+import type { RequestCategory } from "@/lib/request-category";
 
 type RequestDetailHeroProps = {
   studentId: string;
   studentName: string;
   semesterLabel: string;
+  requestCategory: RequestCategory;
   email: string;
   universityName: string | null;
   universityId: string | null;
@@ -37,6 +40,7 @@ export function RequestDetailHero({
   studentId,
   studentName,
   semesterLabel,
+  requestCategory,
   email,
   universityName,
   universityId,
@@ -90,6 +94,7 @@ export function RequestDetailHero({
                     {studentName}
                   </Link>
                   <StatusBadge status={status} />
+                  <RequestCategoryBadge category={requestCategory} />
                 </div>
                 <p className="font-heading text-lg font-medium text-primary">
                   {semesterLabel}

@@ -25,6 +25,7 @@ import Image from "next/image";
 
 import { StudentStatusBadge } from "@/components/student-status-badge";
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
@@ -281,14 +282,18 @@ export default function StudentDetailPage() {
                         <Receipt className="h-5 w-5 text-info" />
                       </div>
                       <div className="w-full">
-                        <div className="flex justify-between items-start mb-1">
+                        <div className="flex justify-between items-start mb-1 gap-2">
                           <h3 className="font-semibold text-foreground">
                             Payment Request{" "}
                             <StatusBadge status={request.status} />
                           </h3>
+                          <RequestCategoryBadge category={request.requestCategory} />
                         </div>
                         <p className="text-muted-foreground text-sm mb-3">
-                          {request.semesterLabel} semester tuition fee
+                          {request.semesterLabel} semester{" "}
+                          {request.requestCategory === "TUITION"
+                            ? "tuition fee"
+                            : "payment"}{" "}
                           requested.
                         </p>
                         <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-between border border-border/50">

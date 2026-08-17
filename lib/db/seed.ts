@@ -110,7 +110,7 @@ async function upsertBankInfo(studentId: string, data: Record<string, unknown>) 
 
 async function seedRequest(studentId: string, bankStudentId: string, semester: { id: string; label: string; startDate: Date }, status: string, amountDue: number, submittedAt: Date) {
   const existing = await q(
-    `SELECT id FROM tuition_payment_requests WHERE student_id=$1 AND university_semester_id=$2`,
+    `SELECT id FROM tuition_payment_requests WHERE student_id=$1 AND university_semester_id=$2 AND request_category='TUITION'`,
     [studentId, semester.id],
   );
   if (existing.rows.length) return existing.rows[0].id as string;

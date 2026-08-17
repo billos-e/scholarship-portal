@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { sortRequestsByUrgency, OPEN_REQUEST_STATUSES } from "@/lib/request-urgency";
+import type { RequestCategory } from "@/lib/request-category";
 
 type DashboardStudent = {
   universityId: string | null;
@@ -32,6 +33,7 @@ type DashboardRequest = {
   dueDate: string | null;
   submittedAt: string;
   status: RequestStatus;
+  requestCategory: RequestCategory;
   studentName: string;
   universityName: string;
   semesterName: string;
@@ -66,6 +68,7 @@ export function AdminDashboardView({
         id: r.id,
         semesterLabel: r.semesterLabel,
         semesterName: r.semesterName,
+        requestCategory: r.requestCategory,
         dueDate: r.dueDate ? new Date(r.dueDate) : null,
         submittedAt: new Date(r.submittedAt),
         status: r.status,

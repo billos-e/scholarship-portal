@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { RequestStatus } from "@prisma/client";
+import type { RequestCategory } from "@/lib/request-category";
 import { ArrowRight } from "lucide-react";
 
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import { StatusStepper } from "@/components/status-stepper";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -10,6 +12,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 export type LatestSubmissionData = {
   id: string;
   semesterLabel: string;
+  requestCategory: RequestCategory;
   amountDue: string;
   submittedAt: Date;
   dueDate: Date | null;
@@ -40,6 +43,7 @@ export function LatestSubmissionCard({ request }: LatestSubmissionCardProps) {
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Latest submission
                 </p>
+                <RequestCategoryBadge category={request.requestCategory} />
                 <StatusBadge status={request.status} />
               </div>
             </div>

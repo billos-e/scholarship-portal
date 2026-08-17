@@ -5,19 +5,23 @@ import type { RequestStatus } from "@prisma/client";
 
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { useTableSort } from "@/hooks/use-table-sort";
 import { formatCurrency, formatDate } from "@/lib/format";
+import type { RequestCategory } from "@/lib/request-category";
 
 type PaymentRequestRow = {
   id: string;
   semesterLabel: string;
+  requestCategory: RequestCategory;
   amountDue: string;
   submittedAt: string;
   status: RequestStatus;
@@ -64,6 +68,9 @@ export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   {formatCurrency(request.amountDue)}
                 </p>
+                <div className="mt-2">
+                  <RequestCategoryBadge category={request.requestCategory} />
+                </div>
               </div>
               <StatusBadge status={request.status} />
             </div>
@@ -85,6 +92,7 @@ export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
                 direction={sortDirection}
                 onSort={onSort}
               />
+              <TableHead>Category</TableHead>
               <SortableTableHead
                 label="Amount"
                 sortKey="amount"
@@ -116,6 +124,9 @@ export function PaymentRequestsTable({ rows }: PaymentRequestsTableProps) {
                 onClick={() => navigate(request.href)}
               >
                 <TableCell className="font-medium">{request.semesterLabel}</TableCell>
+                <TableCell>
+                  <RequestCategoryBadge category={request.requestCategory} />
+                </TableCell>
                 <TableCell>{formatCurrency(request.amountDue)}</TableCell>
                 <TableCell>
                   {formatDate(new Date(request.submittedAt))}

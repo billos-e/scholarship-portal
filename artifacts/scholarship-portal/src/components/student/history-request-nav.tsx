@@ -4,12 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { RequestCategory } from "@/lib/request-category";
 
 export type HistoryRequestItem = {
   id: string;
   semesterLabel: string;
+  requestCategory: RequestCategory;
   amountDue: string;
   submittedAt: Date;
   status: Parameters<typeof StatusBadge>[0]["status"];
@@ -57,7 +60,10 @@ export function HistoryRequestNav({ requests }: HistoryRequestNavProps) {
               <p className="truncate text-xs text-muted-foreground">
                 {formatCurrency(request.amountDue)}
               </p>
-              <StatusBadge status={request.status} />
+              <div className="flex flex-wrap gap-1">
+                <RequestCategoryBadge category={request.requestCategory} />
+                <StatusBadge status={request.status} />
+              </div>
             </Link>
           );
         })}
@@ -86,7 +92,8 @@ export function HistoryRequestNav({ requests }: HistoryRequestNavProps) {
                 {formatCurrency(request.amountDue)} ·{" "}
                 {formatDate(request.submittedAt)}
               </p>
-              <div className="mt-1.5">
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                <RequestCategoryBadge category={request.requestCategory} />
                 <StatusBadge status={request.status} />
               </div>
             </Link>

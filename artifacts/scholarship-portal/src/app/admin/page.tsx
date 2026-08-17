@@ -66,6 +66,7 @@ export default function AdminDashboard() {
         dueDate: request.dueDate?.toISOString() ?? null,
         submittedAt: request.submittedAt.toISOString(),
         status: request.status,
+        requestCategory: request.requestCategory,
         studentName: `${request.student.firstName} ${request.student.lastName}`,
         universityName: request.student.university?.name ?? "—",
         semesterName:

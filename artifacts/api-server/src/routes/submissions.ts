@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import {
   db,
@@ -8,9 +8,31 @@ import {
   tuitionPaymentRequests,
   semesterReports,
   universitySemesters,
+  REQUEST_CATEGORY_VALUES,
+  type RequestCategory,
 } from "@workspace/db";
 
 const router: IRouter = Router();
+
+const OPEN_REQUEST_STATUSES = ["SUBMITTED", "UNDER_REVIEW", "APPROVED"] as const;
+
+const CATEGORY_LABELS: Record<RequestCategory, string> = {
+  TUITION: "tuition",
+  LIVING_EXPENSES: "living expenses",
+  STUDY_ABROAD_INTERNSHIP: "study abroad / internship",
+  EMERGENCY_AID: "emergency aid",
+};
+
+function parseRequestCategory(value: unknown): RequestCategory | null {
+  if (value == null || value === "") return "TUITION";
+  if (
+    typeof value === "string" &&
+    (REQUEST_CATEGORY_VALUES as readonly string[]).includes(value)
+  ) {
+    return value as RequestCategory;
+  }
+  return null;
+}
 
 router.post("/submissions", async (req, res) => {
   try {
@@ -42,6 +64,7 @@ router.post("/submissions", async (req, res) => {
       reflectionAchievement,
       reflectionChallenge,
       reflectionAdditional,
+      requestCategory: rawRequestCategory,
     } = req.body ?? {};
 
     if (!studentId) {
@@ -97,35 +120,48 @@ router.post("/submissions", async (req, res) => {
       return;
     }
 
-    // Check for open request (blocking statuses)
+    const requestCategory = parseRequestCategory(rawRequestCategory);
+    if (!requestCategory) {
+      res.status(400).json({ error: "Please choose a valid payment category." });
+      return;
+    }
+
+    const categoryLabel = CATEGORY_LABELS[requestCategory];
+
+    // Block only an OPEN request of the same category (other categories stay allowed).
     const [openRequest] = await db
-      .select({ id: tuitionPaymentRequests.id, semesterLabel: tuitionPaymentRequests.semesterLabel })
+      .select({
+        id: tuitionPaymentRequests.id,
+        semesterLabel: tuitionPaymentRequests.semesterLabel,
+      })
       .from(tuitionPaymentRequests)
       .where(
         and(
           eq(tuitionPaymentRequests.studentId, studentId),
-          ne(tuitionPaymentRequests.status, "REJECTED"),
-          ne(tuitionPaymentRequests.status, "PAID"),
+          eq(tuitionPaymentRequests.requestCategory, requestCategory),
+          inArray(tuitionPaymentRequests.status, [...OPEN_REQUEST_STATUSES]),
         ),
       )
       .limit(1);
 
     if (openRequest) {
       res.status(409).json({
-        error: `You already have an open request for ${openRequest.semesterLabel}. Please wait for it to be processed.`,
+        error: `You already have an open ${categoryLabel} request for ${openRequest.semesterLabel}. Please wait for it to be processed.`,
       });
       return;
     }
 
-    // Check for duplicate semester submission
+    // One non-REJECTED request per category per semester.
     const dupWhere = universitySemesterId
       ? and(
           eq(tuitionPaymentRequests.studentId, studentId),
+          eq(tuitionPaymentRequests.requestCategory, requestCategory),
           eq(tuitionPaymentRequests.universitySemesterId, universitySemesterId),
           ne(tuitionPaymentRequests.status, "REJECTED"),
         )
       : and(
           eq(tuitionPaymentRequests.studentId, studentId),
+          eq(tuitionPaymentRequests.requestCategory, requestCategory),
           eq(tuitionPaymentRequests.semesterLabel, semesterLabel),
           ne(tuitionPaymentRequests.status, "REJECTED"),
         );
@@ -138,7 +174,7 @@ router.post("/submissions", async (req, res) => {
 
     if (duplicate) {
       res.status(409).json({
-        error: `You have already submitted a request for ${duplicate.semesterLabel}.`,
+        error: `You have already submitted a ${categoryLabel} request for ${duplicate.semesterLabel}.`,
       });
       return;
     }
@@ -157,6 +193,7 @@ router.post("/submissions", async (req, res) => {
       dueDate: dueDateParsed && !Number.isNaN(dueDateParsed.getTime()) ? dueDateParsed : null,
       invoiceFileUrl: (invoiceFileUrl as string) || null,
       message: (message as string)?.trim() || null,
+      requestCategory,
       status: "SUBMITTED",
       bankAccountName: (bankAccountName as string)?.trim() || null,
       bankAccountNumber: (bankAccountNumber as string)?.trim() || null,

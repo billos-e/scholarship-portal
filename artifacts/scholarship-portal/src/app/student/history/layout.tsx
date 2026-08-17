@@ -43,6 +43,7 @@ export default function HistoryLayout({
             requests={requests.map((request) => ({
               id: request.id,
               semesterLabel: request.semesterLabel,
+              requestCategory: request.requestCategory,
               amountDue: request.amountDue.toString(),
               submittedAt: request.submittedAt,
               status: request.status,

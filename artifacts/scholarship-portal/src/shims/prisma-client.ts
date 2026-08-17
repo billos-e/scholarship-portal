@@ -17,6 +17,14 @@ export const RequestStatus = {
 } as const;
 export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus];
 
+export const RequestCategory = {
+  TUITION: "TUITION",
+  LIVING_EXPENSES: "LIVING_EXPENSES",
+  STUDY_ABROAD_INTERNSHIP: "STUDY_ABROAD_INTERNSHIP",
+  EMERGENCY_AID: "EMERGENCY_AID",
+} as const;
+export type RequestCategory = (typeof RequestCategory)[keyof typeof RequestCategory];
+
 export const TermCode = {
   FALL: "FALL",
   SPRING: "SPRING",

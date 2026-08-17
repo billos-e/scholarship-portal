@@ -8,6 +8,13 @@
       "when": 1751983200000,
       "tag": "0001_drop_created_at_from_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755449460000,
+      "tag": "0002_add_request_category",
+      "breakpoints": true
     }
   ]
 }

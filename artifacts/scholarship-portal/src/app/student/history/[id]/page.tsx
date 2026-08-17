@@ -10,6 +10,7 @@ import { FilePreviewModal, isFileImage, openFileInNewTab } from "@/components/fi
 
 import NotFound from "@/pages/not-found";
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentUser } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { fetchRequest } from "@/lib/api/requests";
+import { REQUEST_CATEGORY_LABELS } from "@/lib/request-category";
 import { uploadPublicUrl } from "@/lib/upload-path";
 import { StatusStepper } from "@/components/status-stepper";
 import {
@@ -167,16 +169,21 @@ export default function StudentSubmissionDetailPage() {
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
             {request.semesterLabel}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Submitted {formatDate(request.submittedAt)}
-          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <RequestCategoryBadge category={request.requestCategory} />
+            <p className="text-sm text-muted-foreground">
+              Submitted {formatDate(request.submittedAt)}
+            </p>
+          </div>
         </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <CardTitle>Tuition payment</CardTitle>
+            <CardTitle>
+              {REQUEST_CATEGORY_LABELS[request.requestCategory]} payment
+            </CardTitle>
             <CardDescription>
               Current status of this payment request.
             </CardDescription>
@@ -186,6 +193,10 @@ export default function StudentSubmissionDetailPage() {
         <CardContent className="space-y-6">
           <StatusStepper status={request.status} variant="dots" className="mb-2 max-w-none" />
           <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <Field
+              label="Category"
+              value={REQUEST_CATEGORY_LABELS[request.requestCategory]}
+            />
             <Field
               label="Amount due"
               value={formatCurrency(request.amountDue.toString())}

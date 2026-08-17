@@ -148,6 +148,12 @@ export const REQUESTS_TABLE_COLUMNS: TableExportColumn[] = [
     column: "semester_label",
   },
   {
+    key: "category",
+    label: "Category",
+    table: "tuition_payment_requests",
+    column: "request_category",
+  },
+  {
     key: "amount_due",
     label: "Amount due",
     table: "tuition_payment_requests",

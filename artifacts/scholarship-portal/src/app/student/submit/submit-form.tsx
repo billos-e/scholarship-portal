@@ -36,6 +36,7 @@ import {
   WELLBEING_QUESTIONS,
 } from "@/lib/submissions/constants";
 import { cn } from "@/lib/utils";
+import type { RequestCategory } from "@/lib/request-category";
 
 type SemesterOption = { id: string; label: string };
 
@@ -590,11 +591,15 @@ function SubmitButton({ pending }: { pending: boolean }) {
 export function SubmissionForm({
   defaults,
   semesters = [],
+  requestCategory,
 }: {
   defaults: Defaults;
   semesters?: SemesterOption[];
+  requestCategory: RequestCategory;
 }) {
-  const { get, save, onFormChange, clearDraft } = useFormDraft("draft:submission");
+  const { get, save, onFormChange, clearDraft } = useFormDraft(
+    `draft:submission:${requestCategory}`,
+  );
   const [step, setStep] = useState(() => {
     const saved = Number(get("__step", "1"));
     return Number.isInteger(saved) && saved >= 1 && saved <= STEPS.length ? saved : 1;
@@ -723,6 +728,7 @@ export function SubmissionForm({
       }}
     >
       {/* Hidden bank inputs (auto-populated, not shown) */}
+      <input type="hidden" name="requestCategory" value={requestCategory} />
       <input
         type="hidden"
         name="bankAccountName"

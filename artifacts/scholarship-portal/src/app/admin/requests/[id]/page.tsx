@@ -79,6 +79,7 @@ export default function AdminRequestDetailPage() {
         studentId={student.id}
         studentName={studentName}
         semesterLabel={request.semesterLabel}
+        requestCategory={request.requestCategory}
         email={student.user.email}
         universityName={student.university?.name ?? null}
         universityId={student.universityId}

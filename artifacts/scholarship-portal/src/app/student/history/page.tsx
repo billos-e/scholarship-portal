@@ -55,7 +55,7 @@ export default function StudentHistoryIndexPage() {
           ? "Select a submission from the list or start a new semester submission."
           : eligibility.missingProfileFields.length > 0
             ? "Complete your profile before starting your first submission."
-            : "Finish or resolve your current request before starting another."
+            : "Select a payment type to start a new submission."
       }
       action={
         eligibility.canStart ? (

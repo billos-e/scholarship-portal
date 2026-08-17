@@ -12,6 +12,7 @@ import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import {
   Card,
   CardContent,
@@ -43,6 +44,7 @@ import {
   CLIENT_REQUEST_STATUSES,
   REQUEST_STATUS_LABELS,
 } from "@/lib/request-status";
+import { REQUEST_CATEGORY_LABELS, type RequestCategory } from "@/lib/request-category";
 import { REQUESTS_TABLE_COLUMNS } from "@/lib/export/table-columns";
 import { requestsToExportRows } from "@/lib/export/table-rows";
 
@@ -54,6 +56,7 @@ const STATUS_VALUES: RequestStatus[] = [
 export type RequestRow = {
   id: string;
   semesterLabel: string;
+  requestCategory: RequestCategory;
   amountDue: string;
   dueDate: string | null;
   submittedAt: string;
@@ -83,7 +86,7 @@ const EMPTY_FILTERS: RequestFilterState = {
   status: "",
 };
 
-type RequestSortKey = "student" | "university" | "semester" | "submitted" | "status";
+type RequestSortKey = "student" | "university" | "semester" | "category" | "submitted" | "status";
 
 const REQUEST_SORT_ACCESSORS: Record<
   RequestSortKey,
@@ -92,6 +95,7 @@ const REQUEST_SORT_ACCESSORS: Record<
   student: (row) => `${row.student.firstName} ${row.student.lastName}`,
   university: (row) => row.student.universityName,
   semester: (row) => row.semesterLabel,
+  category: (row) => REQUEST_CATEGORY_LABELS[row.requestCategory],
   submitted: (row) => new Date(row.submittedAt),
   status: (row) => row.status,
 };
@@ -339,6 +343,13 @@ export function RequestsList({
                         onSort={onSort}
                       />
                       <SortableTableHead
+                        label="Category"
+                        sortKey="category"
+                        activeKey={sortKey}
+                        direction={sortDirection}
+                        onSort={onSort}
+                      />
+                      <SortableTableHead
                         label="Submitted"
                         sortKey="submitted"
                         activeKey={sortKey}
@@ -368,6 +379,9 @@ export function RequestsList({
                           {request.student.universityName ?? "—"}
                         </TableCell>
                         <TableCell>{request.semesterLabel}</TableCell>
+                        <TableCell>
+                          <RequestCategoryBadge category={request.requestCategory} />
+                        </TableCell>
                         <TableCell>
                           {formatDate(new Date(request.submittedAt))}
                         </TableCell>

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   decimal,
@@ -27,6 +28,17 @@ export const requestStatusEnum = pgEnum("request_status", [
   "PAID",
   "REJECTED",
 ]);
+export const REQUEST_CATEGORY_VALUES = [
+  "TUITION",
+  "LIVING_EXPENSES",
+  "STUDY_ABROAD_INTERNSHIP",
+  "EMERGENCY_AID",
+] as const;
+export type RequestCategory = (typeof REQUEST_CATEGORY_VALUES)[number];
+export const requestCategoryEnum = pgEnum(
+  "request_category",
+  REQUEST_CATEGORY_VALUES,
+);
 export const termCodeEnum = pgEnum("term_code", [
   "FALL",
   "SPRING",
@@ -164,6 +176,9 @@ export const tuitionPaymentRequests = pgTable(
     dueDate: timestamp("due_date", { withTimezone: false }),
     invoiceFileUrl: text("invoice_file_url"),
     message: text("message"),
+    requestCategory: requestCategoryEnum("request_category")
+      .notNull()
+      .default("TUITION"),
     status: requestStatusEnum("status").notNull().default("SUBMITTED"),
     adminNotes: text("admin_notes"),
     bankAccountName: text("bank_account_name"),
@@ -185,6 +200,15 @@ export const tuitionPaymentRequests = pgTable(
     index("tpr_student_id_idx").on(t.studentId),
     index("tpr_status_idx").on(t.status),
     index("tpr_semester_label_idx").on(t.semesterLabel),
+    index("tpr_request_category_idx").on(t.requestCategory),
+    index("tpr_student_category_status_idx").on(
+      t.studentId,
+      t.requestCategory,
+      t.status,
+    ),
+    uniqueIndex("tpr_student_semester_category_active_idx")
+      .on(t.studentId, t.semesterLabel, t.requestCategory)
+      .where(sql`${t.status} <> 'REJECTED'`),
   ],
 );
 

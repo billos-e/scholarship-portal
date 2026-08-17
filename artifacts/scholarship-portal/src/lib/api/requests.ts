@@ -1,4 +1,6 @@
 import { apiBase, reviveDates } from "./shared";
+import type { RequestCategory } from "@/lib/request-category";
+import { parseRequestCategory } from "@/lib/request-category";
 
 export type RequestStatus =
   | "SUBMITTED"
@@ -59,6 +61,7 @@ export type RequestRecord = {
   dueDate: Date | null;
   invoiceFileUrl: string | null;
   message: string | null;
+  requestCategory: RequestCategory;
   qrPaymentImageUrl: string | null;
   status: RequestStatus;
   adminNotes: string | null;
@@ -95,6 +98,7 @@ const requestDateKeys: (keyof RequestRecord)[] = [
 function reviveRequest<T extends RequestRecord>(r: T): T {
   reviveDates(r, requestDateKeys);
   if (r.paymentHistory) reviveDates(r.paymentHistory, ["paymentDate"]);
+  r.requestCategory = parseRequestCategory(r.requestCategory) ?? "TUITION";
   return r;
 }
 

@@ -1,5 +1,9 @@
 import { formatDate } from "@/lib/format";
 import { REQUEST_STATUS_LABELS } from "@/lib/request-status";
+import {
+  requestCategoryLabel,
+  type RequestCategory,
+} from "@/lib/request-category";
 import type { RequestStatus } from "@prisma/client";
 
 import type { ExportRow } from "./spreadsheet";
@@ -46,6 +50,7 @@ type StudentExportSource = {
 type RequestExportSource = {
   id: string;
   semesterLabel: string;
+  requestCategory?: RequestCategory;
   amountDue: string;
   dueDate: string | null;
   submittedAt: string;
@@ -115,6 +120,7 @@ export function requestsToExportRows(rows: RequestExportSource[]): ExportRow[] {
     student_id: row.student.studentId,
     university: row.student.universityName,
     semester: row.semesterLabel,
+    category: requestCategoryLabel(row.requestCategory),
     amount_due: formatExportDecimal(row.amountDue),
     due_date: formatExportDate(row.dueDate),
     submitted: formatDate(new Date(row.submittedAt)),

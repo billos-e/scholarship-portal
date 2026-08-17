@@ -12,6 +12,7 @@ import {
   type OpenRequestSummary,
   type ProfileField,
 } from "@/lib/submissions/eligibility";
+import { REQUEST_CATEGORY_LABELS } from "@/lib/request-category";
 
 type SubmissionBlockedProps = {
   missingProfileFields: ProfileField[];
@@ -42,7 +43,7 @@ export function SubmissionBlocked({
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
           {profileIncomplete
             ? "Fill in all required profile and bank details before starting a semester submission."
-            : "You already have an active payment request in progress."}
+            : "You already have an active payment request of this type in progress."}
         </p>
 
         {profileIncomplete ? (
@@ -80,8 +81,12 @@ export function SubmissionBlocked({
               <StatusBadge status={openRequest.status} />
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Wait until this request is marked paid or rejected before
-              submitting again.
+              Wait until this{" "}
+              {openRequest.requestCategory
+                ? `${REQUEST_CATEGORY_LABELS[openRequest.requestCategory].toLowerCase()} `
+                : ""}
+              request is marked paid or rejected before submitting this type
+              again.
             </p>
             <Button variant="outline" render={<Link href={`/student/history/${openRequest.id}`} />}>
               View current request

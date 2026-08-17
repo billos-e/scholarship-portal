@@ -1,4 +1,6 @@
 import { apiBase, reviveDates } from "./shared";
+import type { RequestCategory } from "@/lib/request-category";
+import { parseRequestCategory } from "@/lib/request-category";
 
 export type StudentStatus = "ACTIVE" | "GRADUATED" | "INACTIVE";
 
@@ -16,6 +18,7 @@ export type StudentRequestRow = {
   amountDue: string;
   dueDate: Date | null;
   status: "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "PAID" | "REJECTED";
+  requestCategory: RequestCategory;
   universitySemesterId: string | null;
   submittedAt: Date;
 };
@@ -72,7 +75,9 @@ export type StudentListResult = {
 };
 
 function reviveRequest(r: StudentRequestRow): StudentRequestRow {
-  return reviveDates(r, ["dueDate", "submittedAt"]);
+  reviveDates(r, ["dueDate", "submittedAt"]);
+  r.requestCategory = parseRequestCategory(r.requestCategory) ?? "TUITION";
+  return r;
 }
 
 function reviveStudent<T extends StudentRecord>(s: T): T {

@@ -1,12 +1,16 @@
 import type { BankInformation, RequestStatus, Student } from "@prisma/client";
 
 import { REQUEST_STATUS_LABELS } from "@/lib/request-status";
+import {
+  REQUEST_CATEGORY_LABELS,
+  type RequestCategory,
+} from "@/lib/request-category";
 import { fetchStudent } from "@/lib/api/students";
 
-/** Terminal statuses — student may start a new submission when all requests are in one of these. */
+/** Terminal statuses — student may start a new submission of that category when all of its requests are in one of these. */
 export const TERMINAL_REQUEST_STATUSES: RequestStatus[] = ["PAID", "REJECTED"];
 
-/** Active pipeline statuses — block any new submission while one exists. */
+/** Active pipeline statuses — block a new request of the same category while one exists. */
 export const BLOCKING_REQUEST_STATUSES: RequestStatus[] = [
   "SUBMITTED",
   "UNDER_REVIEW",
@@ -44,6 +48,7 @@ export type OpenRequestSummary = {
   id: string;
   semesterLabel: string;
   status: RequestStatus;
+  requestCategory: RequestCategory;
 };
 
 export type SubmissionEligibility = {
@@ -81,29 +86,40 @@ export function isProfileCompleteForSubmission(
 
 export async function findOpenRequest(
   studentId: string,
+  category?: RequestCategory,
 ): Promise<OpenRequestSummary | null> {
   const student = await fetchStudent(studentId);
   if (!student) return null;
-  const request = student.tuitionPaymentRequests.find((r) =>
-    BLOCKING_REQUEST_STATUSES.includes(r.status),
-  );
+  const request = student.tuitionPaymentRequests.find((r) => {
+    if (!BLOCKING_REQUEST_STATUSES.includes(r.status)) return false;
+    if (category && r.requestCategory !== category) return false;
+    return true;
+  });
   if (!request) return null;
   return {
     id: request.id,
     semesterLabel: request.semesterLabel,
     status: request.status,
+    requestCategory: request.requestCategory,
   };
 }
 
 export async function findDuplicateSemesterSubmission(
   studentId: string,
-  opts: { universitySemesterId?: string; semesterLabel?: string },
+  opts: {
+    universitySemesterId?: string;
+    semesterLabel?: string;
+    requestCategory?: RequestCategory;
+  },
 ): Promise<OpenRequestSummary | null> {
   const student = await fetchStudent(studentId);
   if (!student) return null;
 
   const match = student.tuitionPaymentRequests.find((r) => {
     if (r.status === "REJECTED") return false;
+    if (opts.requestCategory && r.requestCategory !== opts.requestCategory) {
+      return false;
+    }
     if (opts.universitySemesterId) {
       return r.universitySemesterId === opts.universitySemesterId;
     }
@@ -118,6 +134,7 @@ export async function findDuplicateSemesterSubmission(
     id: match.id,
     semesterLabel: match.semesterLabel,
     status: match.status,
+    requestCategory: match.requestCategory,
   };
 }
 
@@ -144,9 +161,17 @@ export function profileIncompleteMessage(fields: ProfileField[]): string {
 
 export function openRequestMessage(request: OpenRequestSummary): string {
   const statusLabel = REQUEST_STATUS_LABELS[request.status].toLowerCase();
-  return `You already have an active submission for ${request.semesterLabel} (${statusLabel}). Wait until it is paid or rejected before starting another.`;
+  const categoryLabel =
+    REQUEST_CATEGORY_LABELS[request.requestCategory].toLowerCase();
+  return `You already have an active ${categoryLabel} submission for ${request.semesterLabel} (${statusLabel}). Wait until it is paid or rejected before starting another ${categoryLabel} request.`;
 }
 
-export function duplicateSemesterMessage(semesterLabel: string): string {
-  return `You have already submitted for ${semesterLabel}. Each semester can only be submitted once unless the previous request was rejected.`;
+export function duplicateSemesterMessage(
+  semesterLabel: string,
+  category?: RequestCategory,
+): string {
+  const categoryLabel = category
+    ? REQUEST_CATEGORY_LABELS[category].toLowerCase()
+    : "payment";
+  return `You have already submitted a ${categoryLabel} request for ${semesterLabel}. You can submit again for this semester only if that request was rejected, or choose a different payment type.`;
 }

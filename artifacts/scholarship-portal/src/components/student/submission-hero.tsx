@@ -12,6 +12,10 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  REQUEST_CATEGORY_LABELS,
+  type RequestCategory,
+} from "@/lib/request-category";
 
 const SECTIONS = [
   {
@@ -56,13 +60,16 @@ type SubmissionHeroProps = {
   firstName: string;
   universityName: string | null;
   semesterHint: string | null;
+  category?: RequestCategory | null;
 };
 
 export function SubmissionHero({
   firstName,
   universityName,
   semesterHint,
+  category,
 }: SubmissionHeroProps) {
+  const categoryLabel = category ? REQUEST_CATEGORY_LABELS[category] : null;
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
       <div
@@ -87,12 +94,12 @@ export function SubmissionHero({
             </div>
             <div className="space-y-2">
               <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">
-                New Submission
+                {categoryLabel ? `${categoryLabel} submission` : "New Submission"}
               </h1>
               <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Hi {firstName} — submit your tuition payment request and semester
-                report together. Fill in each section below; required fields are
-                marked with an asterisk.
+                {categoryLabel
+                  ? `Hi ${firstName} — you chose ${categoryLabel.toLowerCase()}. Fill in the same semester payment details and academic report as any other payment type.`
+                  : `Hi ${firstName} — choose a payment type, then submit your payment request and semester report together.`}
               </p>
             </div>
           </div>

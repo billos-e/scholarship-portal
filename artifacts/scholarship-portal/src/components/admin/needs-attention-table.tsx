@@ -2,14 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import type { RequestStatus } from "@prisma/client";
+import type { RequestCategory } from "@/lib/request-category";
 
 import { useNavigationLoading } from "@/components/layout/navigation-loading";
 import { SortableTableHead } from "@/components/sortable-table-head";
 import { StatusBadge } from "@/components/status-badge";
+import { RequestCategoryBadge } from "@/components/request-category-badge";
 import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -22,6 +25,7 @@ export type NeedsAttentionRow = {
   id: string;
   semesterLabel: string;
   semesterName: string;
+  requestCategory: RequestCategory;
   dueDate: Date | null;
   submittedAt: Date;
   status: RequestStatus;
@@ -83,6 +87,7 @@ export function NeedsAttentionTable({ rows }: NeedsAttentionTableProps) {
             direction={sortDirection}
             onSort={onSort}
           />
+          <TableHead>Category</TableHead>
           <SortableTableHead
             label="Due"
             sortKey="due"
@@ -121,6 +126,9 @@ export function NeedsAttentionTable({ rows }: NeedsAttentionTableProps) {
               <TableCell className="font-medium">{request.studentName}</TableCell>
               <TableCell>{request.universityName}</TableCell>
               <TableCell>{request.semesterName}</TableCell>
+              <TableCell>
+                <RequestCategoryBadge category={request.requestCategory} />
+              </TableCell>
               <TableCell
                 className={cn(overdue && "font-medium text-destructive")}
               >

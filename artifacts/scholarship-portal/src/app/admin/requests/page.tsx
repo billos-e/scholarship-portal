@@ -59,7 +59,7 @@ export default function AdminRequestsPage() {
               ))}
             </div>
             <div className="overflow-hidden rounded-xl border border-border/70">
-              <TableSkeleton columns={5} rows={6} />
+              <TableSkeleton columns={6} rows={6} />
             </div>
           </CardContent>
         </Card>
@@ -72,6 +72,7 @@ export default function AdminRequestsPage() {
       requests={requests.map((request) => ({
         id: request.id,
         semesterLabel: request.semesterLabel,
+        requestCategory: request.requestCategory,
         amountDue: request.amountDue.toString(),
         dueDate: request.dueDate?.toISOString() ?? null,
         submittedAt: request.submittedAt.toISOString(),

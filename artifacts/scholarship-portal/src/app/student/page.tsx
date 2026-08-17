@@ -7,13 +7,13 @@ import {
   ArrowRight,
   ClipboardList,
   History,
-  Plus,
   User,
 } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { LatestSubmissionCard } from "@/components/student/latest-submission-card";
+import { RequestCategoryPicker, openRequestsByCategory } from "@/components/student/request-category-picker";
 import { PaymentRequestsTable } from "@/components/payment-requests-table";
 import { QuickActionCard } from "@/components/quick-action-card";
 import { Button } from "@/components/ui/button";
@@ -92,16 +92,15 @@ export default function StudentDashboard() {
   const missingProfileFields = getMissingProfileFields(
     student as unknown as StudentForEligibility,
   );
-  const openRequest =
-    student.tuitionPaymentRequests.find((r) =>
-      BLOCKING_REQUEST_STATUSES.includes(r.status),
-    ) ?? null;
+  const openByCategory = openRequestsByCategory(
+    student.tuitionPaymentRequests,
+    BLOCKING_REQUEST_STATUSES,
+  );
+  const profileReady = missingProfileFields.length === 0;
   const eligibility = {
-    canStart: missingProfileFields.length === 0 && openRequest === null,
+    canStart: profileReady,
     missingProfileFields: missingProfileFields as ProfileField[],
-    openRequest: openRequest
-      ? { id: openRequest.id, semesterLabel: openRequest.semesterLabel }
-      : null,
+    openRequest: null as { id: string; semesterLabel: string } | null,
   };
 
   const requests = student.tuitionPaymentRequests;
@@ -146,12 +145,7 @@ export default function StudentDashboard() {
         title={`${greetingForHour(hour)}, ${student.firstName}`}
         description={`${semesterHint} · ${student.university?.name ?? "No university set"}`}
         actions={
-          eligibility.canStart ? (
-            <Button className="h-11 gap-2 px-5" render={<Link href="/student/submit" />}>
-              <Plus className="size-4" />
-              New Submission
-            </Button>
-          ) : eligibility.missingProfileFields.length > 0 ? (
+          eligibility.missingProfileFields.length > 0 ? (
             <Button
               className="h-11 gap-2 px-5"
               render={<Link href="/student/profile/edit" />}
@@ -163,11 +157,19 @@ export default function StudentDashboard() {
         }
       />
 
+      {eligibility.canStart ? (
+        <RequestCategoryPicker
+          hrefFor={(category) => `/student/submit?category=${category}`}
+          openByCategory={openByCategory}
+        />
+      ) : null}
+
       {latestRequest ? (
         <LatestSubmissionCard
           request={{
             id: latestRequest.id,
             semesterLabel: latestRequest.semesterLabel,
+            requestCategory: latestRequest.requestCategory,
             amountDue: latestRequest.amountDue.toString(),
             submittedAt: latestRequest.submittedAt,
             dueDate: latestRequest.dueDate,
@@ -179,17 +181,11 @@ export default function StudentDashboard() {
           title="No submissions yet"
           description={
             eligibility.canStart
-              ? "Start your first semester submission to track tuition and academic progress."
-              : eligibility.missingProfileFields.length > 0
-                ? "Complete your profile before starting your first submission."
-                : "Finish or resolve your current request before starting another."
+              ? "Choose a payment type above to start your first semester submission."
+              : "Complete your profile before starting your first submission."
           }
           action={
-            eligibility.canStart ? (
-              <Button render={<Link href="/student/submit" />}>
-                New Submission
-              </Button>
-            ) : eligibility.missingProfileFields.length > 0 ? (
+            eligibility.missingProfileFields.length > 0 ? (
               <Button render={<Link href="/student/profile/edit" />}>
                 Complete profile
               </Button>
@@ -207,25 +203,10 @@ export default function StudentDashboard() {
             tone="primary"
           />
         </Link>
-        <Link
-          href={
-            eligibility.canStart
-              ? "/student/submit"
-              : eligibility.openRequest
-                ? `/student/history/${eligibility.openRequest.id}`
-                : "/student/profile/edit"
-          }
-          className="block"
-        >
+        <Link href="/student/submit" className="block">
           <QuickActionCard
             title="Semester Submission"
-            description={
-              eligibility.canStart
-                ? "Tuition payment & academic report"
-                : eligibility.missingProfileFields.length > 0
-                  ? "Complete your profile first"
-                  : "Active request in progress"
-            }
+            description="Choose a payment type and file your report"
             icon={ClipboardList}
             tone="accent"
           />
@@ -262,6 +243,7 @@ export default function StudentDashboard() {
               rows={recentRequests.map((request) => ({
                 id: request.id,
                 semesterLabel: request.semesterLabel,
+                requestCategory: request.requestCategory,
                 amountDue: request.amountDue.toString(),
                 submittedAt: request.submittedAt.toISOString(),
                 status: request.status,
