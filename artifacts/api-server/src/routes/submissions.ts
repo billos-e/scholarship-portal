@@ -82,9 +82,9 @@ router.post("/submissions", async (req, res) => {
       challenges,
       activities,
       activitiesComment,
-      reflectionAchievement,
-      reflectionChallenge,
-      reflectionAdditional,
+      reflectionOvercomeChallenge,
+      reflectionMeaningfulExperience,
+      reflectionProudAchievement,
       requestCategory: rawRequestCategory,
     } = req.body ?? {};
 
@@ -94,7 +94,7 @@ router.post("/submissions", async (req, res) => {
     }
 
     if (!amountDue || Number(amountDue) <= 0) {
-      res.status(400).json({ error: "Tuition amount is required." });
+      res.status(400).json({ error: "Amount is required." });
       return;
     }
 
@@ -250,9 +250,12 @@ router.post("/submissions", async (req, res) => {
       challenges: Array.isArray(challenges) ? challenges : [],
       activities: Array.isArray(activities) ? activities : [],
       activitiesComment: (activitiesComment as string)?.trim() || null,
-      reflectionAchievement: (reflectionAchievement as string) || null,
-      reflectionChallenge: (reflectionChallenge as string) || null,
-      reflectionAdditional: (reflectionAdditional as string) || null,
+      reflectionOvercomeChallenge:
+        (reflectionOvercomeChallenge as string)?.trim() || null,
+      reflectionMeaningfulExperience:
+        (reflectionMeaningfulExperience as string)?.trim() || null,
+      reflectionProudAchievement:
+        (reflectionProudAchievement as string)?.trim() || null,
       universitySemesterId: (universitySemesterId as string) || null,
       submittedAt: now,
       updatedAt: now,

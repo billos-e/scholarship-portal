@@ -270,6 +270,9 @@ export const semesterReports = pgTable(
     reflectionAchievement: text("reflection_achievement"),
     reflectionChallenge: text("reflection_challenge"),
     reflectionAdditional: text("reflection_additional"),
+    reflectionOvercomeChallenge: text("reflection_overcome_challenge"),
+    reflectionMeaningfulExperience: text("reflection_meaningful_experience"),
+    reflectionProudAchievement: text("reflection_proud_achievement"),
     universitySemesterId: text("university_semester_id").references(
       () => universitySemesters.id,
     ),

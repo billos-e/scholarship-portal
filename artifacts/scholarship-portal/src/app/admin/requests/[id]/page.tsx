@@ -35,6 +35,8 @@ import {
   ACTIVITY_OPTIONS,
   CHALLENGE_OPTIONS,
   labelFor,
+  REFLECTION_QUESTIONS,
+  reflectionAnswer,
   WELLBEING_QUESTIONS,
 } from "@/lib/submissions/constants";
 import NotFound from "@/pages/not-found";
@@ -234,18 +236,13 @@ export default function AdminRequestDetailPage() {
                       label="Comments on activities"
                       value={report.activitiesComment}
                     />
-                    <DetailField
-                      label="Biggest achievement"
-                      value={report.reflectionAchievement}
-                    />
-                    <DetailField
-                      label="Biggest challenge"
-                      value={report.reflectionChallenge}
-                    />
-                    <DetailField
-                      label="Anything else"
-                      value={report.reflectionAdditional}
-                    />
+                    {REFLECTION_QUESTIONS.map((question) => (
+                      <DetailField
+                        key={question.name}
+                        label={question.label}
+                        value={reflectionAnswer(report, question)}
+                      />
+                    ))}
                   </dl>
                 </div>
               </RequestSectionCard>

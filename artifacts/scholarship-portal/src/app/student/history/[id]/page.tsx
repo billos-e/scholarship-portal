@@ -30,6 +30,8 @@ import {
   ACTIVITY_OPTIONS,
   CHALLENGE_OPTIONS,
   labelFor,
+  REFLECTION_QUESTIONS,
+  reflectionAnswer,
   WELLBEING_QUESTIONS,
 } from "@/lib/submissions/constants";
 
@@ -396,18 +398,13 @@ export default function StudentSubmissionDetailPage() {
                 label="Comments on your activities"
                 value={report.activitiesComment}
               />
-              <Field
-                label="Biggest achievement"
-                value={report.reflectionAchievement}
-              />
-              <Field
-                label="Biggest challenge"
-                value={report.reflectionChallenge}
-              />
-              <Field
-                label="Anything else"
-                value={report.reflectionAdditional}
-              />
+              {REFLECTION_QUESTIONS.map((question) => (
+                <Field
+                  key={question.name}
+                  label={question.label}
+                  value={reflectionAnswer(report, question)}
+                />
+              ))}
             </CardContent>
           </Card>
         </>

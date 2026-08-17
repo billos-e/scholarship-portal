@@ -51,3 +51,48 @@ export const WELLBEING_QUESTIONS = [
   { name: "wellbeingStress", label: "Overall Stress Level" },
   { name: "wellbeingConfidence", label: "Academic Stress" },
 ] as const;
+
+/** Current reflection prompts. New submissions write these columns only. */
+export const REFLECTION_QUESTIONS = [
+  {
+    name: "reflectionOvercomeChallenge",
+    legacyName: "reflectionChallenge",
+    label:
+      "Tell us about a significant challenge for you this semester and how you overcame it?",
+    placeholder:
+      "Describe a significant challenge and how you worked through it…",
+  },
+  {
+    name: "reflectionMeaningfulExperience",
+    legacyName: "reflectionAdditional",
+    label: "What has been the most meaningful experience of your semester?",
+    placeholder: "Share the experience that meant the most to you…",
+  },
+  {
+    name: "reflectionProudAchievement",
+    legacyName: "reflectionAchievement",
+    label:
+      "What do you feel most proud of achieving this semester and why?",
+    placeholder: "What are you most proud of, and why does it matter to you?",
+  },
+] as const;
+
+export type ReflectionQuestion = (typeof REFLECTION_QUESTIONS)[number];
+
+/** Prefer the new answer; fall back to the matching historical column. */
+export function reflectionAnswer(
+  report: {
+    reflectionOvercomeChallenge?: string | null;
+    reflectionMeaningfulExperience?: string | null;
+    reflectionProudAchievement?: string | null;
+    reflectionAchievement?: string | null;
+    reflectionChallenge?: string | null;
+    reflectionAdditional?: string | null;
+  },
+  question: ReflectionQuestion,
+): string | null {
+  const current = report[question.name]?.trim();
+  if (current) return current;
+  const legacy = report[question.legacyName]?.trim();
+  return legacy || null;
+}

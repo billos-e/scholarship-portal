@@ -83,10 +83,11 @@ const submissionSchema = z
     semesterLabel: z.string().trim().max(40).optional(),
     universitySemesterId: z.string().trim().optional(),
     amountDue: z
-      .number({ message: "Tuition amount is required." })
-      .positive("Tuition amount must be greater than zero.")
-      .max(10_000_000, "Tuition amount looks too large."),
+      .number({ message: "Amount is required." })
+      .positive("Amount must be greater than zero.")
+      .max(10_000_000, "Amount looks too large."),
     dueDate: z.date().optional(),
+    bankAccountId: z.string().trim().optional(),
     bankAccountName: z.string().trim().optional(),
     bankAccountNumber: z.string().trim().optional(),
     bankName: z.string().trim().optional(),
@@ -111,9 +112,9 @@ const submissionSchema = z
       "EMERGENCY_AID",
     ]),
     activitiesComment: z.string().trim().max(2000).optional(),
-    reflectionAchievement: z.string().trim().max(4000).optional(),
-    reflectionChallenge: z.string().trim().max(4000).optional(),
-    reflectionAdditional: z.string().trim().max(4000).optional(),
+    reflectionOvercomeChallenge: z.string().trim().max(4000).optional(),
+    reflectionMeaningfulExperience: z.string().trim().max(4000).optional(),
+    reflectionProudAchievement: z.string().trim().max(4000).optional(),
   })
   .refine(
     (d) =>
@@ -166,6 +167,7 @@ export async function createSubmission(
     universitySemesterId: trimmed(formData.get("universitySemesterId")),
     amountDue: optionalNumber(formData.get("amountDue")),
     dueDate: optionalDate(formData.get("dueDate")),
+    bankAccountId: trimmed(formData.get("bankAccountId")),
     bankAccountName: trimmed(formData.get("bankAccountName")),
     bankAccountNumber: trimmed(formData.get("bankAccountNumber")),
     bankName: trimmed(formData.get("bankName")),
@@ -187,9 +189,15 @@ export async function createSubmission(
     message: trimmed(formData.get("message")),
     requestCategory: trimmed(formData.get("requestCategory")),
     activitiesComment: trimmed(formData.get("activitiesComment")),
-    reflectionAchievement: trimmed(formData.get("reflectionAchievement")),
-    reflectionChallenge: trimmed(formData.get("reflectionChallenge")),
-    reflectionAdditional: trimmed(formData.get("reflectionAdditional")),
+    reflectionOvercomeChallenge: trimmed(
+      formData.get("reflectionOvercomeChallenge"),
+    ),
+    reflectionMeaningfulExperience: trimmed(
+      formData.get("reflectionMeaningfulExperience"),
+    ),
+    reflectionProudAchievement: trimmed(
+      formData.get("reflectionProudAchievement"),
+    ),
   });
 
   if (!parsed.success) {
@@ -247,6 +255,7 @@ export async function createSubmission(
     invoiceFileUrl: invoiceFileUrl ?? null,
     message: data.message ?? null,
     requestCategory: data.requestCategory,
+    bankAccountId: data.bankAccountId ?? null,
     bankAccountName: data.bankAccountName ?? null,
     bankAccountNumber: data.bankAccountNumber ?? null,
     bankName: data.bankName ?? null,
@@ -269,9 +278,9 @@ export async function createSubmission(
     challenges,
     activities,
     activitiesComment: data.activitiesComment ?? null,
-    reflectionAchievement: data.reflectionAchievement ?? null,
-    reflectionChallenge: data.reflectionChallenge ?? null,
-    reflectionAdditional: data.reflectionAdditional ?? null,
+    reflectionOvercomeChallenge: data.reflectionOvercomeChallenge ?? null,
+    reflectionMeaningfulExperience: data.reflectionMeaningfulExperience ?? null,
+    reflectionProudAchievement: data.reflectionProudAchievement ?? null,
   });
 
   if (!result.ok) {

@@ -31,4 +31,4 @@ Migration: `lib/db/migrations/0004_add_academic_awards.sql`.
 
 ## Frontend
 
-Student submit **Academic** step (step 3): two Yes/No toggles, multi-file upload (`awardFiles`), awards comment. Student history and admin request detail show Yes/No, comment if present, and preview/download links for each file.
+Student submit **Semester Report** step (step 3), Academic report subsection: two Yes/No toggles, multi-file upload (`awardFiles`), awards comment. Student history and admin request detail show Yes/No, comment if present, and preview/download links for each file.

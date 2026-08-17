@@ -36,6 +36,13 @@
       "when": 1786999200000,
       "tag": "0005_add_activities_comment",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787002800000,
+      "tag": "0006_add_new_reflection_questions",
+      "breakpoints": true
     }
   ]
 }

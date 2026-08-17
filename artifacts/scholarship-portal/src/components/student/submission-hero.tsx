@@ -1,10 +1,7 @@
 import {
-  BookOpen,
   Building2,
   Calendar,
   GraduationCap,
-  Heart,
-  Landmark,
   Shield,
   Sparkles,
   Wallet,
@@ -26,32 +23,14 @@ const SECTIONS = [
   },
   {
     icon: Wallet,
-    title: "Tuition",
-    description: "Invoice & payment details",
+    title: "Payment",
+    description: "Amount & supporting docs",
     tone: "accent" as const,
-  },
-  {
-    icon: Landmark,
-    title: "Bank",
-    description: "Payout account info",
-    tone: "info" as const,
   },
   {
     icon: GraduationCap,
-    title: "Academic",
-    description: "GPA & transcript",
-    tone: "primary" as const,
-  },
-  {
-    icon: Heart,
-    title: "Wellbeing",
-    description: "How you're doing",
-    tone: "accent" as const,
-  },
-  {
-    icon: BookOpen,
-    title: "Reflections",
-    description: "Your semester story",
+    title: "Semester Report",
+    description: "Academic, wellbeing & reflections",
     tone: "info" as const,
   },
 ] as const;
@@ -120,7 +99,7 @@ export function SubmissionHero({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-3">
           {SECTIONS.map((section) => (
             <SectionPill key={section.title} {...section} />
           ))}

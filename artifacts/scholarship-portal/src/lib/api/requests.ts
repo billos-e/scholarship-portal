@@ -49,6 +49,9 @@ export type SemesterReportRecord = {
   reflectionAchievement: string | null;
   reflectionChallenge: string | null;
   reflectionAdditional: string | null;
+  reflectionOvercomeChallenge: string | null;
+  reflectionMeaningfulExperience: string | null;
+  reflectionProudAchievement: string | null;
   submittedAt: Date;
 } | null;
 
@@ -130,6 +133,12 @@ export async function fetchRequest(id: string): Promise<RequestDetail | null> {
       ? data.semesterReport.awardFileUrls
       : null;
     data.semesterReport.awardsComment ??= null;
+    data.semesterReport.reflectionOvercomeChallenge ??= null;
+    data.semesterReport.reflectionMeaningfulExperience ??= null;
+    data.semesterReport.reflectionProudAchievement ??= null;
+    data.semesterReport.reflectionAchievement ??= null;
+    data.semesterReport.reflectionChallenge ??= null;
+    data.semesterReport.reflectionAdditional ??= null;
   }
   return data;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useCallback, useTransition } from "react";
+import { useActionState, useEffect, useState, useCallback, useTransition, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useFormDraft } from "@/lib/use-form-draft";
@@ -12,8 +12,6 @@ import {
   ChevronRight,
   FileText,
   GraduationCap,
-  Heart,
-  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -32,11 +30,15 @@ import {
 import {
   ACTIVITY_OPTIONS,
   CHALLENGE_OPTIONS,
+  REFLECTION_QUESTIONS,
   SEMESTER_LABEL_SUGGESTIONS,
   WELLBEING_QUESTIONS,
 } from "@/lib/submissions/constants";
 import { cn } from "@/lib/utils";
-import type { RequestCategory } from "@/lib/request-category";
+import {
+  REQUEST_CATEGORY_LABELS,
+  type RequestCategory,
+} from "@/lib/request-category";
 
 type SemesterOption = { id: string; label: string };
 
@@ -50,10 +52,8 @@ type Defaults = {
 
 const STEPS = [
   { id: 1, label: "Semester", icon: Calendar },
-  { id: 2, label: "Tuition", icon: FileText },
-  { id: 3, label: "Academic", icon: GraduationCap },
-  { id: 4, label: "Wellbeing", icon: Heart },
-  { id: 5, label: "Reflections", icon: MessageSquare },
+  { id: 2, label: "Payment", icon: FileText },
+  { id: 3, label: "Semester Report", icon: GraduationCap },
 ];
 
 /* ── Step Indicator ─────────────────────────────────────────── */
@@ -349,12 +349,19 @@ function Step1({ semesters, defaults = {} }: { semesters: SemesterOption[]; defa
   );
 }
 
-function Step2({ defaults = {} }: { defaults?: Record<string, string> }) {
+function Step2({
+  defaults = {},
+  requestCategory,
+}: {
+  defaults?: Record<string, string>;
+  requestCategory: RequestCategory;
+}) {
+  const categoryLabel = REQUEST_CATEGORY_LABELS[requestCategory];
   return (
     <div className="space-y-5">
       <StepHeader
-        title="Tuition Payment"
-        description="Enter your tuition details and upload payment proof."
+        title={`${categoryLabel} payment`}
+        description="Enter the amount, due date, and any supporting documents."
       />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -416,220 +423,231 @@ function Step2({ defaults = {} }: { defaults?: Record<string, string> }) {
   );
 }
 
-function Step3({
-  defaults = {},
-  onToggleChange,
+function SectionBlock({
+  title,
+  description,
+  children,
 }: {
-  defaults?: Record<string, string>;
-  onToggleChange?: (name: string, v: string) => void;
+  title: string;
+  description: string;
+  children: ReactNode;
 }) {
   return (
-    <div className="space-y-5">
-      <StepHeader
-        title="Academic Report"
-        description="Share your academic progress this semester."
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="gpa">GPA (0–4)</Label>
-          <Input
-            id="gpa"
-            name="gpa"
-            type="number"
-            min="0"
-            max="4"
-            step="0.01"
-            inputMode="decimal"
-            placeholder="3.50"
-            defaultValue={defaults.gpa ?? ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="creditsCompleted">Credits completed</Label>
-          <Input
-            id="creditsCompleted"
-            name="creditsCompleted"
-            type="number"
-            min="0"
-            max="60"
-            step="1"
-            inputMode="numeric"
-            placeholder="18"
-            defaultValue={defaults.creditsCompleted ?? ""}
-          />
-        </div>
+    <section className="space-y-5 border-t border-border/60 pt-6">
+      <div>
+        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
       </div>
-      <YesNoToggle
-        name="withdrawnFromCourses"
-        label="Have you had to withdraw from any courses this semester?"
-        defaultValue={defaults.withdrawnFromCourses ?? ""}
-        onValueChange={(v) => onToggleChange?.("withdrawnFromCourses", v)}
-      />
-      <div className="space-y-2">
-        <Label htmlFor="academicComment">Comments (optional)</Label>
-        <textarea
-          id="academicComment"
-          name="academicComment"
-          rows={3}
-          maxLength={2000}
-          placeholder="Any additional comments about your academic performance this semester…"
-          defaultValue={defaults.academicComment ?? ""}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-        />
-      </div>
-      <FormFileField
-        id="transcriptFile"
-        name="transcriptFile"
-        label="Transcript"
-        hint="PDF, JPG or PNG"
-        accept="application/pdf,image/jpeg,image/png"
-        optional
-      />
-      <div className="space-y-5 border-t border-border/60 pt-5">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Awards</h3>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Optional — you can select neither, one, or both.
-          </p>
-        </div>
-        <YesNoToggle
-          name="receivedAcademicExcellenceAward"
-          label="Did you receive an academic excellence award this semester?"
-          defaultValue={defaults.receivedAcademicExcellenceAward ?? ""}
-          onValueChange={(v) =>
-            onToggleChange?.("receivedAcademicExcellenceAward", v)
-          }
-        />
-        <YesNoToggle
-          name="receivedOtherAward"
-          label="Did you receive any other award this semester?"
-          defaultValue={defaults.receivedOtherAward ?? ""}
-          onValueChange={(v) => onToggleChange?.("receivedOtherAward", v)}
-        />
-        <FormFileField
-          id="awardFiles"
-          name="awardFiles"
-          label="Award documents"
-          hint="PDF, JPG or PNG — you can select more than one"
-          accept="application/pdf,image/jpeg,image/png"
-          optional
-          multiple
-        />
-        <div className="space-y-2">
-          <Label htmlFor="awardsComment">Awards comment (optional)</Label>
-          <textarea
-            id="awardsComment"
-            name="awardsComment"
-            rows={3}
-            maxLength={2000}
-            placeholder="Any comments about awards you received this semester…"
-            defaultValue={defaults.awardsComment ?? ""}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-          />
-        </div>
-      </div>
-    </div>
+      {children}
+    </section>
   );
 }
 
-function Step4({
+function Step3({
   defaults = {},
   defaultChallenges,
+  defaultActivities,
+  onToggleChange,
   onChallengesChange,
+  onActivitiesChange,
 }: {
   defaults?: Record<string, string>;
   defaultChallenges?: string[];
+  defaultActivities?: string[];
+  onToggleChange?: (name: string, v: string) => void;
   onChallengesChange?: (v: string[]) => void;
+  onActivitiesChange?: (v: string[]) => void;
 }) {
   return (
     <div className="space-y-6">
       <StepHeader
-        title="Wellbeing"
-        description="Rate your wellbeing and tell us about current challenges."
+        title="Semester Report"
+        description="Academic progress, wellbeing, activities, and reflections for this semester."
       />
-      <div>
-        <Label className="mb-2 block text-sm font-medium">
-          Rate each area (1 = low, 5 = high)
-        </Label>
-        <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-1">
-          {WELLBEING_QUESTIONS.map((q) => (
-            <RatingRow
-              key={q.name}
-              name={q.name}
-              label={q.label}
-              defaultValue={defaults[q.name] ? Number(defaults[q.name]) : undefined}
-            />
-          ))}
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Current challenges</Label>
-        <ChoiceGrid name="challenges" options={CHALLENGE_OPTIONS} defaultSelected={defaultChallenges} onSelectionChange={onChallengesChange} />
-      </div>
-    </div>
-  );
-}
 
-function Step5({
-  defaults = {},
-  defaultActivities,
-  onActivitiesChange,
-}: {
-  defaults?: Record<string, string>;
-  defaultActivities?: string[];
-  onActivitiesChange?: (v: string[]) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <StepHeader
-        title="Reflections"
-        description="Share your activities and thoughts about this semester."
-      />
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Activities & involvement</Label>
-        <ChoiceGrid name="activities" options={ACTIVITY_OPTIONS} defaultSelected={defaultActivities} onSelectionChange={onActivitiesChange} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="activitiesComment">Comments on your activities</Label>
-        <Textarea
-          id="activitiesComment"
-          name="activitiesComment"
-          rows={3}
-          maxLength={2000}
-          className="resize-y"
-          placeholder="Optional — add context about the activities you selected…"
-          defaultValue={defaults.activitiesComment ?? ""}
+      <SectionBlock
+        title="Academic report"
+        description="Share your academic progress this semester."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="gpa">GPA (0–4)</Label>
+            <Input
+              id="gpa"
+              name="gpa"
+              type="number"
+              min="0"
+              max="4"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="3.50"
+              defaultValue={defaults.gpa ?? ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="creditsCompleted">Credits completed</Label>
+            <Input
+              id="creditsCompleted"
+              name="creditsCompleted"
+              type="number"
+              min="0"
+              max="60"
+              step="1"
+              inputMode="numeric"
+              placeholder="18"
+              defaultValue={defaults.creditsCompleted ?? ""}
+            />
+          </div>
+        </div>
+        <YesNoToggle
+          name="withdrawnFromCourses"
+          label="Have you had to withdraw from any courses this semester?"
+          defaultValue={defaults.withdrawnFromCourses ?? ""}
+          onValueChange={(v) => onToggleChange?.("withdrawnFromCourses", v)}
         />
-      </div>
-      {[
-        {
-          key: "reflectionAchievement",
-          label: "Biggest achievement",
-          placeholder: "What are you most proud of this semester?",
-        },
-        {
-          key: "reflectionChallenge",
-          label: "Biggest challenge",
-          placeholder: "What was the hardest thing you faced?",
-        },
-        {
-          key: "reflectionAdditional",
-          label: "Anything else you'd like to share",
-          placeholder: "Optional — any other thoughts or feedback…",
-        },
-      ].map((field) => (
-        <div key={field.key} className="space-y-2">
-          <Label htmlFor={field.key}>{field.label}</Label>
-          <Textarea
-            id={field.key}
-            name={field.key}
+        <div className="space-y-2">
+          <Label htmlFor="academicComment">Comments (optional)</Label>
+          <textarea
+            id="academicComment"
+            name="academicComment"
             rows={3}
-            className="resize-y"
-            placeholder={field.placeholder}
-            defaultValue={defaults[field.key] ?? ""}
+            maxLength={2000}
+            placeholder="Any additional comments about your academic performance this semester…"
+            defaultValue={defaults.academicComment ?? ""}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
           />
         </div>
-      ))}
+        <FormFileField
+          id="transcriptFile"
+          name="transcriptFile"
+          label="Transcript"
+          hint="PDF, JPG or PNG"
+          accept="application/pdf,image/jpeg,image/png"
+          optional
+        />
+        <div className="space-y-5 border-t border-border/60 pt-5">
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">Awards</h4>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Optional — you can select neither, one, or both.
+            </p>
+          </div>
+          <YesNoToggle
+            name="receivedAcademicExcellenceAward"
+            label="Did you receive an academic excellence award this semester?"
+            defaultValue={defaults.receivedAcademicExcellenceAward ?? ""}
+            onValueChange={(v) =>
+              onToggleChange?.("receivedAcademicExcellenceAward", v)
+            }
+          />
+          <YesNoToggle
+            name="receivedOtherAward"
+            label="Did you receive any other award this semester?"
+            defaultValue={defaults.receivedOtherAward ?? ""}
+            onValueChange={(v) => onToggleChange?.("receivedOtherAward", v)}
+          />
+          <FormFileField
+            id="awardFiles"
+            name="awardFiles"
+            label="Award documents"
+            hint="PDF, JPG or PNG — you can select more than one"
+            accept="application/pdf,image/jpeg,image/png"
+            optional
+            multiple
+          />
+          <div className="space-y-2">
+            <Label htmlFor="awardsComment">Awards comment (optional)</Label>
+            <textarea
+              id="awardsComment"
+              name="awardsComment"
+              rows={3}
+              maxLength={2000}
+              placeholder="Any comments about awards you received this semester…"
+              defaultValue={defaults.awardsComment ?? ""}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+            />
+          </div>
+        </div>
+      </SectionBlock>
+
+      <SectionBlock
+        title="Wellbeing"
+        description="Rate your wellbeing and tell us about current challenges."
+      >
+        <div>
+          <Label className="mb-2 block text-sm font-medium">
+            Rate each area (1 = low, 5 = high)
+          </Label>
+          <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-1">
+            {WELLBEING_QUESTIONS.map((q) => (
+              <RatingRow
+                key={q.name}
+                name={q.name}
+                label={q.label}
+                defaultValue={
+                  defaults[q.name] ? Number(defaults[q.name]) : undefined
+                }
+              />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Current challenges</Label>
+          <ChoiceGrid
+            name="challenges"
+            options={CHALLENGE_OPTIONS}
+            defaultSelected={defaultChallenges}
+            onSelectionChange={onChallengesChange}
+          />
+        </div>
+      </SectionBlock>
+
+      <SectionBlock
+        title="Activities"
+        description="What you took part in this semester."
+      >
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Activities & involvement</Label>
+          <ChoiceGrid
+            name="activities"
+            options={ACTIVITY_OPTIONS}
+            defaultSelected={defaultActivities}
+            onSelectionChange={onActivitiesChange}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="activitiesComment">Comments on your activities</Label>
+          <Textarea
+            id="activitiesComment"
+            name="activitiesComment"
+            rows={3}
+            maxLength={2000}
+            className="resize-y"
+            placeholder="Optional — add context about the activities you selected…"
+            defaultValue={defaults.activitiesComment ?? ""}
+          />
+        </div>
+      </SectionBlock>
+
+      <SectionBlock
+        title="Reflections"
+        description="Three questions about this semester."
+      >
+        {REFLECTION_QUESTIONS.map((field) => (
+          <div key={field.name} className="space-y-2">
+            <Label htmlFor={field.name}>{field.label}</Label>
+            <Textarea
+              id={field.name}
+              name={field.name}
+              rows={4}
+              maxLength={4000}
+              className="resize-y"
+              placeholder={field.placeholder}
+              defaultValue={defaults[field.name] ?? ""}
+            />
+          </div>
+        ))}
+      </SectionBlock>
     </div>
   );
 }
@@ -665,7 +683,8 @@ export function SubmissionForm({
   );
   const [step, setStep] = useState(() => {
     const saved = Number(get("__step", "1"));
-    return Number.isInteger(saved) && saved >= 1 && saved <= STEPS.length ? saved : 1;
+    if (!Number.isInteger(saved) || saved < 1) return 1;
+    return Math.min(saved, STEPS.length);
   });
   const total = STEPS.length;
   const [stepError, setStepError] = useState<string | null>(null);
@@ -719,7 +738,7 @@ export function SubmissionForm({
         const amount = trimmed(fd.get("amountDue"));
         const due = trimmed(fd.get("dueDate"));
         if (!amount || Number(amount) <= 0) {
-          setStepError("Please enter a valid tuition amount.");
+          setStepError("Please enter a valid amount.");
           return false;
         }
         if (!due) {
@@ -748,7 +767,15 @@ export function SubmissionForm({
 
   const stepContent = [
     <Step1 key={1} semesters={semesters} defaults={{ universitySemesterId: get("universitySemesterId"), semesterLabel: get("semesterLabel") }} />,
-    <Step2 key={2} defaults={{ amountDue: get("amountDue"), dueDate: get("dueDate") }} />,
+    <Step2
+      key={2}
+      requestCategory={requestCategory}
+      defaults={{
+        amountDue: get("amountDue"),
+        dueDate: get("dueDate"),
+        message: get("message"),
+      }}
+    />,
     <Step3
       key={3}
       defaults={{
@@ -759,25 +786,17 @@ export function SubmissionForm({
         receivedAcademicExcellenceAward: get("receivedAcademicExcellenceAward"),
         receivedOtherAward: get("receivedOtherAward"),
         awardsComment: get("awardsComment"),
+        activitiesComment: get("activitiesComment"),
+        ...Object.fromEntries(
+          WELLBEING_QUESTIONS.map((q) => [q.name, get(q.name)]),
+        ),
+        ...Object.fromEntries(
+          REFLECTION_QUESTIONS.map((q) => [q.name, get(q.name)]),
+        ),
       }}
       onToggleChange={(name, v) => save({ [name]: v })}
-    />,
-    <Step4
-      key={4}
-      defaults={Object.fromEntries(
-        WELLBEING_QUESTIONS.map((q) => [q.name, get(q.name)]),
-      )}
       defaultChallenges={JSON.parse(get("__chips_challenges", "[]"))}
       onChallengesChange={(v) => save({ __chips_challenges: JSON.stringify(v) })}
-    />,
-    <Step5
-      key={5}
-      defaults={{
-        activitiesComment: get("activitiesComment"),
-        reflectionAchievement: get("reflectionAchievement"),
-        reflectionChallenge: get("reflectionChallenge"),
-        reflectionAdditional: get("reflectionAdditional"),
-      }}
       defaultActivities={JSON.parse(get("__chips_activities", "[]"))}
       onActivitiesChange={(v) => save({ __chips_activities: JSON.stringify(v) })}
     />,
