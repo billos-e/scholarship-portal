@@ -4,13 +4,17 @@ import { randomUUID } from "crypto";
 import {
   db,
   students,
-  bankInformation,
   tuitionPaymentRequests,
   semesterReports,
   universitySemesters,
   REQUEST_CATEGORY_VALUES,
   type RequestCategory,
 } from "@workspace/db";
+import { notifyAdminsAfterSubmission } from "../lib/admin-notifications";
+import {
+  persistSubmissionBankRow,
+  resolveSubmissionBankSnapshot,
+} from "../lib/bank-accounts";
 
 const router: IRouter = Router();
 
@@ -60,10 +64,6 @@ router.post("/submissions", async (req, res) => {
       dueDate,
       invoiceFileUrl,
       message,
-      bankAccountName,
-      bankAccountNumber,
-      bankName,
-      promptpayNumber,
       qrPaymentImageUrl,
       gpa,
       creditsCompleted,
@@ -206,6 +206,16 @@ router.post("/submissions", async (req, res) => {
 
     const dueDateParsed = dueDate ? new Date(dueDate) : null;
 
+    const bankResolved = await resolveSubmissionBankSnapshot(
+      studentId,
+      (req.body ?? {}) as Record<string, unknown>,
+    );
+    if (!bankResolved.ok) {
+      res.status(400).json({ error: bankResolved.error });
+      return;
+    }
+    const { snapshot, accountId } = bankResolved;
+
     await db.insert(tuitionPaymentRequests).values({
       id: requestId,
       studentId,
@@ -216,11 +226,11 @@ router.post("/submissions", async (req, res) => {
       message: (message as string)?.trim() || null,
       requestCategory,
       status: "SUBMITTED",
-      bankAccountName: (bankAccountName as string)?.trim() || null,
-      bankAccountNumber: (bankAccountNumber as string)?.trim() || null,
-      bankName: (bankName as string)?.trim() || null,
-      promptpayNumber: (promptpayNumber as string)?.trim() || null,
-      qrPaymentImageUrl: (qrPaymentImageUrl as string) || null,
+      bankAccountName: snapshot.bankAccountName,
+      bankAccountNumber: snapshot.bankAccountNumber,
+      bankName: snapshot.bankName,
+      promptpayNumber: snapshot.promptpayNumber,
+      qrPaymentImageUrl: snapshot.qrPaymentImageUrl || (qrPaymentImageUrl as string) || null,
       universitySemesterId: (universitySemesterId as string) || null,
       submittedAt: now,
       updatedAt: now,
@@ -261,34 +271,7 @@ router.post("/submissions", async (req, res) => {
       updatedAt: now,
     });
 
-    // Update bank information snapshot
-    const bankPatch = {
-      bankAccountName: (bankAccountName as string)?.trim() || null,
-      bankAccountNumber: (bankAccountNumber as string)?.trim() || null,
-      bankName: (bankName as string)?.trim() || null,
-      promptpayNumber: (promptpayNumber as string)?.trim() || null,
-      ...(qrPaymentImageUrl ? { qrPaymentImageUrl: qrPaymentImageUrl as string } : {}),
-      lastUpdatedAt: now,
-    };
-
-    const [existingBank] = await db
-      .select({ id: bankInformation.id })
-      .from(bankInformation)
-      .where(eq(bankInformation.studentId, studentId))
-      .limit(1);
-
-    if (existingBank) {
-      await db
-        .update(bankInformation)
-        .set(bankPatch)
-        .where(eq(bankInformation.studentId, studentId));
-    } else {
-      await db.insert(bankInformation).values({
-        id: randomUUID(),
-        studentId,
-        ...bankPatch,
-      });
-    }
+    await persistSubmissionBankRow(studentId, accountId, snapshot);
 
     // Set currentSemesterLabel if not already set
     if (!student.currentSemesterLabel) {
@@ -297,6 +280,15 @@ router.post("/submissions", async (req, res) => {
         .set({ currentSemesterLabel: semesterLabel, updatedAt: now } as any)
         .where(eq(students.id, studentId));
     }
+
+    await notifyAdminsAfterSubmission({
+      requestId,
+      studentName: `${student.firstName} ${student.lastName}`.trim(),
+      studentCode: student.studentId,
+      semesterLabel,
+      requestCategory,
+      gpa: gpa != null ? String(gpa) : null,
+    });
 
     res.status(201).json({ requestId, ok: true });
   } catch (err) {

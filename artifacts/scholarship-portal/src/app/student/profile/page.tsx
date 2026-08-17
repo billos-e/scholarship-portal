@@ -22,6 +22,8 @@ import { fetchStudent, type StudentDetail } from "@/lib/api/students";
 import { formatEthnicity } from "@/lib/ethnicity-options";
 import { RELIGION_LABELS } from "@/lib/religion";
 import { SCHOLARSHIP_TYPE_LABELS } from "@/lib/scholarship-type";
+import { BankAccountsDisplay } from "@/components/bank-accounts-display";
+import { hasAnyBankField } from "@/lib/bank-accounts";
 import {
   getMissingProfileFields,
   PROFILE_FIELD_LABELS,
@@ -57,7 +59,8 @@ export default function StudentProfilePage() {
 
   if (!student) return <NotFound />;
 
-  const bank = student.bankInformation;
+  const bankAccounts = student.bankAccounts ?? [];
+  const hasBank = bankAccounts.some((account) => hasAnyBankField(account));
   const fullName = `${student.firstName} ${student.lastName}`;
   const initials = getInitials(fullName);
   const hasPhoto = Boolean(student.photoUrl?.trim());
@@ -263,22 +266,8 @@ export default function StudentProfilePage() {
         </ProfileInfoCard>
 
         <ProfileInfoCard title="Bank information">
-          {bank?.bankName || bank?.bankAccountNumber ? (
-            <ProfileInfoGrid>
-              <ProfileInfoField label="Bank name" value={bank.bankName} />
-              <ProfileInfoField
-                label="Account holder"
-                value={bank.bankAccountName}
-              />
-              <ProfileInfoField
-                label="Account number"
-                value={bank.bankAccountNumber}
-              />
-              <ProfileInfoField
-                label="PromptPay"
-                value={bank.promptpayNumber}
-              />
-            </ProfileInfoGrid>
+          {hasBank ? (
+            <BankAccountsDisplay accounts={bankAccounts} />
           ) : (
             <p className="text-sm leading-relaxed text-muted-foreground">
               No bank details on file.{" "}

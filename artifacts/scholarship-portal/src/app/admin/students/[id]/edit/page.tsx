@@ -109,13 +109,7 @@ export default function StudentEditPage() {
           religion: student.religion,
           status: student.status,
           photoUrl: student.photoUrl,
-          bankAccountName:
-            student.bankInformation?.bankAccountName ?? null,
-          bankAccountNumber:
-            student.bankInformation?.bankAccountNumber ?? null,
-          bankName: student.bankInformation?.bankName ?? null,
-          promptpayNumber:
-            student.bankInformation?.promptpayNumber ?? null,
+          bankAccounts: student.bankAccounts ?? [],
         }}
       />
     </div>

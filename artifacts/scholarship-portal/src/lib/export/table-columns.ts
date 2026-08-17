@@ -132,6 +132,30 @@ export const STUDENTS_TABLE_COLUMNS: TableExportColumn[] = [
     table: "bank_information",
     column: "promptpay_number",
   },
+  {
+    key: "bank_account_name_2",
+    label: "Bank account name 2",
+    table: "bank_information",
+    column: "bank_account_name",
+  },
+  {
+    key: "bank_account_number_2",
+    label: "Bank account number 2",
+    table: "bank_information",
+    column: "bank_account_number",
+  },
+  {
+    key: "bank_name_2",
+    label: "Bank name 2",
+    table: "bank_information",
+    column: "bank_name",
+  },
+  {
+    key: "promptpay_number_2",
+    label: "PromptPay number 2",
+    table: "bank_information",
+    column: "promptpay_number",
+  },
 ];
 
 export const REQUESTS_TABLE_COLUMNS: TableExportColumn[] = [

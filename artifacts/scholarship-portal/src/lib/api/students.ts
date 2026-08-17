@@ -9,7 +9,19 @@ import { parseScholarshipType } from "@/lib/scholarship-type";
 
 export type StudentStatus = "ACTIVE" | "GRADUATED" | "INACTIVE";
 
+export type BankAccount = {
+  id: string;
+  sortOrder: number;
+  bankAccountName: string | null;
+  bankAccountNumber: string | null;
+  bankName: string | null;
+  promptpayNumber: string | null;
+  qrPaymentImageUrl?: string | null;
+};
+
 export type BankInfo = {
+  id?: string;
+  sortOrder?: number;
   bankAccountName: string | null;
   bankAccountNumber: string | null;
   bankName: string | null;
@@ -51,6 +63,7 @@ export type StudentRecord = {
   university: { id: string; name: string } | null;
   user: { email: string; role?: string };
   bankInformation: BankInfo;
+  bankAccounts: BankAccount[];
 };
 
 export type StudentDetail = StudentRecord & {
@@ -97,6 +110,18 @@ function reviveStudent<T extends StudentRecord>(s: T): T {
   if (s.graduationYear != null) {
     const year = Number(s.graduationYear);
     s.graduationYear = Number.isInteger(year) ? year : null;
+  }
+  if (!Array.isArray(s.bankAccounts) || s.bankAccounts.length === 0) {
+    s.bankAccounts = s.bankInformation
+      ? [{ ...s.bankInformation, id: s.bankInformation.id ?? "", sortOrder: s.bankInformation.sortOrder ?? 1 }]
+      : [];
+  } else {
+    s.bankAccounts = [...s.bankAccounts].sort(
+      (a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99),
+    );
+  }
+  if (!s.bankInformation && s.bankAccounts[0]) {
+    s.bankInformation = s.bankAccounts[0];
   }
   return s;
 }

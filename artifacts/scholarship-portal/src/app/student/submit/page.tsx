@@ -94,7 +94,8 @@ export default function StudentSubmitPage() {
     ? (openByCategory[selectedCategory] ?? null)
     : null;
 
-  const bank = student.bankInformation;
+  const bankAccounts = student.bankAccounts ?? [];
+  const bank = student.bankInformation ?? bankAccounts[0] ?? null;
   const semesterHint =
     student.currentSemesterLabel ?? semesters[0]?.label ?? null;
   const profileReady = missingProfileFields.length === 0;
@@ -161,6 +162,7 @@ export default function StudentSubmitPage() {
               bankAccountNumber: bank?.bankAccountNumber ?? "",
               bankName: bank?.bankName ?? "",
               promptpayNumber: bank?.promptpayNumber ?? "",
+              bankAccounts,
             }}
           />
         </div>

@@ -39,6 +39,11 @@ import {
   REQUEST_CATEGORY_LABELS,
   type RequestCategory,
 } from "@/lib/request-category";
+import {
+  formatBankAccountOption,
+  isCompleteBankAccount,
+} from "@/lib/bank-accounts";
+import type { BankAccount } from "@/lib/api/students";
 
 type SemesterOption = { id: string; label: string };
 
@@ -48,6 +53,7 @@ type Defaults = {
   bankAccountNumber: string;
   bankName: string;
   promptpayNumber: string;
+  bankAccounts: BankAccount[];
 };
 
 const STEPS = [
@@ -352,17 +358,41 @@ function Step1({ semesters, defaults = {} }: { semesters: SemesterOption[]; defa
 function Step2({
   defaults = {},
   requestCategory,
+  bankAccounts = [],
+  selectedBankId,
+  onBankAccountChange,
 }: {
   defaults?: Record<string, string>;
   requestCategory: RequestCategory;
+  bankAccounts?: BankAccount[];
+  selectedBankId?: string;
+  onBankAccountChange?: (id: string) => void;
 }) {
   const categoryLabel = REQUEST_CATEGORY_LABELS[requestCategory];
+  const completeAccounts = bankAccounts.filter(isCompleteBankAccount);
   return (
     <div className="space-y-5">
       <StepHeader
         title={`${categoryLabel} payment`}
         description="Enter the amount, due date, and any supporting documents."
       />
+      {completeAccounts.length > 1 ? (
+        <div className="space-y-2">
+          <Label htmlFor="bankAccountId">Bank account for this payment</Label>
+          <NativeSelect
+            id="bankAccountId"
+            name="bankAccountId"
+            value={selectedBankId}
+            onChange={(event) => onBankAccountChange?.(event.target.value)}
+          >
+            {completeAccounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {formatBankAccountOption(account)}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="amountDue">
@@ -681,6 +711,15 @@ export function SubmissionForm({
   const { get, save, onFormChange, clearDraft } = useFormDraft(
     `draft:submission:${requestCategory}`,
   );
+  const completeBankAccounts = (defaults.bankAccounts ?? []).filter(
+    isCompleteBankAccount,
+  );
+  const [selectedBankId, setSelectedBankId] = useState(
+    () => get("bankAccountId", completeBankAccounts[0]?.id ?? ""),
+  );
+  const selectedBank =
+    completeBankAccounts.find((account) => account.id === selectedBankId) ??
+    completeBankAccounts[0];
   const [step, setStep] = useState(() => {
     const saved = Number(get("__step", "1"));
     if (!Number.isInteger(saved) || saved < 1) return 1;
@@ -770,6 +809,12 @@ export function SubmissionForm({
     <Step2
       key={2}
       requestCategory={requestCategory}
+      bankAccounts={completeBankAccounts}
+      selectedBankId={selectedBank?.id}
+      onBankAccountChange={(id) => {
+        setSelectedBankId(id);
+        save({ bankAccountId: id });
+      }}
       defaults={{
         amountDue: get("amountDue"),
         dueDate: get("dueDate"),
@@ -831,21 +876,28 @@ export function SubmissionForm({
     >
       {/* Hidden bank inputs (auto-populated, not shown) */}
       <input type="hidden" name="requestCategory" value={requestCategory} />
+      {completeBankAccounts.length <= 1 ? (
+        <input type="hidden" name="bankAccountId" value={selectedBank?.id ?? ""} />
+      ) : null}
       <input
         type="hidden"
         name="bankAccountName"
-        defaultValue={defaults.bankAccountName}
+        value={selectedBank?.bankAccountName ?? defaults.bankAccountName}
       />
       <input
         type="hidden"
         name="bankAccountNumber"
-        defaultValue={defaults.bankAccountNumber}
+        value={selectedBank?.bankAccountNumber ?? defaults.bankAccountNumber}
       />
-      <input type="hidden" name="bankName" defaultValue={defaults.bankName} />
+      <input
+        type="hidden"
+        name="bankName"
+        value={selectedBank?.bankName ?? defaults.bankName}
+      />
       <input
         type="hidden"
         name="promptpayNumber"
-        defaultValue={defaults.promptpayNumber}
+        value={selectedBank?.promptpayNumber ?? defaults.promptpayNumber}
       />
 
       {isProfileError && state.error ? (

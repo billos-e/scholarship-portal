@@ -10,6 +10,8 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/db run migrate` — apply SQL migrations (0006 reflections, 0007 admin notification log, 0008 two bank accounts)
+- Admin emails: `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (optional; defaults to Resend test sender), `CRON_SECRET` (deadline job). See `docs/notifications.md`.
 
 ## Stack
 

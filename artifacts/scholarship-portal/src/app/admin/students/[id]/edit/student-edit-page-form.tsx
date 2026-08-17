@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ProfileInfoCard } from "@/components/admin/profile-info-card";
@@ -32,6 +32,7 @@ import {
   readStudentProfileFromFormData,
   validateStudentProfileEdit,
 } from "@/lib/validations/student-profile";
+import { hasAnyBankField, type BankAccountFields } from "@/lib/bank-accounts";
 
 type UniversityOption = { id: string; name: string };
 
@@ -54,10 +55,7 @@ export type StudentEditPageData = {
   gpa: string | null;
   status: "ACTIVE" | "GRADUATED" | "INACTIVE";
   photoUrl: string | null;
-  bankAccountName: string | null;
-  bankAccountNumber: string | null;
-  bankName: string | null;
-  promptpayNumber: string | null;
+  bankAccounts: BankAccountFields[];
 };
 
 export function StudentEditPageForm({
@@ -79,6 +77,11 @@ export function StudentEditPageForm({
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const displayPhotoUrl = previewPhotoUrl ?? (student.photoUrl ? uploadPublicUrl(student.photoUrl) : null);
   const formRef = useRef<HTMLFormElement>(null);
+  const account1 = student.bankAccounts[0];
+  const account2 = student.bankAccounts[1];
+  const [showSecondAccount, setShowSecondAccount] = useState(
+    () => Boolean(account2 && hasAnyBankField(account2)),
+  );
 
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     async (prev, formData) => {
@@ -302,13 +305,14 @@ export function StudentEditPageForm({
         </div>
       </ProfileInfoCard>
       <ProfileInfoCard title="Bank information">
+        <input type="hidden" name="bankAccountId" value={account1?.id ?? ""} />
         <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="bankName">Bank name</Label>
             <Input
               id="bankName"
               name="bankName"
-              defaultValue={student.bankName ?? ""}
+              defaultValue={account1?.bankName ?? ""}
             />
           </div>
           <div className="space-y-2">
@@ -316,7 +320,7 @@ export function StudentEditPageForm({
             <Input
               id="bankAccountName"
               name="bankAccountName"
-              defaultValue={student.bankAccountName ?? ""}
+              defaultValue={account1?.bankAccountName ?? ""}
             />
           </div>
           <div className="space-y-2">
@@ -324,7 +328,7 @@ export function StudentEditPageForm({
             <Input
               id="bankAccountNumber"
               name="bankAccountNumber"
-              defaultValue={student.bankAccountNumber ?? ""}
+              defaultValue={account1?.bankAccountNumber ?? ""}
             />
           </div>
           <div className="space-y-2">
@@ -332,11 +336,75 @@ export function StudentEditPageForm({
             <Input
               id="promptpayNumber"
               name="promptpayNumber"
-              defaultValue={student.promptpayNumber ?? ""}
+              defaultValue={account1?.promptpayNumber ?? ""}
             />
           </div>
         </div>
       </ProfileInfoCard>
+      {showSecondAccount ? (
+        <ProfileInfoCard
+          title="Second bank account"
+          headerAction={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setShowSecondAccount(false)}
+            >
+              <Trash2 className="size-3.5" />
+              Remove
+            </Button>
+          }
+        >
+          <input type="hidden" name="includeBankAccount2" value="1" />
+          <input type="hidden" name="bankAccountId2" value={account2?.id ?? ""} />
+          <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="bankName2">Bank name</Label>
+              <Input
+                id="bankName2"
+                name="bankName2"
+                defaultValue={account2?.bankName ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bankAccountName2">Account holder</Label>
+              <Input
+                id="bankAccountName2"
+                name="bankAccountName2"
+                defaultValue={account2?.bankAccountName ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bankAccountNumber2">Account number</Label>
+              <Input
+                id="bankAccountNumber2"
+                name="bankAccountNumber2"
+                defaultValue={account2?.bankAccountNumber ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="promptpayNumber2">PromptPay</Label>
+              <Input
+                id="promptpayNumber2"
+                name="promptpayNumber2"
+                defaultValue={account2?.promptpayNumber ?? ""}
+              />
+            </div>
+          </div>
+        </ProfileInfoCard>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowSecondAccount(true)}
+        >
+          <Plus className="size-3.5" />
+          Add a second bank account
+        </Button>
+      )}
       <ProfileInfoCard title="Login credentials">
         <div className="space-y-4">
           <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">

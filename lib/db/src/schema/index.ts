@@ -58,6 +58,19 @@ export const scholarshipTypeEnum = pgEnum(
   SCHOLARSHIP_TYPE_VALUES,
 );
 
+export const ADMIN_NOTIFICATION_KIND_VALUES = [
+  "GPA_UNDER_3",
+  "EMERGENCY_AID",
+  "DEADLINE_APPROACHING",
+  "DEADLINE_OVERDUE",
+] as const;
+export type AdminNotificationKind =
+  (typeof ADMIN_NOTIFICATION_KIND_VALUES)[number];
+export const adminNotificationKindEnum = pgEnum(
+  "admin_notification_kind",
+  ADMIN_NOTIFICATION_KIND_VALUES,
+);
+
 export const RELIGION_VALUES = [
   "CHRISTIAN",
   "BUDDHIST",
@@ -170,19 +183,31 @@ export const students = pgTable("students", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const bankInformation = pgTable("bank_information", {
-  id: text("id").primaryKey(),
-  studentId: text("student_id")
-    .notNull()
-    .unique()
-    .references(() => students.id, { onDelete: "cascade" }),
-  bankAccountName: text("bank_account_name"),
-  bankAccountNumber: text("bank_account_number"),
-  bankName: text("bank_name"),
-  promptpayNumber: text("promptpay_number"),
-  qrPaymentImageUrl: text("qr_payment_image_url"),
-  lastUpdatedAt: timestamp("last_updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const bankInformation = pgTable(
+  "bank_information",
+  {
+    id: text("id").primaryKey(),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(1),
+    bankAccountName: text("bank_account_name"),
+    bankAccountNumber: text("bank_account_number"),
+    bankName: text("bank_name"),
+    promptpayNumber: text("promptpay_number"),
+    qrPaymentImageUrl: text("qr_payment_image_url"),
+    lastUpdatedAt: timestamp("last_updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("bank_information_student_id_sort_order_uidx").on(
+      t.studentId,
+      t.sortOrder,
+    ),
+    index("bank_information_student_id_idx").on(t.studentId),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // Semester submission
@@ -233,6 +258,7 @@ export const tuitionPaymentRequests = pgTable(
     uniqueIndex("tpr_student_semester_category_active_idx")
       .on(t.studentId, t.semesterLabel, t.requestCategory)
       .where(sql`${t.status} <> 'REJECTED'`),
+    index("tpr_due_date_idx").on(t.dueDate),
   ],
 );
 
@@ -303,6 +329,25 @@ export const paymentHistory = pgTable(
   (t) => [index("payment_history_student_id_idx").on(t.studentId)],
 );
 
+export const adminNotificationLog = pgTable(
+  "admin_notification_log",
+  {
+    id: text("id").primaryKey(),
+    tuitionPaymentRequestId: text("tuition_payment_request_id")
+      .notNull()
+      .references(() => tuitionPaymentRequests.id, { onDelete: "cascade" }),
+    kind: adminNotificationKindEnum("kind").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("admin_notification_log_request_kind_idx").on(
+      t.tuitionPaymentRequestId,
+      t.kind,
+    ),
+    index("admin_notification_log_kind_idx").on(t.kind),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -318,3 +363,4 @@ export type BankInformation = typeof bankInformation.$inferSelect;
 export type TuitionPaymentRequest = typeof tuitionPaymentRequests.$inferSelect;
 export type SemesterReport = typeof semesterReports.$inferSelect;
 export type PaymentHistory = typeof paymentHistory.$inferSelect;
+export type AdminNotificationLog = typeof adminNotificationLog.$inferSelect;

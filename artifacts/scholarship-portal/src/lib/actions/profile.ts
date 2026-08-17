@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireStudent } from "@/lib/auth/session";
 import { uploadFileToStorage, validateUpload } from "@/lib/uploads";
+import { readBankAccountsFromFormData } from "@/lib/bank-accounts";
 import {
   readStudentSelfProfileFromFormData,
   validateStudentProfileSelfEdit,
@@ -113,13 +114,7 @@ export async function saveOwnProfileEdit(
   const contextError = await validateUniversityContext(parsed.data, { studentId: student.id });
   if (contextError) return { error: contextError };
 
-  const bankParsed = bankSchema.safeParse({
-    bankAccountName: optionalString(formData.get("bankAccountName")),
-    bankAccountNumber: optionalString(formData.get("bankAccountNumber")),
-    bankName: optionalString(formData.get("bankName")),
-    promptpayNumber: optionalString(formData.get("promptpayNumber")),
-  });
-  if (!bankParsed.success) return { error: "Invalid bank information." };
+  const bankAccounts = readBankAccountsFromFormData(formData);
 
   const file = formData.get("photo");
   let photoUrl: string | undefined;
@@ -151,7 +146,7 @@ export async function saveOwnProfileEdit(
     yearOfStudy: profileFields.yearOfStudy ?? null,
     currentSemesterLabel: profileFields.currentSemesterLabel ?? null,
     gpa: profileFields.gpa != null ? String(profileFields.gpa) : null,
-    ...bankParsed.data,
+    bankAccounts,
     ...(photoUrl ? { photoUrl } : {}),
   };
 

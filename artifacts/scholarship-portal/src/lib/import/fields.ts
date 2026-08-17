@@ -93,6 +93,22 @@ const STUDENT_FIELDS: ImportFieldDef[] = [
     label: "PromptPay number",
     aliases: ["promptpay", "prompt pay"],
   },
+  {
+    key: "bank_account_name_2",
+    label: "Bank account name 2",
+    aliases: ["account name 2", "second bank account name"],
+  },
+  {
+    key: "bank_account_number_2",
+    label: "Bank account number 2",
+    aliases: ["account number 2", "second bank account number"],
+  },
+  { key: "bank_name_2", label: "Bank name 2", aliases: ["second bank name"] },
+  {
+    key: "promptpay_number_2",
+    label: "PromptPay number 2",
+    aliases: ["promptpay 2", "second promptpay"],
+  },
 ];
 
 const UNIVERSITY_FIELDS: ImportFieldDef[] = [

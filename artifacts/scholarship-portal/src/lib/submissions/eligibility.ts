@@ -1,4 +1,4 @@
-import type { BankInformation, RequestStatus, Student } from "@prisma/client";
+import type { RequestStatus, Student } from "@prisma/client";
 
 import { REQUEST_STATUS_LABELS } from "@/lib/request-status";
 import {
@@ -6,6 +6,10 @@ import {
   type RequestCategory,
 } from "@/lib/request-category";
 import { fetchStudent } from "@/lib/api/students";
+import {
+  isCompleteBankAccount,
+  primaryBankAccount,
+} from "@/lib/bank-accounts";
 
 /** Terminal statuses — student may start a new submission of that category when all of its requests are in one of these. */
 export const TERMINAL_REQUEST_STATUSES: RequestStatus[] = ["PAID", "REJECTED"];
@@ -17,8 +21,16 @@ export const BLOCKING_REQUEST_STATUSES: RequestStatus[] = [
   "APPROVED",
 ];
 
+export type BankAccountLike = {
+  bankAccountName?: string | null;
+  bankAccountNumber?: string | null;
+  bankName?: string | null;
+  sortOrder?: number;
+};
+
 export type StudentForEligibility = Student & {
-  bankInformation?: BankInformation | null;
+  bankInformation?: BankAccountLike | null;
+  bankAccounts?: BankAccountLike[] | null;
 };
 
 export type ProfileField =
@@ -61,7 +73,12 @@ export function getMissingProfileFields(
   student: StudentForEligibility,
 ): ProfileField[] {
   const missing: ProfileField[] = [];
-  const bank = student.bankInformation;
+  const accounts =
+    student.bankAccounts && student.bankAccounts.length > 0
+      ? student.bankAccounts
+      : student.bankInformation
+        ? [student.bankInformation]
+        : [];
 
   if (!student.studentId?.trim()) missing.push("studentId");
   if (!student.universityId) missing.push("universityId");
@@ -71,9 +88,13 @@ export function getMissingProfileFields(
     missing.push("currentSemesterLabel");
   }
   if (student.gpa === null || student.gpa === undefined) missing.push("gpa");
-  if (!bank?.bankAccountName?.trim()) missing.push("bankAccountName");
-  if (!bank?.bankAccountNumber?.trim()) missing.push("bankAccountNumber");
-  if (!bank?.bankName?.trim()) missing.push("bankName");
+
+  if (!accounts.some((account) => isCompleteBankAccount(account))) {
+    const bank = primaryBankAccount(accounts) ?? accounts[0];
+    if (!bank?.bankAccountName?.trim()) missing.push("bankAccountName");
+    if (!bank?.bankAccountNumber?.trim()) missing.push("bankAccountNumber");
+    if (!bank?.bankName?.trim()) missing.push("bankName");
+  }
 
   return missing;
 }

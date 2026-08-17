@@ -41,6 +41,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { formatDate, formatCurrency } from "@/lib/format";
 import { getInitials } from "@/lib/initials";
 import { fetchStudent, type StudentDetail } from "@/lib/api/students";
+import { hasAnyBankField } from "@/lib/bank-accounts";
 import { formatEthnicity } from "@/lib/ethnicity-options";
 import { RELIGION_LABELS } from "@/lib/religion";
 import { SCHOLARSHIP_TYPE_LABELS } from "@/lib/scholarship-type";
@@ -116,7 +117,8 @@ export default function StudentDetailPage() {
   const fullName = `${student.firstName} ${student.lastName}`;
   const initials = getInitials(fullName);
   const editHref = `/admin/students/${id}/edit`;
-  const bank = student.bankInformation;
+  const bankAccounts = student.bankAccounts ?? [];
+  const hasBank = bankAccounts.some((account) => hasAnyBankField(account));
   const missingFields = getMissingProfileFields(student as unknown as StudentForEligibility);
 
   const requests = student.tuitionPaymentRequests;
@@ -480,44 +482,59 @@ export default function StudentDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
-              {bank?.bankName || bank?.bankAccountNumber ? (
-                <>
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">
-                      Bank Name
-                    </p>
-                    <p className="font-medium text-foreground">
-                      {bank.bankName}
-                    </p>
-                  </div>
-                  <Separator />
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">
-                      Account Holder
-                    </p>
-                    <p className="font-medium text-foreground">
-                      {bank.bankAccountName}
-                    </p>
-                  </div>
-                  <Separator />
-                  <div className="bg-muted/30 p-3 rounded-md border border-border/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-muted-foreground text-xs">
-                        Account Number
-                      </p>
-                    </div>
-                    <CopyField value={bank.bankAccountNumber!} label="Account number" />
-                  </div>
-                  {bank.promptpayNumber ? (
-                    <div className="bg-muted/30 p-3 rounded-md border border-border/50">
+              {hasBank ? (
+                bankAccounts.filter((account) => hasAnyBankField(account)).map((account, index, visible) => (
+                  <div key={account.id ?? index} className="space-y-4">
+                    {visible.length > 1 ? (
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Account {index + 1}
+                        </p>
+                        {index === 0 ? (
+                          <Badge variant="secondary">Primary</Badge>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <div>
                       <p className="text-muted-foreground text-xs mb-1">
-                        PromptPay
+                        Bank Name
                       </p>
-                      <CopyField value={bank.promptpayNumber} label="PromptPay" />
+                      <p className="font-medium text-foreground">
+                        {account.bankName || "—"}
+                      </p>
                     </div>
-                  ) : null}
-                </>
+                    <Separator />
+                    <div>
+                      <p className="text-muted-foreground text-xs mb-1">
+                        Account Holder
+                      </p>
+                      <p className="font-medium text-foreground">
+                        {account.bankAccountName || "—"}
+                      </p>
+                    </div>
+                    <Separator />
+                    {account.bankAccountNumber ? (
+                      <div className="bg-muted/30 p-3 rounded-md border border-border/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-muted-foreground text-xs">
+                            Account Number
+                          </p>
+                        </div>
+                        <CopyField value={account.bankAccountNumber} label="Account number" />
+                      </div>
+                    ) : null}
+                    {account.promptpayNumber ? (
+                      <div className="bg-muted/30 p-3 rounded-md border border-border/50">
+                        <p className="text-muted-foreground text-xs mb-1">
+                          PromptPay
+                        </p>
+                        <CopyField value={account.promptpayNumber} label="PromptPay" />
+                      </div>
+                    ) : null}
+                    {index < visible.length - 1 ? <Separator /> : null}
+                  </div>
+                ))
               ) : (
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   No bank details on file.

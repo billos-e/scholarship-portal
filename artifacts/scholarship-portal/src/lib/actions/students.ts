@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { generateSecurePassword } from "@/lib/password";
 import { uploadFileToStorage, validateUpload } from "@/lib/uploads";
+import { readBankAccountsFromFormData } from "@/lib/bank-accounts";
 import {
   readStudentProfileFromFormData,
   validateStudentProfileCreate,
@@ -199,13 +200,7 @@ export async function saveStudentEdit(
   const contextError = await validateUniversityContext(parsed.data, { studentId: id });
   if (contextError) return { error: contextError, submitAttempt: attempt };
 
-  const bankParsed = bankSchema.safeParse({
-    bankAccountName: optionalString(formData.get("bankAccountName")),
-    bankAccountNumber: optionalString(formData.get("bankAccountNumber")),
-    bankName: optionalString(formData.get("bankName")),
-    promptpayNumber: optionalString(formData.get("promptpayNumber")),
-  });
-  if (!bankParsed.success) return { error: "Invalid bank information.", submitAttempt: attempt };
+  const bankAccounts = readBankAccountsFromFormData(formData);
 
   const password = optionalString(formData.get("password"));
   if (password) {
@@ -230,7 +225,7 @@ export async function saveStudentEdit(
 
   const payload = {
     ...profileToPayload(parsed.data),
-    ...bankParsed.data,
+    bankAccounts,
     ...(photoUrl ? { photoUrl } : {}),
     ...(password ? { password } : {}),
   };

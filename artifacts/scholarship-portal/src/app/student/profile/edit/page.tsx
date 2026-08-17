@@ -101,10 +101,7 @@ export default function StudentProfileEditPage() {
           graduationYear: student.graduationYear,
           religion: student.religion,
           photoUrl: student.photoUrl,
-          bankAccountName: student.bankInformation?.bankAccountName ?? null,
-          bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,
-          bankName: student.bankInformation?.bankName ?? null,
-          promptpayNumber: student.bankInformation?.promptpayNumber ?? null,
+          bankAccounts: student.bankAccounts ?? [],
         }}
       />
     </div>

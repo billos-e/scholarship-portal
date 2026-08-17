@@ -52,6 +52,10 @@ type StudentExportSource = {
   bankAccountNumber: string | null;
   bankName: string | null;
   promptpayNumber: string | null;
+  bankAccountName2: string | null;
+  bankAccountNumber2: string | null;
+  bankName2: string | null;
+  promptpayNumber2: string | null;
 };
 
 type RequestExportSource = {
@@ -120,6 +124,10 @@ export function studentsToExportRows(rows: StudentExportSource[]): ExportRow[] {
     bank_account_number: row.bankAccountNumber,
     bank_name: row.bankName,
     promptpay_number: row.promptpayNumber,
+    bank_account_name_2: row.bankAccountName2,
+    bank_account_number_2: row.bankAccountNumber2,
+    bank_name_2: row.bankName2,
+    promptpay_number_2: row.promptpayNumber2,
   }));
 }
 

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Lock, Camera } from "lucide-react";
+import { Lock, Camera, Plus, Trash2 } from "lucide-react";
 import { useFormDraft } from "@/lib/use-form-draft";
 import Link from "next/link";
 
@@ -31,6 +31,7 @@ import {
   SCHOLARSHIP_TYPE_LABELS,
   SCHOLARSHIP_TYPES,
 } from "@/lib/scholarship-type";
+import { hasAnyBankField, type BankAccountFields } from "@/lib/bank-accounts";
 
 type UniversityOption = { id: string; name: string };
 
@@ -50,10 +51,7 @@ export type StudentProfileEditData = {
   currentSemesterLabel: string | null;
   gpa: string | null;
   photoUrl: string | null;
-  bankAccountName: string | null;
-  bankAccountNumber: string | null;
-  bankName: string | null;
-  promptpayNumber: string | null;
+  bankAccounts: BankAccountFields[];
 };
 
 // ── Merge helpers (same logic as StudentAcademicFields) ───────────────────────
@@ -328,6 +326,11 @@ export function StudentProfileEditForm({
   const graduationYears = useMemo(
     () => graduationYearOptions(student.graduationYear),
     [student.graduationYear],
+  );
+  const account1 = student.bankAccounts[0];
+  const account2 = student.bankAccounts[1];
+  const [showSecondAccount, setShowSecondAccount] = useState(
+    () => Boolean(account2 && hasAnyBankField(account2)),
   );
 
   // Only keep the student's original program/semester selectable while the
@@ -634,14 +637,15 @@ export function StudentProfileEditForm({
 
         {/* Bank information */}
         <Group title="Bank information">
+          <input type="hidden" name="bankAccountId" value={account1?.id ?? ""} />
           <PairRow
             label1="Bank name"
             children1={
-              <FieldInput id="bankName" name="bankName" defaultValue={getDraft("bankName", student.bankName ?? "")} />
+              <FieldInput id="bankName" name="bankName" defaultValue={getDraft("bankName", account1?.bankName ?? "")} />
             }
             label2="Account holder"
             children2={
-              <FieldInput id="bankAccountName" name="bankAccountName" defaultValue={getDraft("bankAccountName", student.bankAccountName ?? "")} />
+              <FieldInput id="bankAccountName" name="bankAccountName" defaultValue={getDraft("bankAccountName", account1?.bankAccountName ?? "")} />
             }
           />
           <PairRow
@@ -653,15 +657,72 @@ export function StudentProfileEditForm({
                 inputMode="numeric"
                 pattern="[\d\s-]{5,25}"
                 title="Enter a valid account number (5–25 digits)"
-                defaultValue={getDraft("bankAccountNumber", student.bankAccountNumber ?? "")}
+                defaultValue={getDraft("bankAccountNumber", account1?.bankAccountNumber ?? "")}
               />
             }
             label2="PromptPay"
             children2={
-              <FieldInput id="promptpayNumber" name="promptpayNumber" defaultValue={getDraft("promptpayNumber", student.promptpayNumber ?? "")} />
+              <FieldInput id="promptpayNumber" name="promptpayNumber" defaultValue={getDraft("promptpayNumber", account1?.promptpayNumber ?? "")} />
             }
           />
         </Group>
+
+        {showSecondAccount ? (
+          <Group title="Second bank account">
+            <input type="hidden" name="includeBankAccount2" value="1" />
+            <input type="hidden" name="bankAccountId2" value={account2?.id ?? ""} />
+            <div className="flex justify-end border-b border-border/30 py-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-muted-foreground"
+                onClick={() => setShowSecondAccount(false)}
+              >
+                <Trash2 className="size-3.5" />
+                Remove
+              </Button>
+            </div>
+            <PairRow
+              label1="Bank name"
+              children1={
+                <FieldInput id="bankName2" name="bankName2" defaultValue={getDraft("bankName2", account2?.bankName ?? "")} />
+              }
+              label2="Account holder"
+              children2={
+                <FieldInput id="bankAccountName2" name="bankAccountName2" defaultValue={getDraft("bankAccountName2", account2?.bankAccountName ?? "")} />
+              }
+            />
+            <PairRow
+              label1="Account number"
+              children1={
+                <FieldInput
+                  id="bankAccountNumber2"
+                  name="bankAccountNumber2"
+                  inputMode="numeric"
+                  pattern="[\d\s-]{5,25}"
+                  title="Enter a valid account number (5–25 digits)"
+                  defaultValue={getDraft("bankAccountNumber2", account2?.bankAccountNumber ?? "")}
+                />
+              }
+              label2="PromptPay"
+              children2={
+                <FieldInput id="promptpayNumber2" name="promptpayNumber2" defaultValue={getDraft("promptpayNumber2", account2?.promptpayNumber ?? "")} />
+              }
+            />
+          </Group>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={() => setShowSecondAccount(true)}
+          >
+            <Plus className="size-3.5" />
+            Add a second bank account
+          </Button>
+        )}
 
         {state.error ? (
           <p className="text-sm font-medium text-destructive">{state.error}</p>

@@ -14,6 +14,16 @@ import {
   type ScholarshipType,
   type Religion,
 } from "@workspace/db";
+import {
+  attachBankFields,
+  fetchBankAccountsForStudents,
+  fetchStudentBankAccounts,
+  noCompleteBankSql,
+  parseBankAccountsBody,
+  parseLegacyBankFields,
+  replaceStudentBankAccounts,
+  upsertPrimaryBankAccount,
+} from "../lib/bank-accounts";
 
 const router: IRouter = Router();
 
@@ -85,6 +95,22 @@ async function generateUniqueStudentId(): Promise<string> {
   return `STU-${year}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
+function incompleteProfileCondition(): SQL {
+  return or(
+    isNull(students.studentId),
+    eq(students.studentId, ""),
+    isNull(students.universityId),
+    isNull(students.degreeProgram),
+    eq(students.degreeProgram, ""),
+    isNull(students.yearOfStudy),
+    eq(students.yearOfStudy, ""),
+    isNull(students.currentSemesterLabel),
+    eq(students.currentSemesterLabel, ""),
+    isNull(students.gpa),
+    noCompleteBankSql,
+  ) as SQL;
+}
+
 function parsePagination(req: { query: Record<string, unknown> }) {
   const page = Math.max(1, Number.parseInt(String(req.query.page ?? "1"), 10) || 1);
   const limit = Math.min(
@@ -124,26 +150,7 @@ router.get("/students", async (req, res) => {
       conditions.push(eq(students.status, status as "ACTIVE" | "GRADUATED" | "INACTIVE"));
     }
     if (incompleteProfile) {
-      conditions.push(
-        or(
-          isNull(students.studentId),
-          eq(students.studentId, ""),
-          isNull(students.universityId),
-          isNull(students.degreeProgram),
-          eq(students.degreeProgram, ""),
-          isNull(students.yearOfStudy),
-          eq(students.yearOfStudy, ""),
-          isNull(students.currentSemesterLabel),
-          eq(students.currentSemesterLabel, ""),
-          isNull(students.gpa),
-          isNull(bankInformation.bankAccountName),
-          eq(bankInformation.bankAccountName, ""),
-          isNull(bankInformation.bankAccountNumber),
-          eq(bankInformation.bankAccountNumber, ""),
-          isNull(bankInformation.bankName),
-          eq(bankInformation.bankName, ""),
-        ) as SQL,
-      );
+      conditions.push(incompleteProfileCondition());
     }
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -153,12 +160,10 @@ router.get("/students", async (req, res) => {
         university: universities,
         userEmail: users.email,
         userRole: users.role,
-        bank: bankInformation,
       })
       .from(students)
       .leftJoin(universities, eq(students.universityId, universities.id))
-      .innerJoin(users, eq(students.userId, users.id))
-      .leftJoin(bankInformation, eq(bankInformation.studentId, students.id));
+      .innerJoin(users, eq(students.userId, users.id));
 
     const orderColumn = sortKey ? STUDENT_SORT_COLUMNS[sortKey] : students.createdAt;
     const orderBy = sortKey
@@ -173,10 +178,7 @@ router.get("/students", async (req, res) => {
         .limit(limit)
         .offset(offset),
       (() => {
-        const q = db
-          .select({ value: count() })
-          .from(students)
-          .leftJoin(bankInformation, eq(bankInformation.studentId, students.id));
+        const q = db.select({ value: count() }).from(students);
         return where ? q.where(where) : q;
       })(),
     ]);
@@ -191,38 +193,26 @@ router.get("/students", async (req, res) => {
         db
           .select({ value: count() })
           .from(students)
-          .leftJoin(bankInformation, eq(bankInformation.studentId, students.id))
-          .where(
-            or(
-              isNull(students.studentId),
-              eq(students.studentId, ""),
-              isNull(students.universityId),
-              isNull(students.degreeProgram),
-              eq(students.degreeProgram, ""),
-              isNull(students.yearOfStudy),
-              eq(students.yearOfStudy, ""),
-              isNull(students.currentSemesterLabel),
-              eq(students.currentSemesterLabel, ""),
-              isNull(students.gpa),
-              isNull(bankInformation.bankAccountName),
-              eq(bankInformation.bankAccountName, ""),
-              isNull(bankInformation.bankAccountNumber),
-              eq(bankInformation.bankAccountNumber, ""),
-              isNull(bankInformation.bankName),
-              eq(bankInformation.bankName, ""),
-            ),
-          ),
+          .where(incompleteProfileCondition()),
       ]);
     const totalCount = totalCountRows[0].value;
     const activeCount = activeCountRows[0].value;
     const incompleteCount = incompleteCountRows[0].value;
 
-    const items = rows.map((r) => ({
-      ...r.student,
-      university: r.university ?? null,
-      user: { email: r.userEmail, role: r.userRole },
-      bankInformation: r.bank ?? null,
-    }));
+    const banksByStudent = await fetchBankAccountsForStudents(
+      rows.map((r) => r.student.id),
+    );
+
+    const items = rows.map((r) =>
+      attachBankFields(
+        {
+          ...r.student,
+          university: r.university ?? null,
+          user: { email: r.userEmail, role: r.userRole },
+        },
+        banksByStudent.get(r.student.id) ?? [],
+      ),
+    );
 
     res.json({
       items,
@@ -252,12 +242,10 @@ router.get("/students/:id", async (req, res) => {
         university: universities,
         userEmail: users.email,
         userRole: users.role,
-        bank: bankInformation,
       })
       .from(students)
       .leftJoin(universities, eq(students.universityId, universities.id))
       .innerJoin(users, eq(students.userId, users.id))
-      .leftJoin(bankInformation, eq(bankInformation.studentId, students.id))
       .where(eq(students.id, id))
       .limit(1);
 
@@ -266,19 +254,26 @@ router.get("/students/:id", async (req, res) => {
       return;
     }
 
-    const requests = await db
-      .select()
-      .from(tuitionPaymentRequests)
-      .where(eq(tuitionPaymentRequests.studentId, id))
-      .orderBy(desc(tuitionPaymentRequests.submittedAt));
+    const [requests, accounts] = await Promise.all([
+      db
+        .select()
+        .from(tuitionPaymentRequests)
+        .where(eq(tuitionPaymentRequests.studentId, id))
+        .orderBy(desc(tuitionPaymentRequests.submittedAt)),
+      fetchStudentBankAccounts(id),
+    ]);
 
-    res.json({
-      ...row.student,
-      university: row.university ?? null,
-      user: { email: row.userEmail, role: row.userRole },
-      bankInformation: row.bank ?? null,
-      tuitionPaymentRequests: requests,
-    });
+    res.json(
+      attachBankFields(
+        {
+          ...row.student,
+          university: row.university ?? null,
+          user: { email: row.userEmail, role: row.userRole },
+          tuitionPaymentRequests: requests,
+        },
+        accounts,
+      ),
+    );
   } catch (err) {
     console.error("GET /students/:id error", err);
     res.status(500).json({ error: "Failed to fetch student." });
@@ -408,6 +403,7 @@ router.post("/students", async (req, res) => {
     await db.insert(bankInformation).values({
       id: bankId,
       studentId: studentDbId,
+      sortOrder: 1,
     });
 
     res.status(201).json({ id: studentDbId, userId });
@@ -522,34 +518,21 @@ router.put("/students/:id", async (req, res) => {
         .where(eq(students.id, id));
     }
 
-    const bankFields = ["bankAccountName", "bankAccountNumber", "bankName", "promptpayNumber"];
-    const hasBankFields = bankFields.some((f) => f in body);
-    if (hasBankFields) {
-      const bankPatch = {
-        bankAccountName: (body.bankAccountName as string)?.trim() || null,
-        bankAccountNumber: (body.bankAccountNumber as string)?.trim() || null,
-        bankName: (body.bankName as string)?.trim() || null,
-        promptpayNumber: (body.promptpayNumber as string)?.trim() || null,
-        lastUpdatedAt: new Date(),
-      };
-
-      const [existingBank] = await db
-        .select({ id: bankInformation.id })
-        .from(bankInformation)
-        .where(eq(bankInformation.studentId, id))
-        .limit(1);
-
-      if (existingBank) {
-        await db
-          .update(bankInformation)
-          .set(bankPatch)
-          .where(eq(bankInformation.studentId, id));
-      } else {
-        await db.insert(bankInformation).values({
-          id: randomUUID(),
-          studentId: id,
-          ...bankPatch,
-        });
+    const bankAccountsParsed = parseBankAccountsBody(body);
+    if (bankAccountsParsed.provided) {
+      if ("error" in bankAccountsParsed) {
+        res.status(400).json({ error: bankAccountsParsed.error });
+        return;
+      }
+      const replaced = await replaceStudentBankAccounts(id, bankAccountsParsed.accounts);
+      if (!replaced.ok) {
+        res.status(400).json({ error: replaced.error });
+        return;
+      }
+    } else {
+      const legacyBank = parseLegacyBankFields(body);
+      if (legacyBank) {
+        await upsertPrimaryBankAccount(id, legacyBank);
       }
     }
 

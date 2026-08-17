@@ -191,6 +191,7 @@ const STUDENT_FIELD_KEYS = [
   "scholarship_type", "current_semester",
   "gpa", "religion", "ethnicity", "status", "bank_account_name", "bank_account_number",
   "bank_name", "promptpay_number",
+  "bank_account_name_2", "bank_account_number_2", "bank_name_2", "promptpay_number_2",
 ];
 
 async function previewStudents(
@@ -380,11 +381,30 @@ async function commitStudents(
       await db.insert(bankInformation).values({
         id: bankId,
         studentId: studentDbId,
+        sortOrder: 1,
         bankAccountName: values.bank_account_name?.trim() || null,
         bankAccountNumber: values.bank_account_number?.trim() || null,
         bankName: values.bank_name?.trim() || null,
         promptpayNumber: values.promptpay_number?.trim() || null,
       });
+
+      const hasBank2 =
+        values.bank_account_name_2?.trim() ||
+        values.bank_account_number_2?.trim() ||
+        values.bank_name_2?.trim() ||
+        values.promptpay_number_2?.trim();
+
+      if (hasBank2) {
+        await db.insert(bankInformation).values({
+          id: randomUUID(),
+          studentId: studentDbId,
+          sortOrder: 2,
+          bankAccountName: values.bank_account_name_2?.trim() || null,
+          bankAccountNumber: values.bank_account_number_2?.trim() || null,
+          bankName: values.bank_name_2?.trim() || null,
+          promptpayNumber: values.promptpay_number_2?.trim() || null,
+        });
+      }
 
       void hasBank;
       created++;

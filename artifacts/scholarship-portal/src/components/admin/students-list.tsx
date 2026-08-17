@@ -56,6 +56,10 @@ export type StudentRow = {
   bankAccountNumber: string | null;
   bankName: string | null;
   promptpayNumber: string | null;
+  bankAccountName2: string | null;
+  bankAccountNumber2: string | null;
+  bankName2: string | null;
+  promptpayNumber2: string | null;
 };
 
 type StudentsListProps = {
@@ -110,6 +114,10 @@ function toRow(student: StudentRecord): StudentRow {
     bankAccountNumber: student.bankInformation?.bankAccountNumber ?? null,
     bankName: student.bankInformation?.bankName ?? null,
     promptpayNumber: student.bankInformation?.promptpayNumber ?? null,
+    bankAccountName2: student.bankAccounts?.[1]?.bankAccountName ?? null,
+    bankAccountNumber2: student.bankAccounts?.[1]?.bankAccountNumber ?? null,
+    bankName2: student.bankAccounts?.[1]?.bankName ?? null,
+    promptpayNumber2: student.bankAccounts?.[1]?.promptpayNumber ?? null,
   };
 }
 

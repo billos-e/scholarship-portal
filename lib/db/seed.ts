@@ -102,8 +102,8 @@ async function upsertBankInfo(studentId: string, data: Record<string, unknown>) 
   const existing = await q(`SELECT id FROM bank_information WHERE student_id=$1`, [studentId]);
   if (existing.rows.length) return;
   await q(
-    `INSERT INTO bank_information (id, student_id, bank_account_name, bank_account_number, bank_name, promptpay_number)
-     VALUES ($1,$2,$3,$4,$5,$6)`,
+    `INSERT INTO bank_information (id, student_id, sort_order, bank_account_name, bank_account_number, bank_name, promptpay_number)
+     VALUES ($1,$2,1,$3,$4,$5,$6)`,
     [id(), studentId, data.bankAccountName, data.bankAccountNumber, data.bankName, data.promptpayNumber],
   );
 }

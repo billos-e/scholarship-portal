@@ -9,6 +9,7 @@ import academicRouter from "./academic";
 import importRouter from "./import";
 import storageRouter from "./storage";
 import exportRouter from "./export";
+import internalRouter from "./internal";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(academicRouter);
 router.use(importRouter);
 router.use(storageRouter);
 router.use(exportRouter);
+router.use(internalRouter);
 
 export default router;
