@@ -16,6 +16,7 @@ export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB per file
 export type StudentUploadKind =
   | "invoices"
   | "transcripts"
+  | "awards"
   | "qr"
   | "profile-photo";
 
@@ -27,6 +28,7 @@ const DOC_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const ALLOWED_TYPES: Record<UploadKind, ReadonlySet<string>> = {
   invoices: DOC_TYPES,
   transcripts: DOC_TYPES,
+  awards: DOC_TYPES,
   qr: IMAGE_TYPES,
   "profile-photo": IMAGE_TYPES,
   "university-image": IMAGE_TYPES,
@@ -35,6 +37,7 @@ const ALLOWED_TYPES: Record<UploadKind, ReadonlySet<string>> = {
 const ALLOWED_EXT: Record<UploadKind, ReadonlySet<string>> = {
   invoices: new Set([".pdf", ".jpg", ".jpeg", ".png"]),
   transcripts: new Set([".pdf", ".jpg", ".jpeg", ".png"]),
+  awards: new Set([".pdf", ".jpg", ".jpeg", ".png"]),
   qr: new Set([".jpg", ".jpeg", ".png", ".webp"]),
   "profile-photo": new Set([".jpg", ".jpeg", ".png", ".webp"]),
   "university-image": new Set([".jpg", ".jpeg", ".png", ".webp"]),
@@ -43,6 +46,7 @@ const ALLOWED_EXT: Record<UploadKind, ReadonlySet<string>> = {
 export const KIND_LABELS: Record<UploadKind, string> = {
   invoices: "Invoice",
   transcripts: "Transcript",
+  awards: "Award document",
   qr: "Screenshot upload",
   "profile-photo": "Profile photo",
   "university-image": "University image",

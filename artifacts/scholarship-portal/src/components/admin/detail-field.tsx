@@ -42,42 +42,52 @@ export function DetailFileLink({
   icon: Icon = FileText,
 }: {
   label: string;
-  url: string | null;
+  url: string | string[] | null;
   icon?: LucideIcon;
 }) {
-  const [open, setOpen] = useState(false);
+  const [preview, setPreview] = useState<{ url: string; label: string } | null>(
+    null,
+  );
 
-  if (!url) {
+  const urls = (Array.isArray(url) ? url : url ? [url] : []).filter(Boolean);
+
+  if (urls.length === 0) {
     return <DetailField label={label} />;
   }
-
-  const resolvedUrl = uploadPublicUrl(url);
 
   return (
     <div className="rounded-lg border border-border/50 bg-muted/25 px-4 py-3">
       <dt className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-1">
-        <button
-          type="button"
-          onClick={() =>
-            isFileImage(resolvedUrl)
-              ? setOpen(true)
-              : openFileInNewTab(resolvedUrl, label)
-          }
-          className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
-        >
-          <Icon className="size-4 shrink-0" />
-          View file
-        </button>
+      <dd className="mt-1 flex flex-col items-start gap-1.5">
+        {urls.map((raw, index) => {
+          const resolvedUrl = uploadPublicUrl(raw);
+          const itemLabel =
+            urls.length > 1 ? `${label} ${index + 1}` : label;
+          return (
+            <button
+              key={`${raw}-${index}`}
+              type="button"
+              onClick={() =>
+                isFileImage(resolvedUrl)
+                  ? setPreview({ url: resolvedUrl, label: itemLabel })
+                  : openFileInNewTab(resolvedUrl, itemLabel)
+              }
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
+            >
+              <Icon className="size-4 shrink-0" />
+              {urls.length > 1 ? `View file ${index + 1}` : "View file"}
+            </button>
+          );
+        })}
       </dd>
 
       <FilePreviewModal
-        open={open}
-        onClose={() => setOpen(false)}
-        url={resolvedUrl}
-        label={label}
+        open={Boolean(preview)}
+        onClose={() => setPreview(null)}
+        url={preview?.url ?? ""}
+        label={preview?.label ?? label}
       />
     </div>
   );

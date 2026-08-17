@@ -13,9 +13,16 @@ type FormFileFieldProps = {
   accept: string;
   required?: boolean;
   optional?: boolean;
+  multiple?: boolean;
   variant?: "document" | "image";
   className?: string;
 };
+
+function assignFiles(input: HTMLInputElement, files: File[]) {
+  const dataTransfer = new DataTransfer();
+  for (const file of files) dataTransfer.items.add(file);
+  input.files = dataTransfer.files;
+}
 
 export function FormFileField({
   id,
@@ -25,20 +32,31 @@ export function FormFileField({
   accept,
   required,
   optional,
+  multiple = false,
   variant = "document",
   className,
 }: FormFileFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileNames, setFileNames] = useState<string[]>([]);
 
   const Icon = variant === "image" ? ImageIcon : FileText;
 
-  function clearFile() {
-    setFileName(null);
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
+  function setFromFileList(list: FileList | File[] | null, assignToInput: boolean) {
+    const files = list ? Array.from(list) : [];
+    const next = multiple ? files : files.slice(0, 1);
+    if (assignToInput && inputRef.current) assignFiles(inputRef.current, next);
+    setFileNames(next.map((file) => file.name));
   }
+
+  function clearFiles() {
+    setFileNames([]);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  const selectedLabel =
+    fileNames.length === 1
+      ? fileNames[0]
+      : `${fileNames.length} files selected`;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -55,13 +73,39 @@ export function FormFileField({
         ) : null}
       </label>
 
-      {fileName ? (
+      <input
+        ref={inputRef}
+        id={id}
+        name={name}
+        type="file"
+        accept={accept}
+        required={required}
+        multiple={multiple}
+        className="sr-only"
+        onChange={(event) => setFromFileList(event.target.files, false)}
+      />
+
+      {fileNames.length > 0 ? (
         <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/[0.04] px-4 py-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-fuchsia-light text-primary">
             <Icon className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">{fileName}</p>
+            <p className="truncate text-sm font-semibold text-foreground">
+              {selectedLabel}
+            </p>
+            {fileNames.length > 1 ? (
+              <ul className="mt-1 space-y-0.5">
+                {fileNames.map((fileName, index) => (
+                  <li
+                    key={`${fileName}-${index}`}
+                    className="truncate text-xs text-muted-foreground"
+                  >
+                    {fileName}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <button
               type="button"
               className="text-xs text-primary/70 underline-offset-2 hover:underline"
@@ -77,26 +121,13 @@ export function FormFileField({
               className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               onClick={(event) => {
                 event.stopPropagation();
-                clearFile();
+                clearFiles();
               }}
               aria-label="Remove selected file"
             >
               <X className="size-3.5" />
             </button>
           </div>
-          <input
-            ref={inputRef}
-            id={id}
-            name={name}
-            type="file"
-            accept={accept}
-            required={required}
-            className="sr-only"
-            onChange={(event) => {
-              const f = event.target.files?.[0];
-              setFileName(f?.name ?? null);
-            }}
-          />
         </div>
       ) : (
         <div
@@ -115,12 +146,7 @@ export function FormFileField({
           onDrop={(event) => {
             event.preventDefault();
             event.stopPropagation();
-            const f = event.dataTransfer.files?.[0];
-            if (!f || !inputRef.current) return;
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(f);
-            inputRef.current.files = dataTransfer.files;
-            setFileName(f.name);
+            setFromFileList(event.dataTransfer.files, true);
           }}
           role="button"
           tabIndex={0}
@@ -130,24 +156,13 @@ export function FormFileField({
             <Upload className="size-5" />
           </div>
           <p className="text-sm font-medium text-foreground">
-            Choose a file or drag it here
+            {multiple
+              ? "Choose files or drag them here"
+              : "Choose a file or drag it here"}
           </p>
           {hint ? (
             <p className="text-xs text-muted-foreground">{hint}</p>
           ) : null}
-          <input
-            ref={inputRef}
-            id={id}
-            name={name}
-            type="file"
-            accept={accept}
-            required={required}
-            className="sr-only"
-            onChange={(event) => {
-              const f = event.target.files?.[0];
-              setFileName(f?.name ?? null);
-            }}
-          />
         </div>
       )}
     </div>
