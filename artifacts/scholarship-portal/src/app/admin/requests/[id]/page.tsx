@@ -23,6 +23,7 @@ import { ScreenshotDocument } from "@/components/admin/screenshot-document";
 import { RequestDetailHero } from "@/components/admin/request-detail-hero";
 import { RequestSectionCard } from "@/components/admin/request-section-card";
 import {
+  ActivitiesPanel,
   ContextPanel,
   WellbeingGrid,
 } from "@/components/admin/wellbeing-context";
@@ -160,6 +161,37 @@ export default function AdminRequestDetailPage() {
                     url={report.transcriptFileUrl}
                     icon={FileText}
                   />
+                  <DetailField
+                    label="Academic excellence award"
+                    value={
+                      report.receivedAcademicExcellenceAward === null
+                        ? null
+                        : report.receivedAcademicExcellenceAward
+                          ? "Yes"
+                          : "No"
+                    }
+                  />
+                  <DetailField
+                    label="Other award"
+                    value={
+                      report.receivedOtherAward === null
+                        ? null
+                        : report.receivedOtherAward
+                          ? "Yes"
+                          : "No"
+                    }
+                  />
+                  {report.awardsComment && (
+                    <DetailField
+                      label="Awards comment"
+                      value={report.awardsComment}
+                    />
+                  )}
+                  <DetailFileLink
+                    label="Award documents"
+                    url={report.awardFileUrls}
+                    icon={FileText}
+                  />
                 </dl>
               </RequestSectionCard>
 
@@ -174,7 +206,7 @@ export default function AdminRequestDetailPage() {
 
               <RequestSectionCard
                 title="Context"
-                description="Challenges and activities outside the classroom."
+                description="Challenges reported this semester."
                 icon={Tags}
                 tone="info"
               >
@@ -182,32 +214,40 @@ export default function AdminRequestDetailPage() {
                   challenges={report.challenges.map((c) =>
                     labelFor(CHALLENGE_OPTIONS, c),
                   )}
-                  activities={report.activities.map((a) =>
-                    labelFor(ACTIVITY_OPTIONS, a),
-                  )}
                 />
               </RequestSectionCard>
 
               <RequestSectionCard
                 title="Reflections"
-                description="Student-written responses about their semester."
+                description="Activities and student-written responses about their semester."
                 icon={MessageSquare}
                 tone="primary"
               >
-                <dl className="grid grid-cols-1 gap-3">
-                  <DetailField
-                    label="Biggest achievement"
-                    value={report.reflectionAchievement}
+                <div className="space-y-5">
+                  <ActivitiesPanel
+                    activities={report.activities.map((a) =>
+                      labelFor(ACTIVITY_OPTIONS, a),
+                    )}
                   />
-                  <DetailField
-                    label="Biggest challenge"
-                    value={report.reflectionChallenge}
-                  />
-                  <DetailField
-                    label="Anything else"
-                    value={report.reflectionAdditional}
-                  />
-                </dl>
+                  <dl className="grid grid-cols-1 gap-3">
+                    <DetailField
+                      label="Comments on activities"
+                      value={report.activitiesComment}
+                    />
+                    <DetailField
+                      label="Biggest achievement"
+                      value={report.reflectionAchievement}
+                    />
+                    <DetailField
+                      label="Biggest challenge"
+                      value={report.reflectionChallenge}
+                    />
+                    <DetailField
+                      label="Anything else"
+                      value={report.reflectionAdditional}
+                    />
+                  </dl>
+                </div>
               </RequestSectionCard>
             </>
           ) : (

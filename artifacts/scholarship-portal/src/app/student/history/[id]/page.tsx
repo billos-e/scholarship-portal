@@ -58,42 +58,52 @@ function FileLink({
   icon: Icon,
 }: {
   label: string;
-  url: string | null;
+  url: string | string[] | null;
   icon: typeof FileText;
 }) {
-  const [open, setOpen] = useState(false);
+  const [preview, setPreview] = useState<{ url: string; label: string } | null>(
+    null,
+  );
 
-  if (!url) {
+  const urls = (Array.isArray(url) ? url : url ? [url] : []).filter(Boolean);
+
+  if (urls.length === 0) {
     return <Field label={label} />;
   }
-
-  const resolvedUrl = uploadPublicUrl(url);
 
   return (
     <div className="space-y-1">
       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
-      <dd>
-        <button
-          type="button"
-          onClick={() =>
-            isFileImage(resolvedUrl)
-              ? setOpen(true)
-              : openFileInNewTab(resolvedUrl, label)
-          }
-          className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          <Icon className="size-4" />
-          View file
-        </button>
+      <dd className="flex flex-col items-start gap-1.5">
+        {urls.map((raw, index) => {
+          const resolvedUrl = uploadPublicUrl(raw);
+          const itemLabel =
+            urls.length > 1 ? `${label} ${index + 1}` : label;
+          return (
+            <button
+              key={`${raw}-${index}`}
+              type="button"
+              onClick={() =>
+                isFileImage(resolvedUrl)
+                  ? setPreview({ url: resolvedUrl, label: itemLabel })
+                  : openFileInNewTab(resolvedUrl, itemLabel)
+              }
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              <Icon className="size-4" />
+              {urls.length > 1 ? `View file ${index + 1}` : "View file"}
+            </button>
+          );
+        })}
       </dd>
 
       <FilePreviewModal
-        open={open}
-        onClose={() => setOpen(false)}
-        url={resolvedUrl}
-        label={label}
+        open={Boolean(preview)}
+        onClose={() => setPreview(null)}
+        url={preview?.url ?? ""}
+        label={preview?.label ?? label}
       />
     </div>
   );
@@ -289,6 +299,37 @@ export default function StudentSubmissionDetailPage() {
                   url={report.transcriptFileUrl}
                   icon={FileText}
                 />
+                <Field
+                  label="Academic excellence award"
+                  value={
+                    report.receivedAcademicExcellenceAward === null
+                      ? null
+                      : report.receivedAcademicExcellenceAward
+                        ? "Yes"
+                        : "No"
+                  }
+                />
+                <Field
+                  label="Other award"
+                  value={
+                    report.receivedOtherAward === null
+                      ? null
+                      : report.receivedOtherAward
+                        ? "Yes"
+                        : "No"
+                  }
+                />
+                {report.awardsComment && (
+                  <Field
+                    label="Awards comment"
+                    value={report.awardsComment}
+                  />
+                )}
+                <FileLink
+                  label="Award documents"
+                  url={report.awardFileUrls}
+                  icon={FileText}
+                />
               </dl>
             </CardContent>
           </Card>
@@ -333,6 +374,14 @@ export default function StudentSubmissionDetailPage() {
                   )}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Reflections</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Activities
@@ -343,14 +392,10 @@ export default function StudentSubmissionDetailPage() {
                   )}
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Reflections</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
+              <Field
+                label="Comments on your activities"
+                value={report.activitiesComment}
+              />
               <Field
                 label="Biggest achievement"
                 value={report.reflectionAchievement}

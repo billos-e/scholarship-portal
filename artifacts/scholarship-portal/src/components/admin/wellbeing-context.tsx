@@ -137,41 +137,48 @@ export function WellbeingGrid({ items }: { items: WellbeingItem[] }) {
 
 type ContextPanelProps = {
   challenges: string[];
+};
+
+export function ContextPanel({ challenges }: ContextPanelProps) {
+  return (
+    <div className="rounded-xl border border-warning/20 bg-gradient-to-br from-warning-light/60 to-card p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex size-9 items-center justify-center rounded-lg bg-warning/15 text-warning">
+          <AlertTriangle className="size-4" />
+        </div>
+        <div>
+          <p className="font-heading text-sm font-semibold">Challenges</p>
+          <p className="text-xs text-muted-foreground">
+            Difficulties reported this semester
+          </p>
+        </div>
+      </div>
+      {challenges.length > 0 ? (
+        <ul className="space-y-2">
+          {challenges.map((item) => (
+            <li
+              key={item}
+              className="flex items-start gap-2 text-sm text-foreground"
+            >
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-warning" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">None reported</p>
+      )}
+    </div>
+  );
+}
+
+type ActivitiesPanelProps = {
   activities: string[];
 };
 
-export function ContextPanel({ challenges, activities }: ContextPanelProps) {
+export function ActivitiesPanel({ activities }: ActivitiesPanelProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div className="rounded-xl border border-warning/20 bg-gradient-to-br from-warning-light/60 to-card p-5 shadow-sm">
-        <div className="mb-4 flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-warning/15 text-warning">
-            <AlertTriangle className="size-4" />
-          </div>
-          <div>
-            <p className="font-heading text-sm font-semibold">Challenges</p>
-            <p className="text-xs text-muted-foreground">
-              Difficulties reported this semester
-            </p>
-          </div>
-        </div>
-        {challenges.length > 0 ? (
-          <ul className="space-y-2">
-            {challenges.map((item) => (
-              <li
-                key={item}
-                className="flex items-start gap-2 text-sm text-foreground"
-              >
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-warning" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">None reported</p>
-        )}
-      </div>
-
+    <div className="space-y-4">
       <div className="rounded-xl border border-success/20 bg-gradient-to-br from-success-light/50 to-card p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-lg bg-success/15 text-success">

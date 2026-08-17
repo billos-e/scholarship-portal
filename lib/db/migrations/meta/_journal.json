@@ -22,6 +22,20 @@
       "when": 1786983600000,
       "tag": "0003_add_student_profile_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786996920000,
+      "tag": "0004_add_academic_awards",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786999200000,
+      "tag": "0005_add_activities_comment",
+      "breakpoints": true
     }
   ]
 }

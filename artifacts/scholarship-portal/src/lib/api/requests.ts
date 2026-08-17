@@ -34,6 +34,10 @@ export type SemesterReportRecord = {
   withdrawnFromCourses: boolean | null;
   academicComment: string | null;
   transcriptFileUrl: string | null;
+  receivedAcademicExcellenceAward: boolean | null;
+  receivedOtherAward: boolean | null;
+  awardFileUrls: string[] | null;
+  awardsComment: string | null;
   wellbeingPhysical: number | null;
   wellbeingMental: number | null;
   wellbeingFinancial: number | null;
@@ -41,6 +45,7 @@ export type SemesterReportRecord = {
   wellbeingConfidence: number | null;
   challenges: string[];
   activities: string[];
+  activitiesComment: string | null;
   reflectionAchievement: string | null;
   reflectionChallenge: string | null;
   reflectionAdditional: string | null;
@@ -115,7 +120,17 @@ export async function fetchRequest(id: string): Promise<RequestDetail | null> {
   if (!res.ok) throw new Error("Failed to fetch request");
   const data = (await res.json()) as RequestDetail;
   reviveRequest(data);
-  if (data.semesterReport) reviveDates(data.semesterReport, ["submittedAt"]);
+  if (data.semesterReport) {
+    reviveDates(data.semesterReport, ["submittedAt"]);
+    data.semesterReport.receivedAcademicExcellenceAward ??= null;
+    data.semesterReport.receivedOtherAward ??= null;
+    data.semesterReport.awardFileUrls = Array.isArray(
+      data.semesterReport.awardFileUrls,
+    )
+      ? data.semesterReport.awardFileUrls
+      : null;
+    data.semesterReport.awardsComment ??= null;
+  }
   return data;
 }
 

@@ -95,6 +95,9 @@ const submissionSchema = z
     creditsCompleted: z.number().int().min(0).max(60).optional(),
     withdrawnFromCourses: z.boolean().optional(),
     academicComment: z.string().trim().max(2000).optional(),
+    receivedAcademicExcellenceAward: z.boolean().optional(),
+    receivedOtherAward: z.boolean().optional(),
+    awardsComment: z.string().trim().max(2000).optional(),
     wellbeingPhysical: z.number().int().min(1).max(5).optional(),
     wellbeingMental: z.number().int().min(1).max(5).optional(),
     wellbeingFinancial: z.number().int().min(1).max(5).optional(),
@@ -107,6 +110,7 @@ const submissionSchema = z
       "STUDY_ABROAD_INTERNSHIP",
       "EMERGENCY_AID",
     ]),
+    activitiesComment: z.string().trim().max(2000).optional(),
     reflectionAchievement: z.string().trim().max(4000).optional(),
     reflectionChallenge: z.string().trim().max(4000).optional(),
     reflectionAdditional: z.string().trim().max(4000).optional(),
@@ -118,10 +122,25 @@ const submissionSchema = z
     { message: "Semester is required.", path: ["semesterLabel"] },
   );
 
+function optionalBoolean(value: FormDataEntryValue | null): boolean | undefined {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return undefined;
+}
+
 function fileIfProvided(value: FormDataEntryValue | null): File | undefined {
   if (!(value instanceof File)) return undefined;
   if (value.size === 0 || value.name === "") return undefined;
   return value;
+}
+
+const MAX_AWARD_FILES = 10;
+
+function filesIfProvided(formData: FormData, name: string): File[] {
+  return formData.getAll(name).flatMap((value) => {
+    const file = fileIfProvided(value);
+    return file ? [file] : [];
+  });
 }
 
 export async function createSubmission(
@@ -153,13 +172,13 @@ export async function createSubmission(
     promptpayNumber: trimmed(formData.get("promptpayNumber")),
     gpa: optionalNumber(formData.get("gpa")),
     creditsCompleted: optionalInt(formData.get("creditsCompleted"), { min: 0, max: 60 }),
-    withdrawnFromCourses:
-      formData.get("withdrawnFromCourses") === "true"
-        ? true
-        : formData.get("withdrawnFromCourses") === "false"
-          ? false
-          : undefined,
+    withdrawnFromCourses: optionalBoolean(formData.get("withdrawnFromCourses")),
     academicComment: trimmed(formData.get("academicComment")),
+    receivedAcademicExcellenceAward: optionalBoolean(
+      formData.get("receivedAcademicExcellenceAward"),
+    ),
+    receivedOtherAward: optionalBoolean(formData.get("receivedOtherAward")),
+    awardsComment: trimmed(formData.get("awardsComment")),
     wellbeingPhysical: optionalInt(formData.get("wellbeingPhysical"), { min: 1, max: 5 }),
     wellbeingMental: optionalInt(formData.get("wellbeingMental"), { min: 1, max: 5 }),
     wellbeingFinancial: optionalInt(formData.get("wellbeingFinancial"), { min: 1, max: 5 }),
@@ -167,6 +186,7 @@ export async function createSubmission(
     wellbeingConfidence: optionalInt(formData.get("wellbeingConfidence"), { min: 1, max: 5 }),
     message: trimmed(formData.get("message")),
     requestCategory: trimmed(formData.get("requestCategory")),
+    activitiesComment: trimmed(formData.get("activitiesComment")),
     reflectionAchievement: trimmed(formData.get("reflectionAchievement")),
     reflectionChallenge: trimmed(formData.get("reflectionChallenge")),
     reflectionAdditional: trimmed(formData.get("reflectionAdditional")),
@@ -182,14 +202,20 @@ export async function createSubmission(
 
   const invoiceFile = fileIfProvided(formData.get("invoiceFile"));
   const transcriptFile = fileIfProvided(formData.get("transcriptFile"));
+  const awardFiles = filesIfProvided(formData, "awardFiles");
   const screenshotFile =
     fileIfProvided(formData.get("screenshotFile")) ??
     fileIfProvided(formData.get("qrFile"));
+
+  if (awardFiles.length > MAX_AWARD_FILES) {
+    return { error: `You can upload at most ${MAX_AWARD_FILES} award documents.` };
+  }
 
   for (const [file, kind] of [
     [invoiceFile, "invoices"] as const,
     [transcriptFile, "transcripts"] as const,
     [screenshotFile, "qr"] as const,
+    ...awardFiles.map((file) => [file, "awards"] as const),
   ]) {
     if (!file) continue;
     const check = validateUpload(file, kind as UploadKind);
@@ -199,11 +225,15 @@ export async function createSubmission(
   let invoiceFileUrl: string | undefined;
   let transcriptFileUrl: string | undefined;
   let qrPaymentImageUrl: string | undefined;
+  let awardFileUrls: string[] = [];
 
   try {
     if (invoiceFile) invoiceFileUrl = await uploadFileToStorage(invoiceFile);
     if (transcriptFile) transcriptFileUrl = await uploadFileToStorage(transcriptFile);
     if (screenshotFile) qrPaymentImageUrl = await uploadFileToStorage(screenshotFile);
+    for (const file of awardFiles) {
+      awardFileUrls.push(await uploadFileToStorage(file));
+    }
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to process uploaded files." };
   }
@@ -227,6 +257,10 @@ export async function createSubmission(
     withdrawnFromCourses: data.withdrawnFromCourses ?? null,
     academicComment: data.academicComment ?? null,
     transcriptFileUrl: transcriptFileUrl ?? null,
+    receivedAcademicExcellenceAward: data.receivedAcademicExcellenceAward ?? null,
+    receivedOtherAward: data.receivedOtherAward ?? null,
+    awardFileUrls: awardFileUrls.length > 0 ? awardFileUrls : null,
+    awardsComment: data.awardsComment ?? null,
     wellbeingPhysical: data.wellbeingPhysical ?? null,
     wellbeingMental: data.wellbeingMental ?? null,
     wellbeingFinancial: data.wellbeingFinancial ?? null,
@@ -234,6 +268,7 @@ export async function createSubmission(
     wellbeingConfidence: data.wellbeingConfidence ?? null,
     challenges,
     activities,
+    activitiesComment: data.activitiesComment ?? null,
     reflectionAchievement: data.reflectionAchievement ?? null,
     reflectionChallenge: data.reflectionChallenge ?? null,
     reflectionAdditional: data.reflectionAdditional ?? null,

@@ -137,10 +137,14 @@ function RequiredMark() {
   );
 }
 
-function PassedCoursesToggle({
+function YesNoToggle({
+  name,
+  label,
   defaultValue = "",
   onValueChange,
 }: {
+  name: string;
+  label: string;
   defaultValue?: string;
   onValueChange?: (v: string) => void;
 }) {
@@ -151,9 +155,7 @@ function PassedCoursesToggle({
   ];
   return (
     <div>
-      <Label className="mb-1.5 block text-sm font-medium">
-        Have you had to withdraw from any courses this semester?
-      </Label>
+      <Label className="mb-1.5 block text-sm font-medium">{label}</Label>
       <div className="flex gap-2">
         {options.map((opt) => {
           const active = val === opt.value;
@@ -188,7 +190,7 @@ function PassedCoursesToggle({
           );
         })}
       </div>
-      <input type="hidden" name="withdrawnFromCourses" value={val} />
+      <input type="hidden" name={name} value={val} />
     </div>
   );
 }
@@ -416,10 +418,10 @@ function Step2({ defaults = {} }: { defaults?: Record<string, string> }) {
 
 function Step3({
   defaults = {},
-  onPassedCoursesChange,
+  onToggleChange,
 }: {
   defaults?: Record<string, string>;
-  onPassedCoursesChange?: (v: string) => void;
+  onToggleChange?: (name: string, v: string) => void;
 }) {
   return (
     <div className="space-y-5">
@@ -457,9 +459,11 @@ function Step3({
           />
         </div>
       </div>
-      <PassedCoursesToggle
+      <YesNoToggle
+        name="withdrawnFromCourses"
+        label="Have you had to withdraw from any courses this semester?"
         defaultValue={defaults.withdrawnFromCourses ?? ""}
-        onValueChange={onPassedCoursesChange}
+        onValueChange={(v) => onToggleChange?.("withdrawnFromCourses", v)}
       />
       <div className="space-y-2">
         <Label htmlFor="academicComment">Comments (optional)</Label>
@@ -481,6 +485,49 @@ function Step3({
         accept="application/pdf,image/jpeg,image/png"
         optional
       />
+      <div className="space-y-5 border-t border-border/60 pt-5">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Awards</h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Optional — you can select neither, one, or both.
+          </p>
+        </div>
+        <YesNoToggle
+          name="receivedAcademicExcellenceAward"
+          label="Did you receive an academic excellence award this semester?"
+          defaultValue={defaults.receivedAcademicExcellenceAward ?? ""}
+          onValueChange={(v) =>
+            onToggleChange?.("receivedAcademicExcellenceAward", v)
+          }
+        />
+        <YesNoToggle
+          name="receivedOtherAward"
+          label="Did you receive any other award this semester?"
+          defaultValue={defaults.receivedOtherAward ?? ""}
+          onValueChange={(v) => onToggleChange?.("receivedOtherAward", v)}
+        />
+        <FormFileField
+          id="awardFiles"
+          name="awardFiles"
+          label="Award documents"
+          hint="PDF, JPG or PNG — you can select more than one"
+          accept="application/pdf,image/jpeg,image/png"
+          optional
+          multiple
+        />
+        <div className="space-y-2">
+          <Label htmlFor="awardsComment">Awards comment (optional)</Label>
+          <textarea
+            id="awardsComment"
+            name="awardsComment"
+            rows={3}
+            maxLength={2000}
+            placeholder="Any comments about awards you received this semester…"
+            defaultValue={defaults.awardsComment ?? ""}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -488,21 +535,17 @@ function Step3({
 function Step4({
   defaults = {},
   defaultChallenges,
-  defaultActivities,
   onChallengesChange,
-  onActivitiesChange,
 }: {
   defaults?: Record<string, string>;
   defaultChallenges?: string[];
-  defaultActivities?: string[];
   onChallengesChange?: (v: string[]) => void;
-  onActivitiesChange?: (v: string[]) => void;
 }) {
   return (
     <div className="space-y-6">
       <StepHeader
-        title="Wellbeing & Activities"
-        description="Rate your wellbeing and tell us how you've been engaged."
+        title="Wellbeing"
+        description="Rate your wellbeing and tell us about current challenges."
       />
       <div>
         <Label className="mb-2 block text-sm font-medium">
@@ -523,21 +566,41 @@ function Step4({
         <Label className="text-sm font-medium">Current challenges</Label>
         <ChoiceGrid name="challenges" options={CHALLENGE_OPTIONS} defaultSelected={defaultChallenges} onSelectionChange={onChallengesChange} />
       </div>
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Activities & involvement</Label>
-        <ChoiceGrid name="activities" options={ACTIVITY_OPTIONS} defaultSelected={defaultActivities} onSelectionChange={onActivitiesChange} />
-      </div>
     </div>
   );
 }
 
-function Step5({ defaults = {} }: { defaults?: Record<string, string> }) {
+function Step5({
+  defaults = {},
+  defaultActivities,
+  onActivitiesChange,
+}: {
+  defaults?: Record<string, string>;
+  defaultActivities?: string[];
+  onActivitiesChange?: (v: string[]) => void;
+}) {
   return (
     <div className="space-y-5">
       <StepHeader
         title="Reflections"
-        description="Share your thoughts and experiences this semester."
+        description="Share your activities and thoughts about this semester."
       />
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Activities & involvement</Label>
+        <ChoiceGrid name="activities" options={ACTIVITY_OPTIONS} defaultSelected={defaultActivities} onSelectionChange={onActivitiesChange} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="activitiesComment">Comments on your activities</Label>
+        <Textarea
+          id="activitiesComment"
+          name="activitiesComment"
+          rows={3}
+          maxLength={2000}
+          className="resize-y"
+          placeholder="Optional — add context about the activities you selected…"
+          defaultValue={defaults.activitiesComment ?? ""}
+        />
+      </div>
       {[
         {
           key: "reflectionAchievement",
@@ -686,18 +749,38 @@ export function SubmissionForm({
   const stepContent = [
     <Step1 key={1} semesters={semesters} defaults={{ universitySemesterId: get("universitySemesterId"), semesterLabel: get("semesterLabel") }} />,
     <Step2 key={2} defaults={{ amountDue: get("amountDue"), dueDate: get("dueDate") }} />,
-    <Step3 key={3} defaults={{ gpa: get("gpa"), creditsCompleted: get("creditsCompleted"), withdrawnFromCourses: get("withdrawnFromCourses"), academicComment: get("academicComment") }} onPassedCoursesChange={(v) => save({ withdrawnFromCourses: v })} />,
+    <Step3
+      key={3}
+      defaults={{
+        gpa: get("gpa"),
+        creditsCompleted: get("creditsCompleted"),
+        withdrawnFromCourses: get("withdrawnFromCourses"),
+        academicComment: get("academicComment"),
+        receivedAcademicExcellenceAward: get("receivedAcademicExcellenceAward"),
+        receivedOtherAward: get("receivedOtherAward"),
+        awardsComment: get("awardsComment"),
+      }}
+      onToggleChange={(name, v) => save({ [name]: v })}
+    />,
     <Step4
       key={4}
       defaults={Object.fromEntries(
         WELLBEING_QUESTIONS.map((q) => [q.name, get(q.name)]),
       )}
       defaultChallenges={JSON.parse(get("__chips_challenges", "[]"))}
-      defaultActivities={JSON.parse(get("__chips_activities", "[]"))}
       onChallengesChange={(v) => save({ __chips_challenges: JSON.stringify(v) })}
+    />,
+    <Step5
+      key={5}
+      defaults={{
+        activitiesComment: get("activitiesComment"),
+        reflectionAchievement: get("reflectionAchievement"),
+        reflectionChallenge: get("reflectionChallenge"),
+        reflectionAdditional: get("reflectionAdditional"),
+      }}
+      defaultActivities={JSON.parse(get("__chips_activities", "[]"))}
       onActivitiesChange={(v) => save({ __chips_activities: JSON.stringify(v) })}
     />,
-    <Step5 key={5} defaults={{ reflectionAchievement: get("reflectionAchievement"), reflectionChallenge: get("reflectionChallenge"), reflectionAdditional: get("reflectionAdditional") }} />,
   ];
 
   return (

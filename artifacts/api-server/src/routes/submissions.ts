@@ -16,6 +16,22 @@ const router: IRouter = Router();
 
 const OPEN_REQUEST_STATUSES = ["SUBMITTED", "UNDER_REVIEW", "APPROVED"] as const;
 
+function parseOptionalBoolean(value: unknown): boolean | null {
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  return null;
+}
+
+function parseUrlList(value: unknown): string[] | null {
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  if (!Array.isArray(value)) return null;
+  const urls = value
+    .filter((v): v is string => typeof v === "string")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return urls.length > 0 ? urls : null;
+}
+
 const CATEGORY_LABELS: Record<RequestCategory, string> = {
   TUITION: "tuition",
   LIVING_EXPENSES: "living expenses",
@@ -54,6 +70,10 @@ router.post("/submissions", async (req, res) => {
       withdrawnFromCourses,
       academicComment,
       transcriptFileUrl,
+      receivedAcademicExcellenceAward,
+      receivedOtherAward,
+      awardFileUrls,
+      awardsComment,
       wellbeingPhysical,
       wellbeingMental,
       wellbeingFinancial,
@@ -61,6 +81,7 @@ router.post("/submissions", async (req, res) => {
       wellbeingConfidence,
       challenges,
       activities,
+      activitiesComment,
       reflectionAchievement,
       reflectionChallenge,
       reflectionAdditional,
@@ -215,6 +236,12 @@ router.post("/submissions", async (req, res) => {
       withdrawnFromCourses: withdrawnFromCourses != null ? Boolean(withdrawnFromCourses) : null,
       academicComment: (academicComment as string)?.trim() || null,
       transcriptFileUrl: (transcriptFileUrl as string) || null,
+      receivedAcademicExcellenceAward: parseOptionalBoolean(
+        receivedAcademicExcellenceAward,
+      ),
+      receivedOtherAward: parseOptionalBoolean(receivedOtherAward),
+      awardFileUrls: parseUrlList(awardFileUrls),
+      awardsComment: (awardsComment as string)?.trim() || null,
       wellbeingPhysical: wellbeingPhysical != null ? Number(wellbeingPhysical) : null,
       wellbeingMental: wellbeingMental != null ? Number(wellbeingMental) : null,
       wellbeingFinancial: wellbeingFinancial != null ? Number(wellbeingFinancial) : null,
@@ -222,6 +249,7 @@ router.post("/submissions", async (req, res) => {
       wellbeingConfidence: wellbeingConfidence != null ? Number(wellbeingConfidence) : null,
       challenges: Array.isArray(challenges) ? challenges : [],
       activities: Array.isArray(activities) ? activities : [],
+      activitiesComment: (activitiesComment as string)?.trim() || null,
       reflectionAchievement: (reflectionAchievement as string) || null,
       reflectionChallenge: (reflectionChallenge as string) || null,
       reflectionAdditional: (reflectionAdditional as string) || null,
