@@ -19,7 +19,7 @@ function cronSecretMatches(provided: string | undefined, expected: string): bool
  *
  * Scans open payment requests with a due date and emails active admins
  * for approaching (default 7 days) and overdue items. Deduped via
- * admin_notification_log.
+ * admin_notification_log (also the in-app tray event source).
  */
 router.post("/internal/run-deadline-notifications", async (req, res) => {
   const expected = process.env.CRON_SECRET?.trim();

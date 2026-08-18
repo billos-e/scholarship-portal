@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useState } from "react";
 
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { AdminNotificationTray } from "@/components/admin/notification-tray";
 import { cn } from "@/lib/utils";
 
 const COOKIE_NAME = "sidebar-collapsed";
@@ -80,6 +81,7 @@ export function AppShell({
           <div className="w-full min-w-0">{children}</div>
         </main>
       </div>
+      {variant === "admin" ? <AdminNotificationTray /> : null}
     </div>
   );
 }

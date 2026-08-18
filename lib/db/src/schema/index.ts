@@ -345,6 +345,32 @@ export const adminNotificationLog = pgTable(
       t.kind,
     ),
     index("admin_notification_log_kind_idx").on(t.kind),
+    index("admin_notification_log_sent_at_idx").on(t.sentAt),
+  ],
+);
+
+/** Per-admin read state. Unique (user, log) so one click cannot hide the alert for others. */
+export const adminNotificationDismissals = pgTable(
+  "admin_notification_dismissals",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    adminNotificationLogId: text("admin_notification_log_id")
+      .notNull()
+      .references(() => adminNotificationLog.id, { onDelete: "cascade" }),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("admin_notification_dismissals_user_log_uidx").on(
+      t.userId,
+      t.adminNotificationLogId,
+    ),
+    index("admin_notification_dismissals_user_id_idx").on(t.userId),
+    index("admin_notification_dismissals_log_id_idx").on(t.adminNotificationLogId),
   ],
 );
 
@@ -364,3 +390,5 @@ export type TuitionPaymentRequest = typeof tuitionPaymentRequests.$inferSelect;
 export type SemesterReport = typeof semesterReports.$inferSelect;
 export type PaymentHistory = typeof paymentHistory.$inferSelect;
 export type AdminNotificationLog = typeof adminNotificationLog.$inferSelect;
+export type AdminNotificationDismissal =
+  typeof adminNotificationDismissals.$inferSelect;

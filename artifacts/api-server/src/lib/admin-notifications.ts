@@ -119,6 +119,11 @@ function commonRows(input: {
   return rows;
 }
 
+/**
+ * Insert the event log first so the in-app tray has a row even when email
+ * is skipped or fails. Unique (request, kind) still prevents duplicate emails.
+ * Do not delete the log after a failed send — unread in-app would vanish.
+ */
 async function claimAndSend(opts: {
   requestId: string;
   kind: AdminNotificationKind;
@@ -126,31 +131,6 @@ async function claimAndSend(opts: {
   html: string;
   text: string;
 }): Promise<"sent" | "skipped" | "failed"> {
-  if (!isMailConfigured()) {
-    logger.warn(
-      { kind: opts.kind, requestId: opts.requestId },
-      "Skipping admin notification because RESEND_API_KEY is not set",
-    );
-    return "skipped";
-  }
-
-  const allRecipients = await listActiveAdminEmails();
-  if (allRecipients.length === 0) {
-    logger.warn(
-      { kind: opts.kind, requestId: opts.requestId },
-      "Skipping admin notification: no active ADMIN users in the local users table",
-    );
-    return "skipped";
-  }
-
-  const recipients = allRecipients.slice(0, 50);
-  if (allRecipients.length > 50) {
-    logger.warn(
-      { dropped: allRecipients.length - 50 },
-      "Truncated admin recipient list to Resend's 50-address limit",
-    );
-  }
-
   const claimed = await db
     .insert(adminNotificationLog)
     .values({
@@ -167,13 +147,37 @@ async function claimAndSend(opts: {
     })
     .returning({ id: adminNotificationLog.id });
 
-  const claimId = claimed[0]?.id;
-  if (!claimId) {
+  if (!claimed[0]?.id) {
     logger.info(
       { kind: opts.kind, requestId: opts.requestId },
       "Admin notification already logged; skipping duplicate send",
     );
     return "skipped";
+  }
+
+  if (!isMailConfigured()) {
+    logger.warn(
+      { kind: opts.kind, requestId: opts.requestId },
+      "Skipping admin notification email because RESEND_API_KEY is not set",
+    );
+    return "skipped";
+  }
+
+  const allRecipients = await listActiveAdminEmails();
+  if (allRecipients.length === 0) {
+    logger.warn(
+      { kind: opts.kind, requestId: opts.requestId },
+      "Skipping admin notification email: no active ADMIN users in the local users table",
+    );
+    return "skipped";
+  }
+
+  const recipients = allRecipients.slice(0, 50);
+  if (allRecipients.length > 50) {
+    logger.warn(
+      { dropped: allRecipients.length - 50 },
+      "Truncated admin recipient list to Resend's 50-address limit",
+    );
   }
 
   const result = await sendEmail({
@@ -192,19 +196,17 @@ async function claimAndSend(opts: {
     return "sent";
   }
 
-  await db.delete(adminNotificationLog).where(eq(adminNotificationLog.id, claimId));
-
   if (result.skipped) {
     logger.warn(
       { kind: opts.kind, requestId: opts.requestId, reason: result.reason },
-      "Admin notification skipped after claim; log row released",
+      "Admin notification email skipped after log insert; in-app row kept",
     );
     return "skipped";
   }
 
   logger.error(
     { kind: opts.kind, requestId: opts.requestId, reason: result.reason },
-    "Admin notification send failed; log row released for retry",
+    "Admin notification send failed; in-app log row kept",
   );
   return "failed";
 }
