@@ -552,7 +552,7 @@ function SideFact({
   value: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 flex-1">
       <p className="mb-0.5 text-xs text-muted-foreground">{label}</p>
       <p className="wrap-break-word font-medium text-foreground [overflow-wrap:anywhere]">
         {value}
