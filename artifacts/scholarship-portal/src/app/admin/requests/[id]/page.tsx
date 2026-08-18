@@ -9,7 +9,6 @@ import {
   GraduationCap,
   Heart,
   MessageSquare,
-  Tags,
 } from "lucide-react";
 
 import { AdminNotesComment } from "@/components/admin/admin-notes-comment";
@@ -206,45 +205,38 @@ export default function AdminRequestDetailPage() {
                 <WellbeingGrid items={wellbeingItems} />
               </RequestSectionCard>
 
-              <RequestSectionCard
-                title="Context"
-                description="Challenges reported this semester."
-                icon={Tags}
-                tone="info"
-              >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
                 <ContextPanel
                   challenges={report.challenges.map((c) =>
                     labelFor(CHALLENGE_OPTIONS, c),
                   )}
                 />
-              </RequestSectionCard>
+                <ActivitiesPanel
+                  activities={report.activities.map((a) =>
+                    labelFor(ACTIVITY_OPTIONS, a),
+                  )}
+                />
+              </div>
 
               <RequestSectionCard
                 title="Reflections"
-                description="Activities and student-written responses about their semester."
+                description="Student-written responses about their semester."
                 icon={MessageSquare}
                 tone="primary"
               >
-                <div className="space-y-5">
-                  <ActivitiesPanel
-                    activities={report.activities.map((a) =>
-                      labelFor(ACTIVITY_OPTIONS, a),
-                    )}
+                <dl className="grid grid-cols-1 gap-3">
+                  <DetailField
+                    label="Comments on activities"
+                    value={report.activitiesComment}
                   />
-                  <dl className="grid grid-cols-1 gap-3">
+                  {REFLECTION_QUESTIONS.map((question) => (
                     <DetailField
-                      label="Comments on activities"
-                      value={report.activitiesComment}
+                      key={question.name}
+                      label={question.label}
+                      value={reflectionAnswer(report, question)}
                     />
-                    {REFLECTION_QUESTIONS.map((question) => (
-                      <DetailField
-                        key={question.name}
-                        label={question.label}
-                        value={reflectionAnswer(report, question)}
-                      />
-                    ))}
-                  </dl>
-                </div>
+                  ))}
+                </dl>
               </RequestSectionCard>
             </>
           ) : (
