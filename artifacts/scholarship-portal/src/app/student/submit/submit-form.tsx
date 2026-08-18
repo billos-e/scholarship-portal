@@ -501,11 +501,15 @@ function Step3({
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="gpa">GPA (0–4)</Label>
+            <Label htmlFor="gpa">
+              GPA (0–4)
+              <RequiredMark />
+            </Label>
             <Input
               id="gpa"
               name="gpa"
               type="number"
+              required
               min="0"
               max="4"
               step="0.01"
@@ -781,6 +785,15 @@ export function SubmissionForm({
         }
       }
 
+      if (s === 3) {
+        const gpa = trimmed(fd.get("gpa"));
+        const n = Number(gpa);
+        if (!gpa || !Number.isFinite(n) || n < 0 || n > 4) {
+          setStepError("Please enter a valid GPA.");
+          return false;
+        }
+      }
+
       return true;
     },
     [],
@@ -852,6 +865,8 @@ export function SubmissionForm({
         e.preventDefault();
         if (step < total) {
           handleNext(e.currentTarget);
+        } else if (!validateStep(step, e.currentTarget)) {
+          return;
         } else {
           // Snapshot all string fields to localStorage before the action runs,
           // so the draft is fully up-to-date if the submission fails.

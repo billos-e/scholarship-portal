@@ -92,7 +92,10 @@ const submissionSchema = z
     bankAccountNumber: z.string().trim().optional(),
     bankName: z.string().trim().optional(),
     promptpayNumber: z.string().trim().optional(),
-    gpa: z.number().min(0).max(4).optional(),
+    gpa: z
+      .number({ message: "GPA is required." })
+      .min(0, "GPA must be at least 0.")
+      .max(4, "GPA cannot exceed 4."),
     creditsCompleted: z.number().int().min(0).max(60).optional(),
     withdrawnFromCourses: z.boolean().optional(),
     academicComment: z.string().trim().max(2000).optional(),
@@ -261,7 +264,7 @@ export async function createSubmission(
     bankName: data.bankName ?? null,
     promptpayNumber: data.promptpayNumber ?? null,
     qrPaymentImageUrl: qrPaymentImageUrl ?? null,
-    gpa: data.gpa ?? null,
+    gpa: data.gpa,
     creditsCompleted: data.creditsCompleted ?? null,
     withdrawnFromCourses: data.withdrawnFromCourses ?? null,
     academicComment: data.academicComment ?? null,

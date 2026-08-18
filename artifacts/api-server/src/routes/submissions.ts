@@ -98,6 +98,20 @@ router.post("/submissions", async (req, res) => {
       return;
     }
 
+    const gpaMissing =
+      gpa === undefined ||
+      gpa === null ||
+      (typeof gpa === "string" && gpa.trim() === "");
+    const gpaNum = Number(gpa);
+    if (gpaMissing) {
+      res.status(400).json({ error: "GPA is required." });
+      return;
+    }
+    if (!Number.isFinite(gpaNum) || gpaNum < 0 || gpaNum > 4) {
+      res.status(400).json({ error: "GPA must be a number between 0 and 4." });
+      return;
+    }
+
     const [student] = await db
       .select()
       .from(students)
@@ -241,7 +255,7 @@ router.post("/submissions", async (req, res) => {
       studentId,
       tuitionPaymentRequestId: requestId,
       semesterLabel,
-      gpa: gpa != null ? String(gpa) : null,
+      gpa: String(gpaNum),
       creditsCompleted: creditsCompleted != null ? Number(creditsCompleted) : null,
       withdrawnFromCourses: withdrawnFromCourses != null ? Boolean(withdrawnFromCourses) : null,
       academicComment: (academicComment as string)?.trim() || null,
@@ -287,7 +301,7 @@ router.post("/submissions", async (req, res) => {
       studentCode: student.studentId,
       semesterLabel,
       requestCategory,
-      gpa: gpa != null ? String(gpa) : null,
+      gpa: String(gpaNum),
     });
 
     res.status(201).json({ requestId, ok: true });
