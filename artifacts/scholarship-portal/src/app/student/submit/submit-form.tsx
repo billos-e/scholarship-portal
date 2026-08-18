@@ -205,33 +205,32 @@ function RatingRow({
   name,
   label,
   defaultValue,
+  onValueChange,
 }: {
   name: string;
   label: string;
   defaultValue?: number;
+  onValueChange?: (value: string) => void;
 }) {
   const [selected, setSelected] = useState<number | null>(defaultValue ?? null);
   return (
     <div className="flex items-center justify-between border-b border-border/40 py-2.5 last:border-0">
       <span className="text-sm text-foreground">{label}</span>
-      <div className="flex gap-1.5">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <label
-            key={n}
-            className="group flex cursor-pointer flex-col items-center"
-          >
-            <input
-              type="radio"
-              name={name}
-              value={n}
-              className="sr-only"
-              defaultChecked={n === (defaultValue ?? null)}
-              onChange={() => setSelected(n)}
-            />
-            <span
+      <div className="flex gap-1.5" role="group" aria-label={label}>
+        {[1, 2, 3, 4, 5].map((n) => {
+          const active = selected === n;
+          return (
+            <button
+              key={n}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                setSelected(n);
+                onValueChange?.(String(n));
+              }}
               className={cn(
                 "flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all",
-                selected === n
+                active
                   ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : selected !== null && selected >= n
                     ? "bg-primary/15 text-primary"
@@ -239,10 +238,11 @@ function RatingRow({
               )}
             >
               {n}
-            </span>
-          </label>
-        ))}
+            </button>
+          );
+        })}
       </div>
+      <input type="hidden" name={name} value={selected ?? ""} />
     </div>
   );
 }
@@ -617,6 +617,7 @@ function Step3({
                 defaultValue={
                   defaults[q.name] ? Number(defaults[q.name]) : undefined
                 }
+                onValueChange={(v) => onToggleChange?.(q.name, v)}
               />
             ))}
           </div>
