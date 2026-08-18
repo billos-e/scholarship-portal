@@ -14,6 +14,7 @@ export type RequestFilterState = {
   semester: string;
   uni: string;
   status: string;
+  category: string;
 };
 
 export type StudentFilterState = {
@@ -110,6 +111,7 @@ export function filterRequests<
   T extends {
     semesterLabel: string;
     status: RequestStatus;
+    requestCategory?: string;
     student: {
       firstName: string;
       lastName: string;
@@ -129,6 +131,9 @@ export function filterRequests<
       return false;
     }
     if (filters.uni && request.student.universityId !== filters.uni) {
+      return false;
+    }
+    if (filters.category && request.requestCategory !== filters.category) {
       return false;
     }
     if (!matchesStudentQuery(request.student, filters.q)) {

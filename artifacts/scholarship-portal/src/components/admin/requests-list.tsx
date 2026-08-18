@@ -44,7 +44,7 @@ import {
   CLIENT_REQUEST_STATUSES,
   REQUEST_STATUS_LABELS,
 } from "@/lib/request-status";
-import { REQUEST_CATEGORY_LABELS, type RequestCategory } from "@/lib/request-category";
+import { REQUEST_CATEGORIES, REQUEST_CATEGORY_LABELS, type RequestCategory } from "@/lib/request-category";
 import { REQUESTS_TABLE_COLUMNS } from "@/lib/export/table-columns";
 import { requestsToExportRows } from "@/lib/export/table-rows";
 
@@ -84,6 +84,7 @@ const EMPTY_FILTERS: RequestFilterState = {
   semester: "",
   uni: "",
   status: "",
+  category: "",
 };
 
 type RequestSortKey = "student" | "university" | "semester" | "category" | "submitted" | "status";
@@ -131,8 +132,9 @@ export function RequestsList({
         semester: filters.semester,
         uni: filters.uni,
         status: "",
+        category: filters.category,
       }),
-    [requests, filters.q, filters.year, filters.semester, filters.uni],
+    [requests, filters.q, filters.year, filters.semester, filters.uni, filters.category],
   );
 
   const filtered = useMemo(
@@ -167,7 +169,7 @@ export function RequestsList({
 
   useEffect(() => {
     setPage(1);
-  }, [filters.q, filters.year, filters.semester, filters.uni, filters.status, sortKey, sortDirection]);
+  }, [filters.q, filters.year, filters.semester, filters.uni, filters.status, filters.category, sortKey, sortDirection]);
 
   function updateFilters(patch: Partial<RequestFilterState>) {
     setFilters((current) => {
@@ -307,6 +309,27 @@ export function RequestsList({
                 {universities.map((university) => (
                   <option key={university.id} value={university.id}>
                     {university.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+
+            <div className="space-y-1 lg:w-52">
+              <label
+                htmlFor="request-category"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Category
+              </label>
+              <NativeSelect
+                id="request-category"
+                value={filters.category}
+                onChange={(e) => updateFilters({ category: e.target.value })}
+              >
+                <option value="">All categories</option>
+                {REQUEST_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {REQUEST_CATEGORY_LABELS[category]}
                   </option>
                 ))}
               </NativeSelect>
