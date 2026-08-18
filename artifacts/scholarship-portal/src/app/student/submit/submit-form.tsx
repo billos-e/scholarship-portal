@@ -633,8 +633,8 @@ function Step3({
       </SectionBlock>
 
       <SectionBlock
-        title="Activities"
-        description="What you took part in this semester."
+        title="Reflections"
+        description="Activities this semester and how you made sense of them."
       >
         <div className="space-y-2">
           <Label className="text-sm font-medium">Activities & involvement</Label>
@@ -657,12 +657,6 @@ function Step3({
             defaultValue={defaults.activitiesComment ?? ""}
           />
         </div>
-      </SectionBlock>
-
-      <SectionBlock
-        title="Reflections"
-        description="Three questions about this semester."
-      >
         {REFLECTION_QUESTIONS.map((field) => (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>{field.label}</Label>
