@@ -1,0 +1,21 @@
+name: Deadline notifications
+
+on:
+  schedule:
+    # 01:00 UTC = 08:00 Bangkok (ICT, UTC+7)
+    - cron: "0 1 * * *"
+  workflow_dispatch: # run manually from the Actions tab
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deadline alerts
+        env:
+          APP_URL: ${{ secrets.PUBLIC_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -f -X POST "${APP_URL%/}/api/internal/run-deadline-notifications" \
+            -H "X-Cron-Secret: ${CRON_SECRET}" \
+            -H "Content-Type: application/json"
