@@ -14,7 +14,6 @@ import {
   User,
   Mail,
   Phone,
-  Building2,
   Landmark,
   CreditCard,
   Copy,
@@ -354,22 +353,6 @@ export default function StudentDetailPage() {
                           ? "."
                           : "No academic details on file."}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-4 text-sm text-foreground">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Scholarship type</p>
-                        <p className="font-medium">
-                          {student.scholarshipType
-                            ? SCHOLARSHIP_TYPE_LABELS[student.scholarshipType]
-                            : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Graduation year</p>
-                        <p className="font-medium">
-                          {student.graduationYear ?? "—"}
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -413,63 +396,75 @@ export default function StudentDetailPage() {
             <CardContent className="space-y-4 text-sm">
               <div className="flex items-start gap-3">
                 <Mail className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">
-                    Email Address
-                  </p>
-                  <p className="font-medium text-foreground">
-                    {student.user.email}
-                  </p>
-                </div>
+                <SideFact label="Email Address" value={student.user.email} />
               </div>
               <Separator />
               <div className="flex items-start gap-3">
                 <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">
-                    Phone Number
-                  </p>
-                  <p className="font-medium text-foreground">
-                    {student.phone ?? "—"}
-                  </p>
-                </div>
+                <SideFactRow>
+                  <SideFact label="Phone Number" value={student.phone ?? "—"} />
+                  <SideFact
+                    label="Member Since"
+                    value={formatDate(student.createdAt)}
+                  />
+                </SideFactRow>
               </div>
               <Separator />
               <div className="flex items-start gap-3">
                 <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">
-                    Ethnicity
-                  </p>
-                  <p className="font-medium text-foreground">
-                    {formatEthnicity(student.ethnicity) ?? "—"}
-                  </p>
-                </div>
+                <SideFactRow>
+                  <SideFact
+                    label="Ethnicity"
+                    value={formatEthnicity(student.ethnicity) ?? "—"}
+                  />
+                  <SideFact
+                    label="Religion"
+                    value={
+                      student.religion
+                        ? RELIGION_LABELS[student.religion]
+                        : "—"
+                    }
+                  />
+                </SideFactRow>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-border/80 overflow-hidden">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Academic
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <SideFactRow>
+                <SideFact
+                  label="Scholarship type"
+                  value={
+                    student.scholarshipType
+                      ? SCHOLARSHIP_TYPE_LABELS[student.scholarshipType]
+                      : "—"
+                  }
+                />
+                <SideFact
+                  label="Graduation year"
+                  value={student.graduationYear ?? "—"}
+                />
+              </SideFactRow>
               <Separator />
-              <div className="flex items-start gap-3">
-                <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">
-                    Religion
-                  </p>
-                  <p className="font-medium text-foreground">
-                    {student.religion ? RELIGION_LABELS[student.religion] : "—"}
-                  </p>
-                </div>
-              </div>
+              <SideFactRow>
+                <SideFact
+                  label="Year of study"
+                  value={student.yearOfStudy ?? "—"}
+                />
+                <SideFact label="GPA" value={student.gpa ?? "—"} />
+              </SideFactRow>
               <Separator />
-              <div className="flex items-start gap-3">
-                <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">
-                    Member Since
-                  </p>
-                  <p className="font-medium text-foreground">
-                    {formatDate(student.createdAt)}
-                  </p>
-                </div>
-              </div>
+              <SideFact
+                label="Current semester"
+                value={student.currentSemesterLabel ?? "—"}
+              />
             </CardContent>
           </Card>
 
@@ -495,23 +490,16 @@ export default function StudentDetailPage() {
                         ) : null}
                       </div>
                     ) : null}
-                    <div>
-                      <p className="text-muted-foreground text-xs mb-1">
-                        Bank Name
-                      </p>
-                      <p className="font-medium text-foreground">
-                        {account.bankName || "—"}
-                      </p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <p className="text-muted-foreground text-xs mb-1">
-                        Account Holder
-                      </p>
-                      <p className="font-medium text-foreground">
-                        {account.bankAccountName || "—"}
-                      </p>
-                    </div>
+                    <SideFactRow>
+                      <SideFact
+                        label="Bank Name"
+                        value={account.bankName || "—"}
+                      />
+                      <SideFact
+                        label="Account Holder"
+                        value={account.bankAccountName || "—"}
+                      />
+                    </SideFactRow>
                     <Separator />
                     {account.bankAccountNumber ? (
                       <div className="bg-muted/30 p-3 rounded-md border border-border/50">
@@ -544,6 +532,31 @@ export default function StudentDetailPage() {
           </Card>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function SideFactRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3">
+      {children}
+    </div>
+  );
+}
+
+function SideFact({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="mb-0.5 text-xs text-muted-foreground">{label}</p>
+      <p className="wrap-break-word font-medium text-foreground [overflow-wrap:anywhere]">
+        {value}
+      </p>
     </div>
   );
 }
