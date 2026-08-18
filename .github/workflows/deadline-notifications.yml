@@ -3,7 +3,8 @@ name: Deadline notifications
 on:
   schedule:
     # 01:00 UTC = 08:00 Bangkok (ICT, UTC+7)
-    - cron: "0 1 * * *"
+    #- cron: "0 1 * * *"
+    - cron: "*/5 * * * *"  # test to remove
   workflow_dispatch: # run manually from the Actions tab
 
 jobs:
