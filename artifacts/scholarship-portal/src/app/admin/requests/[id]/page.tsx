@@ -205,38 +205,38 @@ export default function AdminRequestDetailPage() {
                 <WellbeingGrid items={wellbeingItems} />
               </RequestSectionCard>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-                <ContextPanel
-                  challenges={report.challenges.map((c) =>
-                    labelFor(CHALLENGE_OPTIONS, c),
-                  )}
-                />
-                <ActivitiesPanel
-                  activities={report.activities.map((a) =>
-                    labelFor(ACTIVITY_OPTIONS, a),
-                  )}
-                />
-              </div>
+              <ContextPanel
+                challenges={report.challenges.map((c) =>
+                  labelFor(CHALLENGE_OPTIONS, c),
+                )}
+              />
 
               <RequestSectionCard
                 title="Reflections"
-                description="Student-written responses about their semester."
+                description="Activities and student-written responses about their semester."
                 icon={MessageSquare}
                 tone="primary"
               >
-                <dl className="grid grid-cols-1 gap-3">
-                  <DetailField
-                    label="Comments on activities"
-                    value={report.activitiesComment}
+                <div className="space-y-5">
+                  <ActivitiesPanel
+                    activities={report.activities.map((a) =>
+                      labelFor(ACTIVITY_OPTIONS, a),
+                    )}
                   />
-                  {REFLECTION_QUESTIONS.map((question) => (
+                  <dl className="grid grid-cols-1 gap-3">
                     <DetailField
-                      key={question.name}
-                      label={question.label}
-                      value={reflectionAnswer(report, question)}
+                      label="Comments on activities"
+                      value={report.activitiesComment}
                     />
-                  ))}
-                </dl>
+                    {REFLECTION_QUESTIONS.map((question) => (
+                      <DetailField
+                        key={question.name}
+                        label={question.label}
+                        value={reflectionAnswer(report, question)}
+                      />
+                    ))}
+                  </dl>
+                </div>
               </RequestSectionCard>
             </>
           ) : (

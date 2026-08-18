@@ -5,7 +5,6 @@ import {
   DollarSign,
   Flame,
   Heart,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 
@@ -135,40 +134,92 @@ export function WellbeingGrid({ items }: { items: WellbeingItem[] }) {
   );
 }
 
+type ItemListCardProps = {
+  title: string;
+  description: string;
+  items: string[];
+  icon: typeof Heart;
+  tone: "warning" | "success";
+};
+
+const ITEM_TONE = {
+  warning: {
+    card: "border-warning/20 from-warning-light/60",
+    iconWrap: "bg-warning/15 text-warning",
+    chip: "border-warning/25 bg-warning-light/80 text-warning-foreground",
+  },
+  success: {
+    card: "border-success/20 from-success-light/50",
+    iconWrap: "bg-success/15 text-success",
+    chip: "border-success/25 bg-success-light/80 text-success-foreground",
+  },
+} as const;
+
+function ItemListCard({
+  title,
+  description,
+  items,
+  icon: Icon,
+  tone,
+}: ItemListCardProps) {
+  const styles = ITEM_TONE[tone];
+  return (
+    <div
+      className={cn(
+        "rounded-xl border bg-gradient-to-br to-card p-5 shadow-sm",
+        styles.card,
+      )}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex min-w-0 shrink-0 items-center gap-2.5 sm:max-w-[16rem]">
+          <div
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-lg",
+              styles.iconWrap,
+            )}
+          >
+            <Icon className="size-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-heading text-sm font-semibold">{title}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        {items.length > 0 ? (
+          <ul className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            {items.map((item) => (
+              <li
+                key={item}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-sm font-medium",
+                  styles.chip,
+                )}
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">None reported</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type ContextPanelProps = {
   challenges: string[];
 };
 
 export function ContextPanel({ challenges }: ContextPanelProps) {
   return (
-    <div className="flex h-full flex-col rounded-xl border border-warning/20 bg-gradient-to-br from-warning-light/60 to-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-warning/15 text-warning">
-          <AlertTriangle className="size-4" />
-        </div>
-        <div>
-          <p className="font-heading text-sm font-semibold">Challenges</p>
-          <p className="text-xs text-muted-foreground">
-            Difficulties reported this semester
-          </p>
-        </div>
-      </div>
-      {challenges.length > 0 ? (
-        <ul className="space-y-2">
-          {challenges.map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-2 text-sm text-foreground"
-            >
-              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-warning" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">None reported</p>
-      )}
-    </div>
+    <ItemListCard
+      title="Challenges"
+      description="Difficulties reported this semester"
+      items={challenges}
+      icon={AlertTriangle}
+      tone="warning"
+    />
   );
 }
 
@@ -178,33 +229,12 @@ type ActivitiesPanelProps = {
 
 export function ActivitiesPanel({ activities }: ActivitiesPanelProps) {
   return (
-    <div className="flex h-full flex-col rounded-xl border border-success/20 bg-gradient-to-br from-success-light/50 to-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-success/15 text-success">
-          <Activity className="size-4" />
-        </div>
-        <div>
-          <p className="font-heading text-sm font-semibold">Activities</p>
-          <p className="text-xs text-muted-foreground">
-            Extracurricular involvement
-          </p>
-        </div>
-      </div>
-      {activities.length > 0 ? (
-        <ul className="space-y-2">
-          {activities.map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-2 text-sm text-foreground"
-            >
-              <Sparkles className="mt-0.5 size-3.5 shrink-0 text-success" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">None reported</p>
-      )}
-    </div>
+    <ItemListCard
+      title="Activities"
+      description="Extracurricular involvement"
+      items={activities}
+      icon={Activity}
+      tone="success"
+    />
   );
 }

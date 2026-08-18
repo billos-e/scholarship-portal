@@ -361,38 +361,34 @@ export default function StudentSubmissionDetailPage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Challenges</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tags
-                  items={report.challenges.map((c) =>
-                    labelFor(CHALLENGE_OPTIONS, c),
-                  )}
-                />
-              </CardContent>
-            </Card>
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Activities</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tags
-                  items={report.activities.map((a) =>
-                    labelFor(ACTIVITY_OPTIONS, a),
-                  )}
-                />
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Challenges</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tags
+                items={report.challenges.map((c) =>
+                  labelFor(CHALLENGE_OPTIONS, c),
+                )}
+              />
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>Reflections</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Activities
+                </p>
+                <Tags
+                  items={report.activities.map((a) =>
+                    labelFor(ACTIVITY_OPTIONS, a),
+                  )}
+                />
+              </div>
               <Field
                 label="Comments on your activities"
                 value={report.activitiesComment}
